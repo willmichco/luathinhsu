@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>Đang chuyển hướng…</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+  // Đường dẫn không tồn tại → chuyển về ứng dụng tra cứu (thử nhận diện số điều trong đường dẫn)
+  (function () {
+    var base = location.pathname.split('/').slice(0, 2).join('/') + '/';
+    if (location.hostname.indexOf('github.io') < 0) base = '/';
+    var m = location.pathname.match(/dieu-?(\d{1,3}[a-z]?)/i);
+    location.replace(base + (m ? '#/dieu/' + m[1].toLowerCase() : '#/'));
+  })();
+</script>
+</head><body><p>Đang chuyển hướng tới trang tra cứu… <a href="./">Bấm vào đây</a> nếu trình duyệt không tự chuyển.</p></body></html>
