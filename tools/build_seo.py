@@ -984,6 +984,10 @@ def head_html(p):
         '<meta name="twitter:description" content="%s">' % esc(p["desc"]),
         '<meta name="twitter:image" content="%s">' % OG_IMAGE,
     ] + p.get("preload", [])
+    if not p["path"].startswith("dieu-"):
+        # Hoa văn trống đồng ở đầu trang (mặt nạ CSS) là phần tử lớn nhất khi tải: nạp sẵn để vẽ ngay lần đầu.
+        # crossorigin để khớp chế độ tải của mask-image, tránh tải hai lần.
+        lines.append('<link rel="preload" href="assets/img/trong-dong.svg" as="image" type="image/svg+xml" crossorigin>')
     ld = p.get("ld")
     if ld is None and p.get("crumbs"):
         crumbs = p["crumbs"]
