@@ -6,13 +6,13 @@
  *  - Dữ liệu điều luật nằm ở bộ nhớ đệm riêng (DATA), không bị xóa khi phát hành phiên bản giao diện mới;
  *    ứng dụng báo mã phiên bản dữ liệu hiện hành để xóa các bản cũ.
  */
-var VERSION = 'blhs-20261014g';
+var VERSION = 'blhs-20261014h';
 var DATA = 'blhs-data';
 var NET_WAIT = 3000;
 var SHELL = [
   './', 'index.html', 'manifest.webmanifest',
-  'assets/css/app.css?v=20261014g', 'assets/js/lx-core.js?v=20261014g', 'assets/js/app.js?v=20261014g',
-  'assets/js/tools.js?v=20261014g', 'assets/js/search-engine.js?v=20261014g', 'assets/js/search-worker.js?v=20261014g',
+  'assets/css/app.css?v=20261014h', 'assets/js/lx-core.js?v=20261014h', 'assets/js/app.js?v=20261014h',
+  'assets/js/tools.js?v=20261014h', 'assets/js/search-engine.js?v=20261014h', 'assets/js/search-worker.js?v=20261014h',
   'assets/img/logo.webp', 'assets/img/trong-dong.svg', 'assets/img/favicon-32.png', 'assets/img/icon-192.png',
   'assets/fonts/be-vietnam-pro-400.woff2', 'assets/fonts/be-vietnam-pro-500.woff2',
   'assets/fonts/be-vietnam-pro-600.woff2', 'assets/fonts/be-vietnam-pro-700.woff2'

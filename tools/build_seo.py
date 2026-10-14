@@ -647,7 +647,7 @@ def side_html(a):
         h += "</div>"
     return ('<aside class="side" aria-label="Mục lục điều luật"><div class="side-h js-only"><input class="inp" type="search" '
             'placeholder="Lọc nhanh điều luật…" aria-label="Lọc mục lục"><a class="side-all" href="muc-luc" data-act="jump" '
-            'aria-haspopup="dialog" title="Mở danh sách đầy đủ tất cả điều luật" aria-label="Mở danh sách đầy đủ tất cả điều luật">%s</a>'
+            'aria-haspopup="dialog" title="Mở mục lục đầy đủ (Ctrl+K)" aria-label="Mở mục lục đầy đủ">%s</a>'
             '</div><div class="side-b">' % ic("olist") + h + "</div></aside>")
 
 
@@ -753,7 +753,7 @@ def page_article(a):
     pager = ('<nav class="pager no-print" aria-label="Điều trước, điều sau">%s%s%s</nav>'
              % ('<a href="dieu-%s" rel="prev"><small>%sĐiều trước</small><span>Điều %s. %s</span></a>'
                 % (prev.id, ic("chev-l"), esc(prev.id), esc(prev.t)) if prev else "<span></span>",
-                '<a class="pg-all" href="muc-luc" data-act="jump" aria-haspopup="dialog">%s<span>Tất cả điều</span></a>' % ic("olist"),
+                '<a class="pg-all" href="muc-luc" data-act="jump" aria-haspopup="dialog">%s<span>Mục lục</span></a>' % ic("olist"),
                 '<a class="nx" href="dieu-%s" rel="next"><small>Điều sau%s</small><span>Điều %s. %s</span></a>'
                 % (nxt.id, ic("chev-r"), esc(nxt.id), esc(nxt.t)) if nxt else ""))
     # Cột phải: khung hình phạt, đi tới khoản, điều liên quan

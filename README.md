@@ -10,7 +10,7 @@ Luật số 59/2024/QH15 và Luật số 86/2025/QH15) dành cho luật sư, sin
 | Nhóm | Chi tiết |
 |---|---|
 | Tra cứu | 428 điều (kể cả Điều 217a, 256a), mục lục Phần → Chương → Mục → Điều, lọc tức thì |
-| Tất cả điều luật | Bảng mở đè lên trang (nút “Tất cả điều” ở đầu trang, thanh bên, giữa “Điều trước/Điều sau”, menu; phím `Ctrl/⌘ + K`): toàn bộ 428 điều liên tục theo chương, cột chương để cuộn nhanh, đánh dấu điều đang đọc, “Vừa xem”; lọc theo số, không dấu, `khoản 2 điều 134`, `chương 16`; ↑ ↓ Enter để mở |
+| Mục lục nhanh | Mọi nút “Mục lục” (đầu trang, thanh dưới, menu ☰, giữa “Điều trước/Điều sau”, nút cạnh ô lọc thanh bên; phím `Ctrl/⌘ + K`) mở cùng một bảng: toàn bộ 428 điều liên tục theo chương, đánh dấu điều đang đọc, “Vừa xem”; lọc theo số, không dấu, `khoản 2 điều 134`, `chương 16`; ↑ ↓ Enter. Máy tính: hộp thoại có cột chương. Điện thoại, máy tính bảng: ngăn kéo bên phải — **vuốt từ mép phải sang trái** để mở (bám theo ngón tay), vuốt sang phải hoặc chạm vùng tối để đóng; tay nắm ở mép phải trang điều luật/chương; Android: nút Quay lại đóng ngăn kéo. Trang `muc-luc` (lọc sửa đổi 2025, tổng quan chương) mở từ chân bảng |
 | Tìm kiếm thông minh | Gõ không dấu; `173`, `khoản 2 điều 134`, `điểm a khoản 1 điều 51`, `chương 20`; “cụm từ chính xác”; gợi ý theo cách gọi thông dụng (“vay tiền không trả” → Điều 175) |
 | Trình đọc điều luật | Văn bản luật, bình luận khoa học, điều liên quan; chú thích; xem nhanh điều được dẫn chiếu khi rê chuột/chạm; sao chép trích dẫn từng khoản; lưu, ghi chú cá nhân; điều trước/sau bằng phím ← → |
 | Khung hình phạt | Nhận diện tự động khung của từng khoản, phân loại tội (Điều 9), thời hiệu (Điều 27, 28), độ tuổi (Điều 12), biểu đồ trực quan |
