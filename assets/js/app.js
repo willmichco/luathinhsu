@@ -20,7 +20,7 @@
   var cap = function (s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; };
   var debounce = function (fn, ms) { var t; return function () { var a = arguments, c = this; clearTimeout(t); t = setTimeout(function () { fn.apply(c, a); }, ms); }; };
   var isTouch = window.matchMedia('(hover: none)').matches;
-  var VER = '20261014f';
+  var VER = '20261014h';
   // Thư mục gốc của trang web (…/luathinhsu/), suy ra từ vị trí tệp assets/js/app.js
   var ROOT = document.currentScript ? new URL('../../', document.currentScript.src).href : new URL('./', location.href).href;
   var ROOT_PATH = new URL(ROOT).pathname;
@@ -374,7 +374,8 @@
       // Cỡ chữ, kiểu chữ chỉ áp dụng cho văn bản điều luật và bình luận → chỉ hiện khi đang đọc một điều
       var reading = !!(Router.view && Router.view.a);
       $('#drawerNav').innerHTML =
-        L('./', 'home', 'Trang chủ') + L('muc-luc', 'list', 'Mục lục Bộ luật') + L('tim-kiem', 'search', 'Tìm kiếm toàn văn') +
+        L('./', 'home', 'Trang chủ') + L('muc-luc', 'list', 'Mục lục Bộ luật').replace('<a ', '<a data-act="jump" aria-haspopup="dialog" ') +
+        L('tim-kiem', 'search', 'Tìm kiếm toàn văn') +
         L('da-luu', 'bookmark', 'Đã lưu & ghi chú') +
         '<div class="dn-h">Công cụ nghiên cứu</div>' +
         L('cong-cu-thoi-hieu', 'clock', 'Phân loại tội & thời hiệu') + L('cong-cu-tuoi', 'user', 'Tuổi chịu trách nhiệm hình sự') +
@@ -400,6 +401,308 @@
         '<div class="seg" data-set="serif"><button type="button" data-v="0" aria-pressed="' + (p.serif !== true) + '">Không chân</button><button type="button" data-v="1" aria-pressed="' + (p.serif === true) + '">Có chân</button></div></div>' +
         '<div class="set-row"><div><b>Đọc khi không có mạng</b><small>Tải sẵn toàn bộ 428 điều và bình luận (~3 MB)</small></div>' +
         '<button type="button" class="btn btn--sm" data-act="offline">' + ic('offline') + 'Tải về</button></div>');
+    }
+  };
+
+  /* =========================================================================
+     6b. Mục lục điều luật: toàn bộ điều theo Phần → Chương → Mục; chọn một điều là chuyển ngay tới điều đó.
+         Mọi nút "Mục lục" (đầu trang, thanh dưới, menu, giữa Điều trước/sau, Ctrl/⌘+K) đều mở bảng này.
+         Máy tính (≥ 1024px): hộp thoại giữa màn hình, cột chương bên trái. Điện thoại, máy tính bảng: ngăn kéo
+         trượt từ mép phải — vuốt từ mép phải sang trái để mở (ngăn kéo bám theo ngón tay), vuốt sang phải để đóng.
+         Ô lọc hiểu số điều (173), không dấu (trom cap), "khoản 2 điều 134", "chương 16". Phím: ↑ ↓ Enter Esc.
+     ========================================================================= */
+  var DRAWER = window.matchMedia('(max-width: 1023px)');
+  // Android: vuốt mép màn hình / nút Quay lại của hệ thống phải đóng ngăn kéo chứ không rời trang → thêm một mục lịch sử
+  // tạm khi mở. Không làm trên iOS: mục lịch sử thừa biến cú vuốt mép phải thành "Tiến tới" của Safari.
+  var ANDROID = /Android/i.test(navigator.userAgent || '');
+  var Jump = {
+    el: null, isOpen: false, hist: false, rows: [], byId: {}, secs: [], secById: {}, act: -1, cur: null, ref: null, spyCur: null,
+    isDrawer: function () { return DRAWER.matches; },
+    build: function () {
+      var J = Jump, nav = '', list = '', lastP = null;
+      DB.chaps.forEach(function (c) {
+        if (c.part !== lastP) {
+          lastP = c.part;
+          var p = DB.parts.filter(function (x) { return x.id === c.part; })[0] || {};
+          nav += '<div class="jp-np">' + esc(p.label) + '</div>';
+          list += '<div class="jp-part">' + esc(p.label) + ' · ' + esc(p.name) + '</div>';
+        }
+        nav += '<button type="button" data-jc="' + c.id + '" title="' + esc(c.title) + '"><b>' + esc(c.num || 'TH') + '</b><span>' + esc(c.name) + '</span><small>' + c.arts.length + '</small></button>';
+        var rows = '', lastM = null;
+        c.arts.forEach(function (a) {
+          if (a.m && a.m !== lastM) { lastM = a.m; var mn = c.muc.filter(function (m) { return m.n === a.m; })[0]; if (mn) rows += '<div class="jp-muc">' + esc(mn.name) + '</div>'; }
+          rows += '<a class="jp-a' + (a.rep ? ' is-rep' : '') + '" href="dieu-' + a.id + '" data-id="' + esc(a.id) + '"><b>Điều ' + esc(a.id) + '</b><span class="t">' + esc(a.t) + '</span><span class="tg">' + artTags(a, true) + '</span></a>';
+        });
+        var range = 'Điều ' + c.first.id + (c.first !== c.last ? ' – ' + c.last.id : '');
+        list += '<section class="jp-sec" data-c="' + c.id + '"><h3 class="jp-ch"><small>' + (c.num ? esc(c.label) + ' · ' : '') + range + ' · ' + c.arts.length + ' điều</small>' + esc(c.name) +
+          (CH_NOTE[c.id] ? ' <span class="tag tag--rep26">' + CH_NOTE[c.id].short + '</span>' : '') + '</h3>' + rows + '</section>';
+      });
+      var mod = /Mac|iP(hone|ad|od)/.test(navigator.platform || '') ? '⌘' : 'Ctrl';
+      var el = document.createElement('div');
+      el.className = 'jp'; el.id = 'jump'; el.hidden = true;
+      el.innerHTML =
+        '<div class="jp-bg" data-act="jump-close"></div>' +
+        '<div class="jp-panel" role="dialog" aria-modal="true" aria-labelledby="jpTitle" tabindex="-1">' +
+        '<div class="jp-hd"><div><h2 id="jpTitle">' + ic('olist') + 'Mục lục điều luật</h2><p class="jp-sub" id="jpSub" aria-live="polite"></p></div>' +
+        '<button type="button" class="jp-x" data-act="jump-close" aria-label="Đóng mục lục">' + ic('x') + '</button></div>' +
+        '<div class="jp-tool"><div class="sb"><div class="sb-box">' + ic('filter') +
+        '<input class="sb-in" id="jpQ" type="search" autocomplete="off" spellcheck="false" enterkeyhint="go" placeholder="' + (window.matchMedia('(max-width: 560px)').matches ? 'Số điều hoặc tên điều…' : 'Gõ số điều hoặc tên điều… (vd: 173, trom cap, ma tuy)') + '" aria-label="Lọc danh sách điều luật" aria-controls="jpList">' +
+        '<button type="button" class="sb-clear" id="jpClr" aria-label="Xóa từ lọc" hidden>' + ic('x') + '</button></div></div>' +
+        '<div class="jp-recent" id="jpRecent" hidden></div></div>' +
+        '<div class="jp-body"><nav class="jp-nav" id="jpNav" aria-label="Đi tới chương">' + nav + '</nav>' +
+        '<div class="jp-list" id="jpList">' + list + '<div class="jp-empty" id="jpEmpty" hidden></div></div></div>' +
+        '<div class="jp-ft"><span class="k"><kbd>↑</kbd><kbd>↓</kbd> chọn điều</span><span class="k"><kbd>Enter</kbd> mở</span><span class="k"><kbd>Esc</kbd> đóng</span>' +
+        '<span class="k"><kbd>' + mod + '</kbd>+<kbd>K</kbd> mở mục lục ở mọi trang</span>' +
+        '<p class="jp-tip" id="jpTip" hidden>' + ic('spark') + '<span>Mẹo: vuốt từ mép phải màn hình sang trái để mở nhanh mục lục, vuốt sang phải để đóng.</span></p>' +
+        '<a href="muc-luc" title="Trang Mục lục: lọc điều sửa đổi 2025, tổng quan từng chương">Trang Mục lục đầy đủ ' + ic('arrow-r') + '</a></div>' +
+        '</div>';
+      document.body.appendChild(el);
+      J.el = el; J.q = $('#jpQ', el); J.clr = $('#jpClr', el); J.sub = $('#jpSub', el); J.rec = $('#jpRecent', el);
+      J.panel = $('.jp-panel', el); J.bg = $('.jp-bg', el); J.tip = $('#jpTip', el);
+      J.nav = $('#jpNav', el); J.list = $('#jpList', el); J.empty = $('#jpEmpty', el);
+      $$('.jp-sec', el).forEach(function (s) {
+        var c = DB.chapById[s.dataset.c], x = { c: c, el: s, btn: $('[data-jc="' + c.id + '"]', J.nav), lo: c.name.toLowerCase(), fo: fold(c.name) };
+        x.n = $('small', x.btn);
+        J.secs.push(x); J.secById[c.id] = x;
+      });
+      $$('.jp-a', el).forEach(function (r, i) {
+        var x = { a: DB.byId[r.dataset.id], el: r, t: $('.t', r), i: i, hl: null };
+        J.rows.push(x); J.byId[x.a.id] = x;
+      });
+      var redo = debounce(J.filter, 60);
+      J.q.addEventListener('input', redo);
+      J.q.addEventListener('keydown', J.onKey);
+      J.clr.addEventListener('click', function () { J.q.value = ''; J.filter(); J.q.focus(); });
+      J.nav.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-jc]'), s = b && J.secById[b.dataset.jc];
+        if (!s || s.el.hidden) return;
+        var smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        J.list.scrollTo({ top: s.el.offsetTop, behavior: smooth ? 'smooth' : 'auto' });
+      });
+      var ticking = false;
+      J.list.addEventListener('scroll', function () {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(function () { ticking = false; J.spy(); });
+      }, { passive: true });
+    },
+    // drag: mở bằng cú vuốt — ngăn kéo đứng ngoài mép phải, vị trí do ngón tay quyết định (xem Jump.swipe)
+    show: function (opener, drag) {
+      var J = Jump;
+      if (!DB.toc) return false;
+      if (!J.el) J.build();
+      UI.closePop(); UI.closeSheet(); UI.drawer(false);
+      clearTimeout(J.tHide);
+      J.opener = opener || document.activeElement;
+      // Điều đang đọc (hoặc chương đang xem) để đánh dấu và cuộn tới
+      var v = Router.view, a = v && v.a ? v.a : null;
+      var ch = a ? a.ch : (Router.cur && Router.cur.parts[0] === 'chuong' ? DB.chapterBySlug(Router.cur.parts[1] || '') : null);
+      if (J.cur) { J.cur.el.classList.remove('on'); J.cur.el.removeAttribute('aria-current'); }
+      J.cur = a ? J.byId[a.id] : null;
+      if (J.cur) { J.cur.el.classList.add('on'); J.cur.el.setAttribute('aria-current', 'page'); }
+      var ids = Hist.list().map(function (h) { return h.id; }).filter(function (id) { return DB.byId[id] && (!a || id !== a.id); }).slice(0, 6);
+      J.rec.hidden = !ids.length;
+      J.rec.innerHTML = '<span>' + ic('history') + 'Vừa xem</span>' + ids.map(function (id) {
+        return '<a class="chip" href="dieu-' + id + '" title="' + esc(DB.byId[id].t) + '">Điều ' + esc(id) + '</a>';
+      }).join('');
+      J.q.value = '';
+      J.filter();
+      J.tip.hidden = !isTouch || !!Store.get('swipeOk');
+      J.el.classList.toggle('is-drag', !!drag);
+      J.el.hidden = false; J.isOpen = true;
+      document.body.style.overflow = 'hidden';
+      // Hiện tiêu đề chương ở trên cùng để thấy bối cảnh; chương dài thì đặt điều đang đọc ở khoảng 1/3 khung
+      var L = J.list, sec = ch && J.secById[ch.id] ? J.secById[ch.id].el : null;
+      if (J.cur) {
+        var y = J.cur.el.offsetTop;
+        L.scrollTop = y + J.cur.el.offsetHeight - sec.offsetTop < L.clientHeight * 0.7 ? sec.offsetTop : y - L.clientHeight / 3;
+      } else L.scrollTop = sec ? sec.offsetTop : 0;
+      if (J.spyCur) J.spyCur.btn.classList.remove('on');
+      J.spyCur = null; J.spy();
+      // Màn hình cảm ứng: đưa tiêu điểm vào bảng (trình đọc màn hình nhận biết) nhưng không bật bàn phím ảo
+      if (isTouch) J.panel.focus({ preventScroll: true }); else J.q.focus({ preventScroll: true });
+      if (!drag) { void J.panel.offsetWidth; J.settle(true); }
+      return true;
+    },
+    // Kết thúc mở/kéo: giữ mở (open) hoặc đóng lại; ngăn kéo trượt nốt từ vị trí đang đứng
+    settle: function (open, bySwipe) {
+      var J = Jump;
+      J.el.classList.remove('is-drag');
+      J.panel.style.transform = ''; J.bg.style.opacity = '';
+      if (!open) { J.hide(); return; }
+      J.el.classList.add('is-open');
+      // Đang chờ lệnh lùi lịch sử trước đó hoàn tất (đóng rồi mở lại rất nhanh) → thêm mục lịch sử sau, khi lệnh lùi xong
+      if (ANDROID && J.isDrawer() && !J.hist) { if (J.backing) J.pushLater = true; else J.push(); }
+      if (bySwipe) { Store.set('swipeOk', 1); J.tip.hidden = true; }
+    },
+    // Gỡ mục lịch sử tạm; đánh dấu để sự kiện popstate do chính lệnh này sinh ra (đến sau) không đóng nhầm ngăn kéo mở lại ngay
+    back: function () { Jump.backing = true; history.back(); },
+    push: function () { history.pushState({ jp: 1 }, '', location.href); Jump.hist = true; },
+    // navigating: đóng vì đang chuyển trang → ẩn ngay, không trả tiêu điểm, không lùi lịch sử
+    hide: function (navigating) {
+      var J = Jump;
+      if (!J.isOpen) return;
+      J.isOpen = false; J.pushLater = false;
+      document.body.style.overflow = '';
+      if (J.hist) { J.hist = false; if (!navigating) J.back(); }
+      J.el.classList.remove('is-open', 'is-drag');
+      J.panel.style.transform = ''; J.bg.style.opacity = '';
+      clearTimeout(J.tHide);
+      if (J.isDrawer() && !navigating) J.tHide = setTimeout(function () { if (!J.isOpen) J.el.hidden = true; }, 300);
+      else J.el.hidden = true;
+      if (!navigating && J.opener && J.opener.focus && J.opener.offsetParent) J.opener.focus({ preventScroll: true });
+    },
+    /* Cử chỉ vuốt (điện thoại, máy tính bảng):
+         - mở: chạm trong dải sát mép phải rồi kéo sang trái. Dải rộng hơn mép một chút vì Android dành mép màn hình
+           cho cử chỉ Quay lại của hệ thống;
+         - đóng: kéo ngăn kéo sang phải.
+       Bỏ qua khi chạm vào ô nhập, vùng cuộn ngang (thanh tab, bảng…), khi đang phóng to trang, đang chọn chữ
+       hoặc đang mở menu / cửa sổ khác. Thả tay quá 1/3 quãng đường hoặc vuốt nhanh thì hoàn tất. */
+    swipe: function () {
+      var J = Jump, s = null;
+      var hScroll = function (el) {
+        for (; el && el !== document.body; el = el.parentElement) {
+          if (el.matches('input,textarea,select,[contenteditable]')) return true;
+          if (el.scrollWidth > el.clientWidth + 1) { var o = getComputedStyle(el).overflowX; if (o === 'auto' || o === 'scroll') return true; }
+        }
+        return false;
+      };
+      document.addEventListener('touchstart', function (e) {
+        s = null;
+        if (e.touches.length !== 1 || !J.isDrawer() || !DB.toc) return;
+        var t = e.touches[0], open = J.isOpen;
+        if (open) {
+          if (!J.panel.contains(e.target)) return;
+        } else {
+          if (t.clientX < window.innerWidth - Math.min(96, Math.max(48, window.innerWidth * 0.18))) return;
+          if (!$('#drawer').hidden || !$('#sheet').hidden) return;
+          if (window.visualViewport && window.visualViewport.scale > 1.02) return;
+          var sel = window.getSelection && window.getSelection();
+          if (sel && !sel.isCollapsed) return;
+        }
+        if (hScroll(e.target)) return;
+        s = { x0: t.clientX, y0: t.clientY, open: open, drag: false, lx: t.clientX, lt: e.timeStamp, v: 0, off: 0, w: 0 };
+      }, { passive: true });
+      document.addEventListener('touchmove', function (e) {
+        if (!s || e.touches.length !== 1) return;
+        var t = e.touches[0], dx = t.clientX - s.x0, dy = t.clientY - s.y0;
+        if (!s.drag) {
+          if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+          // Cuộn dọc hoặc kéo sai hướng → trả lại cho trình duyệt
+          if (Math.abs(dx) < Math.abs(dy) * 1.3 || (s.open ? dx < 0 : dx > 0)) { s = null; return; }
+          if (s.open) J.el.classList.add('is-drag');
+          else if (!J.show(null, true)) { s = null; return; }
+          s.drag = true; s.w = J.panel.offsetWidth || 1;
+        }
+        if (e.cancelable) e.preventDefault();
+        s.off = Math.max(0, Math.min(s.w, s.open ? dx : s.w + dx));
+        J.panel.style.transform = 'translateX(' + s.off + 'px)';
+        J.bg.style.opacity = String(1 - s.off / s.w);
+        var dt = e.timeStamp - s.lt;
+        if (dt > 0) { s.v = (t.clientX - s.lx) / dt; s.lx = t.clientX; s.lt = e.timeStamp; }
+      }, { passive: false });
+      var end = function () {
+        var g = s; s = null;
+        if (!g || !g.drag) return;
+        // Vuốt nhanh: hướng vuốt quyết định. Kéo chậm: đã đi quá 1/3 quãng đường thì hoàn tất
+        var keep = Math.abs(g.v) > 0.4 ? g.v < 0 : g.off < g.w * (g.open ? 1 / 3 : 2 / 3);
+        J.settle(keep, !g.open);
+      };
+      document.addEventListener('touchend', end, { passive: true });
+      document.addEventListener('touchcancel', end, { passive: true });
+    },
+    filter: function () {
+      var J = Jump, v = J.q.value.trim();
+      J.clr.hidden = !v;
+      // Hiểu cú pháp tra nhanh như ô tìm kiếm: 173 · điều 173 · khoản 2 điều 134 · chương 16
+      var r = v ? parseRef(v) : null, chap = null, only = null, num = null, cq = null;
+      if (r && r.chap) chap = r.chap;
+      else if (r && r.art) { if (r.k) only = r.art; else num = r.art; }
+      else if (v) { cq = window.LX.compile(window.LX.parseQuery(v), { prefix: true }); if (cq.empty) cq = null; }
+      J.ref = r && (r.a || r.chap) ? r : null;
+      var on = !!(chap || only || num || cq), n = 0, per = {}, chHit = {};
+      if (cq) J.secs.forEach(function (s) { chHit[s.c.id] = cq.exact(s.lo, s.fo) || cq.loose(s.lo, s.fo); });
+      J.rows.forEach(function (x) {
+        var a = x.a, ok = !on || (chap ? a.ch === chap : only ? a.id === only : num ? a.id.indexOf(num) === 0 :
+          (cq.exact(a.lo, a.fo) || cq.loose(a.lo, a.fo) || chHit[a.ch.id]));
+        x.el.hidden = !ok;
+        if (ok) { n++; per[a.ch.id] = (per[a.ch.id] || 0) + 1; }
+        var h = ok && cq ? hl(a.t, cq) : null;
+        if (h !== x.hl) { x.t.innerHTML = h == null ? esc(a.t) : h; x.hl = h; }
+      });
+      J.secs.forEach(function (s) {
+        var k = per[s.c.id] || 0;
+        s.el.hidden = on && !k;
+        s.btn.hidden = on && !k;
+        s.n.textContent = on ? k : s.c.arts.length;
+      });
+      J.el.classList.toggle('is-filter', on);
+      J.empty.hidden = !on || n > 0;
+      if (on && !n) {
+        J.empty.innerHTML = ic('search') + '<p>Không có điều nào khớp “' + esc(v) + '”.</p><a class="btn btn--sm" href="tim-kiem?q=' + encodeURIComponent(v) + '">' + ic('search') + 'Tìm trong toàn văn điều luật và bình luận</a>';
+      }
+      var tip = J.ref && J.ref.a && J.ref.k && n ? ' · Enter để mở ' + refLabel(J.ref) : '';
+      J.sub.textContent = on ? (n ? 'Tìm thấy ' + n + ' điều' + tip : 'Không có điều nào phù hợp') :
+        DB.arts.length + ' điều · ' + DB.toc.stats.chapters + ' chương · chọn một điều để chuyển tới ngay';
+      if (on) { J.list.scrollTop = 0; J.setAct(J.firstVisible()); }
+      else J.setAct(J.cur ? J.cur.i : -1);
+      J.spy();
+    },
+    firstVisible: function () {
+      for (var i = 0; i < Jump.rows.length; i++) if (!Jump.rows[i].el.hidden) return i;
+      return -1;
+    },
+    setAct: function (i, scroll) {
+      var J = Jump, old = J.rows[J.act];
+      if (old) old.el.classList.remove('act');
+      J.act = i;
+      var x = J.rows[i];
+      if (x) { x.el.classList.add('act'); if (scroll) J.reveal(x.el); }
+    },
+    // Đưa một dòng vào vùng nhìn thấy của danh sách, tránh bị tiêu đề chương (dính ở trên) che
+    reveal: function (el) {
+      var L = Jump.list, y = el.offsetTop, h = el.offsetHeight;
+      var hd = (el.parentNode.querySelector('.jp-ch') || {}).offsetHeight || 0;
+      if (y - hd - 6 < L.scrollTop) L.scrollTop = y - hd - 6;
+      else if (y + h + 6 > L.scrollTop + L.clientHeight) L.scrollTop = y + h + 6 - L.clientHeight;
+    },
+    // Đánh dấu chương đang hiển thị ở đầu danh sách và giữ nút chương đó trong tầm nhìn
+    spy: function () {
+      var J = Jump, top = J.list.scrollTop + 12, cur = null;
+      for (var i = 0; i < J.secs.length; i++) {
+        var s = J.secs[i];
+        if (s.el.hidden) continue;
+        if (!cur || s.el.offsetTop <= top) cur = s; else break;
+      }
+      if (cur === J.spyCur) return;
+      if (J.spyCur) J.spyCur.btn.classList.remove('on');
+      J.spyCur = cur;
+      if (!cur) return;
+      cur.btn.classList.add('on');
+      var N = J.nav, b = cur.btn;
+      if (N.scrollWidth > N.clientWidth + 2) {
+        if (b.offsetLeft < N.scrollLeft || b.offsetLeft + b.offsetWidth > N.scrollLeft + N.clientWidth) N.scrollLeft = b.offsetLeft - (N.clientWidth - b.offsetWidth) / 2;
+      } else if (b.offsetTop < N.scrollTop || b.offsetTop + b.offsetHeight > N.scrollTop + N.clientHeight) {
+        N.scrollTop = b.offsetTop - (N.clientHeight - b.offsetHeight) / 2;
+      }
+    },
+    onKey: function (e) {
+      var J = Jump;
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        var d = e.key === 'ArrowDown' ? 1 : -1, i = J.act;
+        do { i += d; } while (J.rows[i] && J.rows[i].el.hidden);
+        if (J.rows[i]) J.setAct(i, true);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        var x = J.rows[J.act] && !J.rows[J.act].el.hidden ? J.rows[J.act] : J.rows[J.firstVisible()];
+        if (!x) { if (J.ref && J.ref.chap) go(refHref(J.ref)); return; }
+        go(J.ref && J.ref.a === x.a ? refHref(J.ref) : 'dieu-' + x.a.id);
+      } else if (e.key === 'Escape' && J.q.value) {
+        // Esc lần đầu xóa từ lọc, lần sau mới đóng bảng
+        e.preventDefault(); e.stopPropagation();
+        J.q.value = ''; J.filter();
+      }
     }
   };
 
@@ -665,6 +968,9 @@
   function go(href, replace) {
     var u = abs(href);
     Router.byClick = true;
+    // Chọn điều trong mục lục đang có mục lịch sử tạm (Android) → thay mục đó, để nút Quay lại không phải bấm hai lần
+    Jump.pushLater = false;
+    if (Jump.hist) { Jump.hist = false; if (u === location.href) Jump.back(); else replace = true; }
     if (u !== location.href) history[replace ? 'replaceState' : 'pushState'](null, '', u);
     route();
   }
@@ -699,6 +1005,7 @@
     if (legacy != null) history.replaceState(null, '', abs(legacy));
     var ctx = parseRoute(), main = $('#main');
     var name = ctx.parts[0] || '';
+    document.body.classList.toggle('is-reading', name === 'dieu' || name === 'chuong');
     if (name === 'cong-cu' && !VIEWS['cong-cu']) {
       loadTools().then(route, function () {
         main.innerHTML = '<div class="wrap page"><div class="callout callout--warn">' + ic('alert') + '<div>Không tải được công cụ. Vui lòng kiểm tra kết nối mạng và <a href="javascript:location.reload()">tải lại trang</a>.</div></div></div>';
@@ -709,7 +1016,7 @@
     if (prevKey != null) Router.pos[prevKey] = window.scrollY;
     var back = !Router.byClick;
     Router.byClick = false;
-    UI.closePop(); UI.closeSheet(); UI.drawer(false);
+    UI.closePop(); UI.closeSheet(); UI.drawer(false); Jump.hide(true);
     // Cùng một trang, chỉ đổi tham số (tab, khoản…) → cập nhật tại chỗ
     if (Router.view && Router.view.update && Router.cur && Router.cur.parts.join('/') === ctx.parts.join('/') && Router.view.update(ctx) !== false) {
       Router.cur = ctx; return;
@@ -1049,7 +1356,8 @@
     this.tab = tab;
     main.innerHTML =
       '<div class="wrap"><div class="reader">' +
-      '<aside class="side" aria-label="Mục lục điều luật"><div class="side-h"><input class="inp" id="sideQ" type="search" placeholder="Lọc nhanh điều luật…" aria-label="Lọc mục lục"></div><div class="side-b" id="sideB"></div></aside>' +
+      '<aside class="side" aria-label="Mục lục điều luật"><div class="side-h"><input class="inp" id="sideQ" type="search" placeholder="Lọc nhanh điều luật…" aria-label="Lọc mục lục">' +
+      '<a class="side-all" href="muc-luc" data-act="jump" aria-haspopup="dialog" title="Mở mục lục đầy đủ (Ctrl+K)" aria-label="Mở mục lục đầy đủ">' + ic('olist') + '</a></div><div class="side-b" id="sideB"></div></aside>' +
       '<article class="art" id="art">' +
       '<header class="art-h">' + crumb([['Trang chủ', './'], [c.label, 'chuong-' + c.slug], ['Điều ' + a.id]]) +
       '<div class="art-tags"><span class="tag tag--soft">' + esc(DB.partName(c.part).split(':')[0]) + '</span><a class="tag tag--soft" href="chuong-' + c.slug + '">' + esc(c.label) + '</a>' + artTags(a) + (M.a14 ? '<span class="tag tag--a14" title="Người từ đủ 14 đến dưới 16 tuổi chịu TNHS ở khung rất nghiêm trọng, đặc biệt nghiêm trọng">Từ đủ 14 tuổi chịu TNHS (khoản 2 Điều 12)</span>' : '') + '</div>' +
@@ -1072,6 +1380,7 @@
       '<div id="panels"><div class="panel"><div class="skel" style="width:60%"></div><div class="skel"></div><div class="skel" style="width:85%"></div><div class="skel"></div></div></div>' +
       '<nav class="pager no-print" aria-label="Điều trước, điều sau">' +
       (prev ? '<a href="dieu-' + prev.id + '" rel="prev"><small>' + ic('chev-l') + 'Điều trước</small><span>Điều ' + esc(prev.id) + '. ' + esc(prev.t) + '</span></a>' : '<span></span>') +
+      '<a class="pg-all" href="muc-luc" data-act="jump" aria-haspopup="dialog">' + ic('olist') + '<span>Mục lục</span></a>' +
       (next ? '<a class="nx" href="dieu-' + next.id + '" rel="next"><small>Điều sau' + ic('chev-r') + '</small><span>Điều ' + esc(next.id) + '. ' + esc(next.t) + '</span></a>' : '') +
       '</nav></article>' +
       '<aside class="rail" id="rail" aria-label="Thông tin bổ trợ"></aside>' +
@@ -1086,7 +1395,7 @@
       $('#panels').innerHTML = '<div class="callout callout--warn">' + ic('alert') + '<div>Không tải được nội dung điều luật. Vui lòng kiểm tra kết nối mạng và <a href="javascript:location.reload()">tải lại trang</a>.</div></div>';
     });
     this.onKey = function (e) {
-      if (e.target.closest('input,textarea,select,[contenteditable]') || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (Jump.isOpen || e.target.closest('input,textarea,select,[contenteditable]') || e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.key === 'ArrowLeft' && prev) go('dieu-' + prev.id);
       if (e.key === 'ArrowRight' && next) go('dieu-' + next.id);
     };
@@ -1507,6 +1816,11 @@
   }
 
   function bindGlobal() {
+    Jump.swipe();
+    var edge = document.createElement('button');
+    edge.type = 'button'; edge.className = 'jp-edge'; edge.setAttribute('data-act', 'jump'); edge.setAttribute('aria-haspopup', 'dialog');
+    edge.setAttribute('aria-label', 'Mở mục lục (hoặc vuốt từ mép phải sang trái)');
+    document.body.appendChild(edge);
     document.addEventListener('click', function (e) {
       var t = e.target;
       var pv = t.closest('a[data-pv]');
@@ -1546,12 +1860,13 @@
       if (A === 'drawer') UI.drawer(true);
       else if (A === 'drawer-close') UI.drawer(false);
       else if (A === 'sheet-close') UI.closeSheet();
+      else if (A === 'jump') { if (!(e.metaKey || e.ctrlKey || e.shiftKey || e.button) && Jump.show(act)) e.preventDefault(); }
+      else if (A === 'jump-close') Jump.hide();
       else if (A === 'settings') { UI.drawer(false); UI.settings(); }
       else if (A === 'theme') {
         var cur = Prefs.get().theme || 'light', dark = cur === 'dark' || (cur === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
         Prefs.set('theme', dark ? 'light' : 'dark'); UI.toast(dark ? 'Đã chuyển sang giao diện sáng' : 'Đã chuyển sang giao diện tối');
       }
-      else if (A === 'find') { go('tim-kiem'); }
       else if (A === 'focus-hero') { var hi = $('#heroSearch .sb-in'); if (hi) { e.preventDefault(); hi.placeholder = 'Mô tả hành vi, vd: vay tiền không trả, đánh nhau…'; hi.focus(); hi.scrollIntoView({ block: 'center', behavior: 'smooth' }); } }
       else if (A === 'offline') offline(act);
       else if (V && V.a) {
@@ -1606,8 +1921,13 @@
       });
     }
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') { UI.closePop(); UI.closeSheet(); UI.drawer(false); }
+      if (e.key === 'Escape') { UI.closePop(); UI.closeSheet(); UI.drawer(false); Jump.hide(); }
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && (e.key === 'k' || e.key === 'K')) {
+        if (Jump.isOpen) { e.preventDefault(); Jump.hide(); } else if (Jump.show()) e.preventDefault();
+        return;
+      }
       if (e.key === '/' && !e.target.closest('input,textarea,select,[contenteditable]')) {
+        if (Jump.isOpen) { e.preventDefault(); Jump.q.focus(); return; }
         var inp = $('#heroSearch .sb-in') || $('#srBox .sb-in') || $('#hdSearch .sb-in');
         if (inp && inp.offsetParent) { e.preventDefault(); inp.focus(); inp.select(); }
         else { e.preventDefault(); go('tim-kiem'); }
@@ -1643,6 +1963,12 @@
     });
     // Quay lại/tiến tới; bỏ qua khi chỉ đổi phần #neo trong cùng trang (vd. liên kết “Bỏ qua thanh điều hướng”)
     var onPop = function () {
+      if (Jump.backing) {
+        Jump.backing = false;
+        if (Jump.pushLater) { Jump.pushLater = false; if (Jump.isOpen) Jump.push(); }
+        return;
+      }
+      if (Jump.hist && Jump.isOpen) { Jump.hist = false; Jump.hide(); return; }
       if (!DB.toc) return; // chưa nạp xong dữ liệu: lần vẽ đầu tiên sẽ đọc đường dẫn hiện tại
       if (legacyHash() == null && Router.cur && parseRoute().full === Router.cur.full) return;
       route();
