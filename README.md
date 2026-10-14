@@ -35,10 +35,13 @@ assets/js/search-*.js    Tìm kiếm toàn văn chạy nền (Web Worker)
 data/toc.json            Mục lục
 data/c01…c26.json, p3.json  Nội dung điều luật + bình luận theo chương
 data/meta.json           Trích đoạn, khung hình phạt, dẫn chiếu (sinh tự động)
+data/a/<số>.json         Dữ liệu riêng từng điều – trang điều luật chỉ tải vài KB thay vì cả chương (sinh tự động)
+assets/fonts/            Be Vietnam Pro: mỗi độ đậm 1 tệp chỉ gồm ký tự tiếng Việt (tools/build_fonts.py); OFL.txt
 tools/build_blhs.py      Chuyển tệp Word “Bình luận khoa học BLHS” → data/*.json
 tools/build_meta.py      Sinh data/meta.json, sửa lỗi đánh máy nguồn
-tools/build_seo.py       Sinh các trang dựng tĩnh, sitemap.xml, robots.txt từ index.html + data/
-tools/serve.py           Máy chủ thử nghiệm mô phỏng GitHub Pages (đường dẫn không đuôi .html, trang 404)
+tools/build_seo.py       Sinh các trang dựng tĩnh, data/a/*.json, sitemap.xml, robots.txt từ index.html + data/
+tools/build_fonts.py     Tạo phông thu gọn (cần: pip install fonttools brotli); chỉ chạy lại khi đổi phông/bộ ký tự
+tools/serve.py           Máy chủ thử nghiệm mô phỏng GitHub Pages (đường dẫn không đuôi .html, trang 404, nén gzip)
 sw.js, manifest.webmanifest  Đọc offline, cài đặt như ứng dụng
 ```
 
@@ -52,6 +55,16 @@ python3 tools/serve.py
 Sau khi cập nhật dữ liệu điều luật, chạy `python3 tools/build_meta.py` để sinh lại `data/meta.json`.
 Sau khi sửa `index.html` (header, footer…) hoặc dữ liệu, chạy `python3 tools/build_seo.py` để sinh lại các trang dựng tĩnh
 và sitemap. Khi chuyển sang tên miền riêng: `SITE_URL=https://ten-mien.vn/ python3 tools/build_seo.py`.
+
+## Tốc độ tải
+
+- Mỗi trang có sẵn nội dung HTML, hiển thị trước khi JavaScript chạy; phông chữ 400 và hoa văn đầu trang được nạp sẵn.
+- Trang điều luật chỉ tải dữ liệu của chính điều đó (`data/a/…`); dữ liệu tìm kiếm toàn văn (~400 KB) chỉ tải khi người
+  dùng bắt đầu gõ tìm kiếm; mã công cụ (`tools.js`) chỉ tải khi mở trang công cụ.
+- Rê chuột/chạm vào liên kết điều luật → nạp trước dữ liệu điều đó (tắt khi bật chế độ tiết kiệm dữ liệu).
+- Danh sách dài dùng `content-visibility` để trình duyệt chỉ dàn trang phần đang nhìn thấy.
+- Service worker: tệp có `?v=` (CSS, JS, dữ liệu), phông, hình lấy thẳng từ bộ nhớ đệm; HTML ưu tiên mạng (chờ tối đa 3 giây).
+  Khi sửa CSS/JS, tăng mã phiên bản `?v=` trong `index.html`, `VER` trong `assets/js/app.js`, `sw.js`, `search-worker.js`.
 
 ## Đường dẫn
 

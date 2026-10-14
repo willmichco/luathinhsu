@@ -20,7 +20,7 @@
   var cap = function (s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; };
   var debounce = function (fn, ms) { var t; return function () { var a = arguments, c = this; clearTimeout(t); t = setTimeout(function () { fn.apply(c, a); }, ms); }; };
   var isTouch = window.matchMedia('(hover: none)').matches;
-  var VER = '20261014e';
+  var VER = '20261014f';
   // Thư mục gốc của trang web (…/luathinhsu/), suy ra từ vị trí tệp assets/js/app.js
   var ROOT = document.currentScript ? new URL('../../', document.currentScript.src).href : new URL('./', location.href).href;
   var ROOT_PATH = new URL(ROOT).pathname;
@@ -167,7 +167,7 @@
      4. Dữ liệu
      ========================================================================= */
   var DB = {
-    toc: null, meta: {}, arts: [], byId: {}, chaps: [], chapById: {}, cache: {},
+    toc: null, meta: {}, arts: [], byId: {}, chaps: [], chapById: {}, cache: {}, one: {},
     init: function () {
       var j = function (u) {
         return fetch(u, { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); });
@@ -215,7 +215,18 @@
     article: function (id) {
       var a = DB.byId[id];
       if (!a) return Promise.reject(new Error('Không có điều ' + id));
-      return DB.chapter(a.ch.id).then(function (map) { return map[id]; });
+      // Đã có dữ liệu cả chương (đọc offline…) thì dùng luôn; nếu không, chỉ tải tệp nhỏ của riêng điều này (data/a/…).
+      // Không tải được (mất mạng, chưa lưu) → thử tệp chương, vốn được lưu khi chọn "Tải về" để đọc offline.
+      if (DB.cache[a.ch.id]) return DB.cache[a.ch.id].then(function (map) { return map[id]; });
+      if (!DB.one[id]) {
+        DB.one[id] = fetch(abs('data/a/' + id + '.json?v=' + DB.v)).then(function (r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        }).catch(function () {
+          return DB.chapter(a.ch.id).then(function (map) { return map[id]; });
+        }).catch(function (e) { delete DB.one[id]; throw e; });
+      }
+      return DB.one[id];
     },
     chapterBySlug: function (s) {
       for (var i = 0; i < DB.chaps.length; i++) if (DB.chaps[i].slug === s || DB.chaps[i].id === s) return DB.chaps[i];
@@ -530,7 +541,8 @@
       if (opt.onPick) { opt.onPick(it); return; }
       go(it.href);
     }
-    inp.addEventListener('input', function () { clr.hidden = !inp.value; render(); if (opt.onInput) opt.onInput(inp.value); });
+    // Người dùng bắt đầu gõ → chuẩn bị sẵn tìm kiếm toàn văn (tải ~400 KB dữ liệu) để kết quả có ngay khi nhấn tìm
+    inp.addEventListener('input', function () { clr.hidden = !inp.value; render(); FT.start(); if (opt.onInput) opt.onInput(inp.value); });
     inp.addEventListener('focus', function () { render(); });
     inp.addEventListener('keydown', function (e) {
       var n = items.filter(function (x) { return x.kind !== 'none'; }).length;
@@ -672,11 +684,27 @@
   function setTitle(t) { document.title = t ? t + ' – Bộ luật Hình sự 2015 (sửa đổi 2025)' : 'Tra cứu Bộ luật Hình sự 2015 (sửa đổi 2017, 2025) – Luật Sư Nam'; }
 
   var VIEWS = {};
+  // Mã các công cụ (tools.js) chỉ tải khi mở trang công cụ; trang dựng tĩnh của công cụ đã nhúng sẵn tệp này
+  var toolsP = null;
+  function loadTools() {
+    return toolsP || (toolsP = new Promise(function (res, rej) {
+      var sc = document.createElement('script');
+      sc.src = abs('assets/js/tools.js?v=' + VER); sc.onload = res;
+      sc.onerror = function () { toolsP = null; sc.remove(); rej(new Error('tools.js')); };
+      document.head.appendChild(sc);
+    }));
+  }
   function route() {
     var legacy = legacyHash();
     if (legacy != null) history.replaceState(null, '', abs(legacy));
     var ctx = parseRoute(), main = $('#main');
     var name = ctx.parts[0] || '';
+    if (name === 'cong-cu' && !VIEWS['cong-cu']) {
+      loadTools().then(route, function () {
+        main.innerHTML = '<div class="wrap page"><div class="callout callout--warn">' + ic('alert') + '<div>Không tải được công cụ. Vui lòng kiểm tra kết nối mạng và <a href="javascript:location.reload()">tải lại trang</a>.</div></div></div>';
+      });
+      return;
+    }
     var prevKey = Router.cur && Router.cur.full;
     if (prevKey != null) Router.pos[prevKey] = window.scrollY;
     var back = !Router.byClick;
@@ -1075,12 +1103,17 @@
     return '<button type="button" role="tab" id="tab-' + key + '" data-tab="' + key + '" aria-controls="p-' + key + '" aria-selected="' + (cur === key) + '">' + label + (cnt ? '<span class="cnt">' + cnt + '</span>' : '') + '</button>';
   }
   ArticleView.prototype.leave = function () {
+    if (this.mq) { if (this.mq.removeEventListener) this.mq.removeEventListener('change', this.onMq); else this.mq.removeListener(this.onMq); }
     document.removeEventListener('keydown', this.onKey);
     window.removeEventListener('scroll', this.onScroll);
     $('#progress').style.width = '0';
   };
   ArticleView.prototype.side = function () {
-    var a = this.a, box = $('#sideB'), q = $('#sideQ');
+    var a = this.a, box = $('#sideB'), q = $('#sideQ'), self = this;
+    // Danh sách điều của một chương chỉ dựng khi chương đó được mở (không vẽ sẵn cả 428 liên kết)
+    var list = function (arts) {
+      return arts.map(function (x) { return '<a href="dieu-' + x.id + '"' + (x === a ? ' class="on" aria-current="page"' : x.rep ? ' class="is-rep"' : '') + '><b>' + esc(x.id) + '</b><span>' + esc(x.t) + '</span></a>'; }).join('');
+    };
     var draw = function () {
       var v = q.value.trim(), cq = v ? window.LX.compile(window.LX.parseQuery(v), { prefix: true }) : null;
       var num = /^\d{1,3}[a-z]?$/.test(v) ? v : null, h = '', lastP = null;
@@ -1089,19 +1122,29 @@
         if (!arts.length) return;
         if (c.part !== lastP) { lastP = c.part; h += '<div class="sp">' + esc((DB.parts.filter(function (p) { return p.id === c.part; })[0] || {}).label || '') + '</div>'; }
         var open = c === a.ch || !!v;
-        h += '<div class="sc' + (open ? ' open' : '') + '"><button type="button" aria-expanded="' + open + '">' + ic('chev-r') + '<span class="r">' + esc(c.num || 'TH') + '</span><span>' + esc(c.name) + '</span></button><div class="sc-l">' +
-          arts.map(function (x) { return '<a href="dieu-' + x.id + '"' + (x === a ? ' class="on" aria-current="page"' : x.rep ? ' class="is-rep"' : '') + '><b>' + esc(x.id) + '</b><span>' + esc(x.t) + '</span></a>'; }).join('') + '</div></div>';
+        h += '<div class="sc' + (open ? ' open' : '') + '" data-c="' + c.id + '"><button type="button" aria-expanded="' + open + '">' + ic('chev-r') + '<span class="r">' + esc(c.num || 'TH') + '</span><span>' + esc(c.name) + '</span></button><div class="sc-l">' +
+          (open ? list(arts) : '') + '</div></div>';
       });
       box.innerHTML = h;
     };
     q.addEventListener('input', debounce(draw, 120));
     box.addEventListener('click', function (e) {
       var b = e.target.closest('.sc>button'); if (!b) return;
-      var sc = b.parentNode; sc.classList.toggle('open'); b.setAttribute('aria-expanded', String(sc.classList.contains('open')));
+      var sc = b.parentNode, l = $('.sc-l', sc); sc.classList.toggle('open'); b.setAttribute('aria-expanded', String(sc.classList.contains('open')));
+      if (sc.classList.contains('open') && !l.firstChild) l.innerHTML = list(DB.chapById[sc.dataset.c].arts);
     });
-    draw();
-    var on = $('.sc-l a.on', box);
-    if (on) { box.scrollTop = on.offsetTop - box.clientHeight / 2 + 40; }
+    // Cột mục lục chỉ hiện trên màn hình từ 1024px: điện thoại, máy tính bảng dọc không cần dựng
+    var mq = window.matchMedia('(min-width: 1024px)');
+    this.onMq = function () {
+      if (!mq.matches || self.sideDone) return;
+      self.sideDone = true;
+      draw();
+      var on = $('.sc-l a.on', box);
+      if (on) { box.scrollTop = on.offsetTop - box.clientHeight / 2 + 40; }
+    };
+    this.mq = mq;
+    if (mq.addEventListener) mq.addEventListener('change', this.onMq); else mq.addListener(this.onMq);
+    this.onMq();
   };
   ArticleView.prototype.build = function (ctx) {
     var a = this.a, d = this.d, M = a.M, self = this;
@@ -1571,6 +1614,22 @@
       }
       if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('sup.fn')) { e.preventDefault(); e.target.click(); }
     });
+    // Nạp trước dữ liệu của điều sắp mở: rê chuột lên liên kết (máy tính) hoặc vừa chạm (điện thoại) → mở ra là có ngay
+    var saveData = navigator.connection && navigator.connection.saveData, pfT = null;
+    var artOf = function (el) {
+      var a = el && el.closest && el.closest('a[href^="dieu-"]'), m = a && /^dieu-(\d{1,3}[a-z]?)(?:\?|$)/.exec(a.getAttribute('href'));
+      return m && DB.byId[m[1]] ? m[1] : null;
+    };
+    var prefetch = function (id) { if (id && DB.toc) DB.article(id).catch(function () { }); };
+    var toolOf = function (el) { return !!(el && el.closest && el.closest('a[href^="cong-cu"]')); };
+    if (!saveData) {
+      document.addEventListener('mouseover', function (e) {
+        clearTimeout(pfT);
+        var id = artOf(e.target), tool = !id && toolOf(e.target);
+        if (id || tool) pfT = setTimeout(function () { if (id) prefetch(id); else loadTools().catch(function () { }); }, 80);
+      });
+      document.addEventListener('touchstart', function (e) { var id = artOf(e.target); if (id) prefetch(id); else if (toolOf(e.target)) loadTools().catch(function () { }); }, { passive: true });
+    }
     var tt = $('#toTop');
     window.addEventListener('scroll', function () { tt.classList.toggle('on', window.scrollY > 900); }, { passive: true });
     tt.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
@@ -1622,22 +1681,21 @@
   });
   Promise.all([DB.init(), domReady]).then(function () {
     SearchBox($('#hdSearch'), { kbd: true, go: false });
+    // Báo service worker phiên bản dữ liệu hiện hành để xóa dữ liệu điều luật cũ trong bộ nhớ đệm
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) navigator.serviceWorker.controller.postMessage({ type: 'data-version', v: DB.v });
     // Chuẩn hoá: index.html, dieu-173.html → đường dẫn sạch
     var clean = location.pathname.replace(/(^|\/)index(\.html)?$/, '$1').replace(/\.html$/, '');
     if (clean !== location.pathname) history.replaceState(null, '', clean + location.search + location.hash);
     // Mở thẳng một điều: nạp sẵn dữ liệu chương để thay nội dung tĩnh mà không chớp khung chờ
     var c0 = legacyHash() == null ? parseRoute() : null, a0 = c0 && c0.parts[0] === 'dieu' && DB.byId[(c0.parts[1] || '').toLowerCase()];
-    return (a0 ? DB.article(a0.id).catch(function () { }) : Promise.resolve()).then(route);
-  }).then(function () {
-    // Khởi động trước luồng tìm kiếm nền khi trình duyệt rảnh
-    var idle = window.requestIdleCallback || function (f) { return setTimeout(f, 2500); };
-    idle(function () { FT.start(); });
+    var tick = new Promise(function (r) { setTimeout(r, 0); });
+    return (a0 ? Promise.all([DB.article(a0.id).catch(function () { }), tick]) : tick).then(route);
   }).catch(function (err) {
     // Trang dựng tĩnh vẫn đọc được khi không tải được dữ liệu tương tác → giữ nguyên nội dung
     if ($('#main [data-prerender]')) { UI.toast('Không tải được dữ liệu tra cứu, đang hiển thị bản đọc tĩnh'); return; }
     $('#main').innerHTML = '<div class="wrap page"><div class="empty">' + ic('alert') + '<h3>Không tải được dữ liệu</h3><p>Vui lòng kiểm tra kết nối mạng rồi <a href="javascript:location.reload()">tải lại trang</a>.</p><p class="muted" style="font-size:.8rem;margin-top:8px">' + esc(err && err.message) + '</p></div></div>';
   });
-  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  if ('serviceWorker' in navigator && window.isSecureContext) {
     window.addEventListener('load', function () { navigator.serviceWorker.register(abs('sw.js')).catch(function () { }); });
   }
 })();

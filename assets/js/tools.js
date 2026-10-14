@@ -484,12 +484,14 @@
       $('#cnt').textContent = list.length + ' / ' + rows.length + ' tội danh';
       var age = function (a) { return a.M.a14 ? '14' : ['145', '146', '147'].indexOf(a.id) > -1 ? '18' : '16'; };
       var cr = function (r) { return r.cmin === r.cmax ? '<span class="tag tag--c' + r.cmin + '">' + CLS[r.cmin].n + '</span>' : '<span class="tag tag--c' + r.cmin + '">' + CLS[r.cmin].n + '</span> → <span class="tag tag--c' + r.cmax + '">' + CLS[r.cmax].n + '</span>'; };
-      $('#tb').innerHTML = list.map(function (r) {
+      // Chỉ dựng dạng đang hiển thị: bảng (màn hình rộng) hoặc thẻ (điện thoại) — dạng kia để trống
+      var wide = mq.matches;
+      $('#tb').innerHTML = !wide ? '' : list.map(function (r) {
         var a = r.a;
         return '<tr><td class="n"><a href="dieu-' + a.id + '" data-pv="' + a.id + '">' + esc(a.id) + '</a></td><td><a href="dieu-' + a.id + '" style="color:var(--ink);font-weight:500">' + esc(a.t) + '</a> ' + A.artTags(a, true) + '</td>' +
           '<td>' + esc(Pen.label(r.min)) + '</td><td><span class="tag tag--c' + r.max.c + '">' + esc(Pen.label(r.max)) + '</span></td><td>' + cr(r) + '</td><td>' + age(a) + '</td></tr>';
       }).join('') || '<tr><td colspan="6" class="muted" style="text-align:center;padding:30px">Không có tội danh phù hợp bộ lọc</td></tr>';
-      $('#mc').innerHTML = list.slice(0, 150).map(function (r) {
+      $('#mc').innerHTML = wide ? '' : list.slice(0, 150).map(function (r) {
         var a = r.a;
         return '<a class="mc" href="dieu-' + a.id + '"><b>Điều ' + esc(a.id) + '</b> · <span class="muted" style="font-size:.8rem">' + esc(a.ch.label) + '</span><div class="mt">' + esc(a.t) + '</div>' +
           '<div class="kpick"><span class="tag tag--soft">Thấp nhất: ' + esc(Pen.label(r.min)) + '</span><span class="tag tag--c' + r.max.c + '">Cao nhất: ' + esc(Pen.label(r.max)) + '</span><span class="tag tag--soft">Từ ' + age(a) + ' tuổi</span></div></a>';
@@ -504,8 +506,10 @@
       var i = st.f.indexOf(b.dataset.f); if (i > -1) st.f.splice(i, 1); else st.f.push(b.dataset.f);
       b.setAttribute('aria-pressed', String(i < 0)); draw();
     });
+    var mq = window.matchMedia('(min-width: 861px)');
+    if (mq.addEventListener) mq.addEventListener('change', draw); else mq.addListener(draw);
     draw();
-    return null;
+    return { leave: function () { if (mq.removeEventListener) mq.removeEventListener('change', draw); else mq.removeListener(draw); } };
   }
 
   var SUB = { 'thoi-hieu': thoiHieu, 'tuoi': tuoi, 'thi-hanh-an': thiHanh, 'so-sanh': soSanh, 'khung-hinh-phat': bang };
