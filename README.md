@@ -40,10 +40,13 @@ data/meta.json           Trích đoạn, khung hình phạt, dẫn chiếu (sinh
 data/a/<số>.json         Dữ liệu riêng từng điều – trang điều luật chỉ tải vài KB thay vì cả chương (sinh tự động)
 assets/fonts/            Be Vietnam Pro: mỗi độ đậm 1 tệp chỉ gồm ký tự tiếng Việt (tools/build_fonts.py); OFL.txt
 tools/build_blhs.py      Chuyển tệp Word “Bình luận khoa học BLHS” → data/*.json
-tools/build_meta.py      Sinh data/meta.json, sửa lỗi đánh máy nguồn
-tools/build_seo.py       Sinh các trang dựng tĩnh, data/a/*.json, sitemap.xml, robots.txt từ index.html + data/
+tools/build_meta.py      Sinh data/meta.json (khung hình phạt, độ tuổi: a14 – khoản 2 Điều 12, a18 – điều luật quy định
+                         chủ thể đủ 18 tuổi), sửa lỗi đánh máy nguồn
+tools/build_seo.py       Sinh các trang dựng tĩnh, data/a/*.json, sitemap.xml, robots.txt từ index.html + data/;
+                         tự kiểm tra hằng số pháp lý trùng với assets/js (CLS, CH_NOTE, PRESETS…), lệch thì dừng
 tools/build_fonts.py     Tạo phông thu gọn (cần: pip install fonttools brotli); chỉ chạy lại khi đổi phông/bộ ký tự
 tools/serve.py           Máy chủ thử nghiệm mô phỏng GitHub Pages (đường dẫn không đuôi .html, trang 404, nén gzip)
+tools/test/              Kiểm thử trên trình duyệt (Playwright): công cụ tuổi, mục lục, ngăn kéo vuốt, rà toàn bộ trang
 sw.js, manifest.webmanifest  Đọc offline, cài đặt như ứng dụng
 ```
 
@@ -57,6 +60,9 @@ python3 tools/serve.py
 Sau khi cập nhật dữ liệu điều luật, chạy `python3 tools/build_meta.py` để sinh lại `data/meta.json`.
 Sau khi sửa `index.html` (header, footer…) hoặc dữ liệu, chạy `python3 tools/build_seo.py` để sinh lại các trang dựng tĩnh
 và sitemap. Khi chuyển sang tên miền riêng: `SITE_URL=https://ten-mien.vn/ python3 tools/build_seo.py`.
+Khi đổi CSS/JS, tăng mã phiên bản `?v=` (index.html, sw.js, app.js, search-worker.js) để trình duyệt nhận bản mới.
+
+Kiểm thử trước khi phát hành (cần Node.js và Playwright): `sh tools/test/run.sh`.
 
 ## Tốc độ tải
 
