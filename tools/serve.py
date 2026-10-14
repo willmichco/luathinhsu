@@ -3,18 +3,22 @@
 Máy chủ thử nghiệm trên máy, mô phỏng cách GitHub Pages phục vụ trang:
   /luathinhsu/dieu-173  → dieu-173.html   (đường dẫn không đuôi .html)
   đường dẫn không tồn tại → 404.html với mã 404
+  nén gzip các tệp văn bản (HTML, CSS, JS, JSON, SVG) như GitHub Pages
 
     python3 tools/serve.py            # mở http://localhost:8000/luathinhsu/
     python3 tools/serve.py 8080
 """
 import functools
+import gzip
 import http.server
+import io
 import os
 import sys
 import urllib.parse
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PREFIX = "/luathinhsu"  # giống địa chỉ trên GitHub Pages: https://willmichco.github.io/luathinhsu/
+TEXT = (".html", ".css", ".js", ".json", ".svg", ".xml", ".txt", ".webmanifest")
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
@@ -38,6 +42,14 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             local += ".html"
         if not os.path.isfile(local):
             return self.not_found()
+        if local.endswith(TEXT) and "gzip" in self.headers.get("Accept-Encoding", ""):
+            body = gzip.compress(open(local, "rb").read(), 6)
+            self.send_response(200)
+            self.send_header("Content-Type", self.guess_type(local))
+            self.send_header("Content-Encoding", "gzip")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            return io.BytesIO(body)
         self.path = urllib.parse.urlunsplit(("", "", "/" + os.path.relpath(local, ROOT).replace(os.sep, "/"), url.query, ""))
         return super().send_head()
 
