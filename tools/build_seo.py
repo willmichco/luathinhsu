@@ -788,7 +788,7 @@ def page_article(a):
          "legislationLegalForce": "https://schema.org/NotInForce" if (a.rep or a.r26) else "https://schema.org/InForce",
          "isPartOf": dict(CODE, **{"@id": SITE + "#blhs"})},
         breadcrumb_ld(crumbs[:-1] + [("Điều " + a.id, "dieu-" + a.id)])]}
-    preload = ['<link rel="preload" href="data/%s.json?v=%s" as="fetch" crossorigin>' % (c["id"], TOC["v"])]
+    preload = ['<link rel="preload" href="data/a/%s.json?v=%s" as="fetch" crossorigin>' % (a.id, TOC["v"])]
     return {"path": "dieu-" + a.id, "title": "Điều %s. %s" % (a.id, a.t) + SUFFIX, "og_type": "article",
             "desc": desc, "main": main, "ld": ld, "preload": preload, "lastmod": True}
 
@@ -893,16 +893,25 @@ def page_tools():
     def cr(r):
         t = '<span class="tag tag--c%d">%s</span>' % (r["cmin"], CLS[r["cmin"]]["n"])
         return t if r["cmin"] == r["cmax"] else t + ' → <span class="tag tag--c%d">%s</span>' % (r["cmax"], CLS[r["cmax"]]["n"])
-    trs = "".join(
-        '<tr><td class="n"><a href="dieu-%s">%s</a></td><td><a href="dieu-%s" style="color:var(--ink);font-weight:500">%s</a> %s</td>'
-        "<td>%s</td><td><span class=\"tag tag--c%d\">%s</span></td><td>%s</td><td>%s</td></tr>"
-        % (r["a"].id, esc(r["a"].id), r["a"].id, esc(r["a"].t), art_tags(r["a"], True), esc(pen_label(r["min"])),
-           r["max"]["c"], esc(pen_label(r["max"])), cr(r), age(r["a"])) for r in rows)
+    def tr(r):
+        return ('<tr><td class="n"><a href="dieu-%s">%s</a></td><td><a href="dieu-%s" style="color:var(--ink);font-weight:500">%s</a> %s</td>'
+                "<td>%s</td><td><span class=\"tag tag--c%d\">%s</span></td><td>%s</td><td>%s</td></tr>"
+                % (r["a"].id, esc(r["a"].id), r["a"].id, esc(r["a"].t), art_tags(r["a"], True), esc(pen_label(r["min"])),
+                   r["max"]["c"], esc(pen_label(r["max"])), cr(r), age(r["a"])))
+    # Mỗi chương một bảng nhỏ trong khối "cv" (content-visibility): trình duyệt chỉ dàn trang các chương đang ở trên màn hình
+    head = ("<thead><tr><th>Điều</th><th>Tội danh</th><th>Khung thấp nhất</th><th>Khung cao nhất</th><th>Loại tội</th><th>Tuổi</th>"
+            "</tr></thead>")
+    trs = ""
+    for c in [c for c in CHAPS if c["part"] == "p2"]:
+        rs = [r for r in rows if r["a"].ch is c]
+        if rs:
+            trs += ('<section class="cv"><h2 class="muc-h"><a href="chuong-%s" style="color:inherit">%s. %s</a></h2>'
+                    '<div style="overflow:auto"><table class="tbl cmp-tbl">%s<tbody>%s</tbody></table></div></section>'
+                    % (c["slug"], esc(c["label"]), esc(c["name"]), head, "".join(tr(r) for r in rs)))
     pages.append(tool_page("khung-hinh-phat", "Bảng khung hình phạt", "Bảng tra khung hình phạt",
                            "%d tội danh tại Phần thứ hai, được tổng hợp tự động từ các khoản có quy định khung hình phạt chính. "
                            "Nhấn vào tội danh để xem toàn văn." % len(rows), "Khung hình phạt",
-                           '<div style="overflow:auto"><table class="tbl cmp-tbl"><thead><tr><th>Điều</th><th>Tội danh</th><th>Khung thấp nhất</th>'
-                           "<th>Khung cao nhất</th><th>Loại tội</th><th>Tuổi</th></tr></thead><tbody>" + trs + "</tbody></table></div>"
+                           trs +
                            '<p class="legal-src" style="margin-top:14px">' + ic("info") + "Loại tội xác định theo khoản 1 Điều 9 cho từng khung; không tính "
                            "khung dành cho hành vi chuẩn bị phạm tội. “Tuổi”: độ tuổi tối thiểu phải chịu TNHS theo Điều 12 (và câu chữ của điều luật).</p>",
                            "Bảng khung hình phạt %d tội danh trong Bộ luật Hình sự 2015 (sửa đổi 2025): khung thấp nhất, khung cao nhất, "
@@ -948,9 +957,19 @@ def page_search():
     main = (ph(crumbs, "Tìm kiếm trong Bộ luật Hình sự",
                "Tìm đồng thời trong tên điều, văn bản điều luật và phần bình luận. Gõ không dấu, dùng “ngoặc kép” để tìm cụm từ chính xác.",
                extra='<div id="srBox" style="margin-top:18px;max-width:760px">' + search_form() + "</div>") +
-            '<div class="wrap"><div id="srOut"></div></div>')
+            '<div class="wrap"><div id="srOut">' + search_tips() + '</div></div>')
     return {"path": "tim-kiem", "title": "Tìm kiếm" + SUFFIX, "main": main, "crumbs": crumbs, "noindex": True,
             "desc": "Tìm kiếm toàn văn Bộ luật Hình sự 2015 (sửa đổi 2025): tên điều, nội dung điều luật và bình luận khoa học; gõ không dấu."}
+
+
+def search_tips():
+    """Giống tipsHtml() trong app.js: có sẵn trong trang tĩnh để bố cục không xô lệch khi ứng dụng khởi động."""
+    ex = [("Số điều", "173", "đi thẳng tới Điều 173"), ("Khoản, điểm", "điểm a khoản 2 điều 134", "mở đúng vị trí trong điều"),
+          ("Không dấu", "lam dung tin nhiem", "tự hiểu là “lạm dụng tín nhiệm”"),
+          ("Cụm chính xác", '"tái phạm nguy hiểm"', "các từ phải đứng liền nhau"),
+          ("Theo hành vi", "vay tiền không trả", "gợi ý tội danh tương ứng"), ("Chương", "chương 20", "mở chương các tội phạm về ma túy")]
+    return ('<h2 class="muc-h" style="margin-top:28px">Mẹo tìm kiếm</h2><div class="tips">' +
+            "".join('<div class="tip"><b>%s</b><code data-try="%s">%s</code> → %s</div>' % (t, esc(q), esc(q), d) for t, q, d in ex) + "</div>")
 
 
 def page_saved():
@@ -1004,6 +1023,10 @@ def render(tpl, p):
     out = re.sub(r"<!--seo:head-->.*?<!--/seo:head-->", lambda m: "<!--seo:head-->\n" + head_html(p) + "\n<!--/seo:head-->",
                  tpl, count=1, flags=re.S)
     out = re.sub(r"<body[^>]*>", '<body class="%s">' % p["body"] if p.get("body") else "<body>", out, count=1)
+    if p["path"].startswith("cong-cu"):
+        # Trang công cụ cần tools.js ngay khi tải; các trang khác để ứng dụng tự tải khi cần
+        out = re.sub(r'(<script src="assets/js/app\.js\?v=([^"]+)" defer></script>)',
+                     r'\1\n<script src="assets/js/tools.js?v=\2" defer></script>', out, count=1)
     out = re.sub(r"<!--seo:main-->.*?<!--/seo:main-->",
                  lambda m: "<!--seo:main-->\n<div data-prerender>" + p["main"] + "</div>\n<!--/seo:main-->", out, count=1, flags=re.S)
     return out
@@ -1034,6 +1057,20 @@ def main():
     for f in glob.glob(os.path.join(ROOT, "dieu-*.html")) + glob.glob(os.path.join(ROOT, "chuong-*.html")):
         if os.path.basename(f) not in keep:
             os.remove(f)
+
+    # Dữ liệu riêng từng điều (data/a/<số>.json): trang điều luật chỉ cần tải vài KB thay vì cả chương
+    adir = os.path.join(DATA, "a")
+    os.makedirs(adir, exist_ok=True)
+    keep_a = {a.id + ".json" for a in ARTS}
+    for f in os.listdir(adir):
+        if f not in keep_a:
+            os.remove(os.path.join(adir, f))
+    for a in ARTS:
+        dest = os.path.join(adir, a.id + ".json")
+        body = json.dumps(a.d, ensure_ascii=False, separators=(",", ":"))
+        if not os.path.exists(dest) or open(dest, encoding="utf-8").read() != body:
+            with open(dest, "w", encoding="utf-8", newline="\n") as f:
+                f.write(body)
 
     written = 0
     for p in pages:
