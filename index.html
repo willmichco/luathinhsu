@@ -16,7 +16,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="preload" href="assets/fonts/be-vietnam-pro-400-normal-vietnamese.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="data/toc.json" as="fetch" crossorigin>
-<link rel="stylesheet" href="assets/css/app.css?v=20261014b">
+<link rel="stylesheet" href="assets/css/app.css?v=20261014c">
 <script>
   // Áp dụng giao diện sáng/tối trước khi vẽ trang để tránh nháy màu
   (function () {
@@ -24,10 +24,12 @@
       var p = JSON.parse(localStorage.getItem('lx.prefs') || '{}');
       var d = document.documentElement;
       // Từ phiên bản 2: mặc định nền sáng, bỏ lựa chọn giao diện cũ (trước đây tự theo chế độ tối của thiết bị)
-      if (p.tv !== 2) { delete p.theme; p.tv = 2; localStorage.setItem('lx.prefs', JSON.stringify(p)); }
+      if (p.tv !== 2 && p.tv !== 3) delete p.theme;
+      // Phiên bản 3: mặc định font không chân cho toàn trang
+      if (p.tv !== 3) { delete p.serif; p.tv = 3; localStorage.setItem('lx.prefs', JSON.stringify(p)); }
       if (p.theme) d.setAttribute('data-theme', p.theme);
       if (p.fs != null) d.style.setProperty('--fs-step', p.fs);
-      if (p.serif === false) d.classList.add('sans-law');
+      if (p.serif === true) d.classList.add('serif-law');
     } catch (e) {}
   })();
 </script>
@@ -178,8 +180,8 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <button class="to-top" id="toTop" type="button" aria-label="Lên đầu trang"><svg><use href="#i-arrow-up"/></svg></button>
 
-<script src="assets/js/lx-core.js?v=20261014b" defer></script>
-<script src="assets/js/app.js?v=20261014b" defer></script>
-<script src="assets/js/tools.js?v=20261014b" defer></script>
+<script src="assets/js/lx-core.js?v=20261014c" defer></script>
+<script src="assets/js/app.js?v=20261014c" defer></script>
+<script src="assets/js/tools.js?v=20261014c" defer></script>
 </body>
 </html>

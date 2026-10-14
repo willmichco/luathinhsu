@@ -3,7 +3,7 @@
  * mà không làm đứng giao diện đọc.
  */
 'use strict';
-importScripts('lx-core.js?v=20261014b', 'search-engine.js?v=20261014b');
+importScripts('lx-core.js?v=20261014c', 'search-engine.js?v=20261014c');
 
 var engine = new self.LXEngine();
 var pending = null;

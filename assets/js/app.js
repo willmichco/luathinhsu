@@ -17,7 +17,7 @@
   var cap = function (s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; };
   var debounce = function (fn, ms) { var t; return function () { var a = arguments, c = this; clearTimeout(t); t = setTimeout(function () { fn.apply(c, a); }, ms); }; };
   var isTouch = window.matchMedia('(hover: none)').matches;
-  var VER = '20261014b';
+  var VER = '20261014c';
 
   function plain(h) {
     return String(h).replace(/<sup class="fn"[^>]*>.*?<\/sup>/g, '').replace(/<[^>]+>/g, '')
@@ -75,7 +75,7 @@
       var th = p.theme || 'light';
       d.setAttribute('data-theme', th);
       d.style.setProperty('--fs-step', p.fs || 0);
-      d.classList.toggle('sans-law', p.serif === false);
+      d.classList.toggle('serif-law', p.serif === true);
       var dark = th === 'dark' || (th === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
       var m = $('meta[name="theme-color"]'); if (m) m.setAttribute('content', dark ? '#2c0709' : '#7a1216');
       var cs = $('meta[name="color-scheme"]'); if (cs) cs.setAttribute('content', dark ? 'dark' : 'light');
@@ -376,8 +376,8 @@
         }).join('') + '</div></div>' +
         '<div class="set-row"><div><b>Cỡ chữ văn bản</b><small>Áp dụng cho điều luật và bình luận</small></div>' +
         '<div class="fs-ctl"><button type="button" data-fs="-1" aria-label="Giảm cỡ chữ">A−</button><output id="fsOut">' + (100 + fs * 6) + '%</output><button type="button" data-fs="1" aria-label="Tăng cỡ chữ">A+</button></div></div>' +
-        '<div class="set-row"><div><b>Kiểu chữ điều luật</b><small>Có chân (trang trọng) hoặc không chân</small></div>' +
-        '<div class="seg" data-set="serif"><button type="button" data-v="1" aria-pressed="' + (p.serif !== false) + '">Có chân</button><button type="button" data-v="0" aria-pressed="' + (p.serif === false) + '">Không chân</button></div></div>' +
+        '<div class="set-row"><div><b>Kiểu chữ điều luật</b><small>Mặc định không chân; có thể chọn kiểu có chân</small></div>' +
+        '<div class="seg" data-set="serif"><button type="button" data-v="0" aria-pressed="' + (p.serif !== true) + '">Không chân</button><button type="button" data-v="1" aria-pressed="' + (p.serif === true) + '">Có chân</button></div></div>' +
         '<div class="set-row"><div><b>Đọc khi không có mạng</b><small>Tải sẵn toàn bộ 428 điều và bình luận (~3 MB)</small></div>' +
         '<button type="button" class="btn btn--sm" data-act="offline">' + ic('offline') + 'Tải về</button></div>');
     }
