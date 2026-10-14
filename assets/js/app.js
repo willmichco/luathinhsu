@@ -17,7 +17,7 @@
   var cap = function (s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; };
   var debounce = function (fn, ms) { var t; return function () { var a = arguments, c = this; clearTimeout(t); t = setTimeout(function () { fn.apply(c, a); }, ms); }; };
   var isTouch = window.matchMedia('(hover: none)').matches;
-  var VER = '20261014a';
+  var VER = '20261014b';
 
   function plain(h) {
     return String(h).replace(/<sup class="fn"[^>]*>.*?<\/sup>/g, '').replace(/<[^>]+>/g, '')
@@ -72,11 +72,13 @@
     set: function (k, v) { var p = Prefs.get(); p[k] = v; Store.set('prefs', p); Prefs.apply(); },
     apply: function () {
       var p = Prefs.get(), d = document.documentElement;
-      d.setAttribute('data-theme', p.theme || 'auto');
+      var th = p.theme || 'light';
+      d.setAttribute('data-theme', th);
       d.style.setProperty('--fs-step', p.fs || 0);
       d.classList.toggle('sans-law', p.serif === false);
-      var dark = p.theme === 'dark' || (p.theme !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      var dark = th === 'dark' || (th === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
       var m = $('meta[name="theme-color"]'); if (m) m.setAttribute('content', dark ? '#2c0709' : '#7a1216');
+      var cs = $('meta[name="color-scheme"]'); if (cs) cs.setAttribute('content', dark ? 'dark' : 'light');
     }
   };
 
@@ -366,10 +368,10 @@
         '<a href="mailto:luatsunam.hcm@gmail.com">' + ic('mail') + 'luatsunam.hcm@gmail.com</a>';
     },
     settings: function () {
-      var p = Prefs.get(), th = p.theme || 'auto', fs = p.fs || 0;
+      var p = Prefs.get(), th = p.theme || 'light', fs = p.fs || 0;
       UI.sheet('<h2 id="sheetTitle">Tùy chỉnh hiển thị</h2>' +
         '<div class="set-row"><div><b>Giao diện</b><small>Sáng, tối hoặc theo thiết bị</small></div>' +
-        '<div class="seg" data-set="theme">' + [['light', 'Sáng'], ['dark', 'Tối'], ['auto', 'Tự động']].map(function (o) {
+        '<div class="seg" data-set="theme">' + [['light', 'Sáng'], ['dark', 'Tối'], ['auto', 'Theo máy']].map(function (o) {
           return '<button type="button" data-v="' + o[0] + '" aria-pressed="' + (th === o[0]) + '">' + o[1] + '</button>';
         }).join('') + '</div></div>' +
         '<div class="set-row"><div><b>Cỡ chữ văn bản</b><small>Áp dụng cho điều luật và bình luận</small></div>' +
@@ -1460,7 +1462,7 @@
       else if (A === 'sheet-close') UI.closeSheet();
       else if (A === 'settings') { UI.drawer(false); UI.settings(); }
       else if (A === 'theme') {
-        var cur = Prefs.get().theme || 'auto', dark = cur === 'dark' || (cur === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        var cur = Prefs.get().theme || 'light', dark = cur === 'dark' || (cur === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
         Prefs.set('theme', dark ? 'light' : 'dark'); UI.toast(dark ? 'Đã chuyển sang giao diện sáng' : 'Đã chuyển sang giao diện tối');
       }
       else if (A === 'find') { go('#/tim-kiem'); }
