@@ -1,0 +1,6 @@
+# Công cụ tìm kiếm chỉ đọc robots.txt ở gốc tên miền. Với địa chỉ dạng …github.io/luathinhsu/, hãy khai báo
+# sitemap trong Google Search Console; tệp này có hiệu lực khi trang chạy trên tên miền riêng.
+User-agent: *
+Allow: /
+
+Sitemap: https://willmichco.github.io/luathinhsu/sitemap.xml

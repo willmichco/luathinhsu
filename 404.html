@@ -1,13 +1,20 @@
 <!doctype html>
 <html lang="vi"><head><meta charset="utf-8"><title>Đang chuyển hướng…</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
 <script>
-  // Đường dẫn không tồn tại → chuyển về ứng dụng tra cứu (thử nhận diện số điều trong đường dẫn)
+  // Đường dẫn không tồn tại → chuyển về ứng dụng tra cứu, thử nhận diện số điều/chương trong đường dẫn.
+  // Chuyển tới dạng #/dieu/… ở trang gốc (ứng dụng tự đổi sang đường dẫn sạch) để không lặp vô hạn khi số điều không có.
   (function () {
-    var base = location.pathname.split('/').slice(0, 2).join('/') + '/';
-    if (location.hostname.indexOf('github.io') < 0) base = '/';
-    var m = location.pathname.match(/dieu-?(\d{1,3}[a-z]?)/i);
-    location.replace(base + (m ? '#/dieu/' + m[1].toLowerCase() : '#/'));
+    var p = location.pathname, base = '/';
+    if (/^\/luathinhsu(\/|$)/.test(p)) base = '/luathinhsu/';
+    else if (location.hostname.indexOf('github.io') > -1) base = p.split('/').slice(0, 2).join('/') + '/';
+    var rest = p.slice(base.length), m;
+    var to = (m = rest.match(/dieu[-\/]?(\d{1,3}[a-z]?)/i)) ? '#/dieu/' + m[1].toLowerCase()
+      : (m = rest.match(/chuong[-\/]?([0-9]{1,2}|[ivxl]{1,6}|p3)\b/i)) ? '#/chuong/' + m[1].toLowerCase()
+      : (m = rest.match(/^(muc-luc|tim-kiem|da-luu|gioi-thieu|cong-cu)(?:-([a-z-]+))?\/?$/)) ? '#/' + m[1] + (m[2] ? '/' + m[2] : '')
+      : '';
+    location.replace(base + to);
   })();
 </script>
 </head><body><p>Đang chuyển hướng tới trang tra cứu… <a href="./">Bấm vào đây</a> nếu trình duyệt không tự chuyển.</p></body></html>

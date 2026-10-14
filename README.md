@@ -14,7 +14,8 @@ Luật số 59/2024/QH15 và Luật số 86/2025/QH15) dành cho luật sư, sin
 | Trình đọc điều luật | Văn bản luật, bình luận khoa học, điều liên quan; chú thích; xem nhanh điều được dẫn chiếu khi rê chuột/chạm; sao chép trích dẫn từng khoản; lưu, ghi chú cá nhân; điều trước/sau bằng phím ← → |
 | Khung hình phạt | Nhận diện tự động khung của từng khoản, phân loại tội (Điều 9), thời hiệu (Điều 27, 28), độ tuổi (Điều 12), biểu đồ trực quan |
 | Công cụ | Phân loại tội & thời hiệu truy cứu · Tuổi chịu TNHS · Thời hiệu thi hành bản án · So sánh hai điều luật · Bảng khung hình phạt |
-| Đa thiết bị | Tối ưu PC, máy tính bảng, điện thoại; giao diện sáng/tối; chỉnh cỡ chữ; cài như ứng dụng (PWA); đọc offline |
+| Đa thiết bị | Tối ưu PC, máy tính bảng, điện thoại; giao diện sáng/tối; chỉnh cỡ chữ (trong trang điều luật); cài như ứng dụng (PWA); đọc offline |
+| SEO | Mỗi điều, chương, công cụ có đường dẫn riêng (`dieu-173`, `chuong-14`, `cong-cu-thoi-hieu`…) với trang HTML dựng sẵn toàn văn; tiêu đề, mô tả, canonical, Open Graph, JSON-LD (Legislation, BreadcrumbList, WebSite, LegalService); `sitemap.xml` |
 
 Lưu ý hiệu lực đã được gắn trên trang: Chương XII (Điều 90 – 107) bị bãi bỏ từ 01/01/2026 theo Điều 177
 Luật Tư pháp người chưa thành niên số 59/2024/QH15; Điều 292 đã bị bãi bỏ; 39 điều sửa đổi theo Luật số 86/2025/QH15.
@@ -22,7 +23,10 @@ Luật Tư pháp người chưa thành niên số 59/2024/QH15; Điều 292 đã
 ## Cấu trúc
 
 ```
-index.html               Khung ứng dụng (định tuyến bằng #/…)
+index.html               Khung ứng dụng + khuôn cho mọi trang (vùng <!--seo:head-->, <!--seo:main-->)
+dieu-*.html, chuong-*.html, muc-luc.html, cong-cu*.html, gioi-thieu.html, tim-kiem.html, da-luu.html
+                         Trang dựng tĩnh cho công cụ tìm kiếm (sinh tự động, không sửa tay)
+sitemap.xml, robots.txt  Sơ đồ trang (sinh tự động)
 assets/css/app.css       Giao diện (đỏ son – vàng đồng, hoa văn trống đồng)
 assets/js/app.js         Dữ liệu, định tuyến, trang chủ, mục lục, chương, điều luật, tìm kiếm, đã lưu
 assets/js/tools.js       Các công cụ nghiên cứu
@@ -33,17 +37,36 @@ data/c01…c26.json, p3.json  Nội dung điều luật + bình luận theo chư
 data/meta.json           Trích đoạn, khung hình phạt, dẫn chiếu (sinh tự động)
 tools/build_blhs.py      Chuyển tệp Word “Bình luận khoa học BLHS” → data/*.json
 tools/build_meta.py      Sinh data/meta.json, sửa lỗi đánh máy nguồn
+tools/build_seo.py       Sinh các trang dựng tĩnh, sitemap.xml, robots.txt từ index.html + data/
+tools/serve.py           Máy chủ thử nghiệm mô phỏng GitHub Pages (đường dẫn không đuôi .html, trang 404)
 sw.js, manifest.webmanifest  Đọc offline, cài đặt như ứng dụng
 ```
 
 ## Chạy thử trên máy
 
 ```bash
-python3 -m http.server 8000
-# mở http://localhost:8000/
+python3 tools/serve.py
+# mở http://localhost:8000/luathinhsu/
 ```
 
 Sau khi cập nhật dữ liệu điều luật, chạy `python3 tools/build_meta.py` để sinh lại `data/meta.json`.
+Sau khi sửa `index.html` (header, footer…) hoặc dữ liệu, chạy `python3 tools/build_seo.py` để sinh lại các trang dựng tĩnh
+và sitemap. Khi chuyển sang tên miền riêng: `SITE_URL=https://ten-mien.vn/ python3 tools/build_seo.py`.
+
+## Đường dẫn
+
+| Trang | Đường dẫn |
+|---|---|
+| Trang chủ | `./` |
+| Điều luật · tab · khoản | `dieu-173` · `dieu-173?tab=binh-luan` · `dieu-173?k=2&d=a` |
+| Chương · Mục lục | `chuong-16`, `chuong-p3` · `muc-luc` |
+| Công cụ | `cong-cu`, `cong-cu-thoi-hieu`, `cong-cu-tuoi`, `cong-cu-thi-hanh-an`, `cong-cu-so-sanh`, `cong-cu-khung-hinh-phat` |
+| Khác | `tim-kiem?q=…`, `da-luu`, `gioi-thieu` |
+
+Liên kết kiểu cũ (`#/dieu/173`, `#d173`) vẫn mở đúng trang và được tự đổi sang đường dẫn mới.
+
+**Google Search Console:** thêm thuộc tính dạng tiền tố URL `https://willmichco.github.io/luathinhsu/` rồi gửi
+`sitemap.xml`. Với trang dự án GitHub Pages, `robots.txt` chỉ có hiệu lực khi đặt ở gốc tên miền.
 
 ## Miễn trừ trách nhiệm
 
