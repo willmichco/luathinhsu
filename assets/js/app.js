@@ -1,5 +1,8 @@
 /*
- * Tra cứu Bộ luật Hình sự – ứng dụng một trang (định tuyến bằng #/…)
+ * Tra cứu Bộ luật Hình sự – ứng dụng một trang.
+ * Định tuyến bằng History API với đường dẫn sạch nằm cùng thư mục gốc: dieu-173, chuong-14, muc-luc,
+ * cong-cu-thoi-hieu… Mỗi đường dẫn có sẵn một trang HTML dựng tĩnh (tools/build_seo.py) để công cụ tìm kiếm
+ * đọc được; khi JavaScript chạy, ứng dụng thay nội dung tĩnh bằng giao diện tương tác.
  * Không phụ thuộc thư viện ngoài; dữ liệu nằm trong thư mục data/.
  */
 (function () {
@@ -17,7 +20,11 @@
   var cap = function (s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; };
   var debounce = function (fn, ms) { var t; return function () { var a = arguments, c = this; clearTimeout(t); t = setTimeout(function () { fn.apply(c, a); }, ms); }; };
   var isTouch = window.matchMedia('(hover: none)').matches;
-  var VER = '20261014c';
+  var VER = '20261014d';
+  // Thư mục gốc của trang web (…/luathinhsu/), suy ra từ vị trí tệp assets/js/app.js
+  var ROOT = document.currentScript ? new URL('../../', document.currentScript.src).href : new URL('./', location.href).href;
+  var ROOT_PATH = new URL(ROOT).pathname;
+  var abs = function (p) { return new URL(p, ROOT).href; };
 
   function plain(h) {
     return String(h).replace(/<sup class="fn"[^>]*>.*?<\/sup>/g, '').replace(/<[^>]+>/g, '')
@@ -149,11 +156,11 @@
     'tha tu truoc thoi han': ['66'], 'phap nhan': ['74', '76'], 'duoi muc thap nhat': ['54'], 'phan loai toi pham': ['9']
   };
   var TOOL_KW = [
-    { k: ['thoi hieu', 'het han truy cuu', 'truy cuu'], href: '#/cong-cu/thoi-hieu', t: 'Tính thời hiệu truy cứu trách nhiệm hình sự', i: 'clock' },
-    { k: ['tuoi', 'vi thanh nien', 'chua thanh nien', 'duoi 18', 'duoi 16'], href: '#/cong-cu/tuoi', t: 'Kiểm tra tuổi chịu trách nhiệm hình sự', i: 'user' },
-    { k: ['so sanh', 'phan biet', 'khac nhau'], href: '#/cong-cu/so-sanh', t: 'So sánh hai điều luật', i: 'columns' },
-    { k: ['khung hinh phat', 'muc phat', 'bi phat bao nhieu', 'phat tu bao nhieu', 'loai toi'], href: '#/cong-cu/khung-hinh-phat', t: 'Bảng tra khung hình phạt', i: 'table' },
-    { k: ['thi hanh an', 'thoi hieu thi hanh'], href: '#/cong-cu/thi-hanh-an', t: 'Thời hiệu thi hành bản án', i: 'calendar' }
+    { k: ['thoi hieu', 'het han truy cuu', 'truy cuu'], href: 'cong-cu-thoi-hieu', t: 'Tính thời hiệu truy cứu trách nhiệm hình sự', i: 'clock' },
+    { k: ['tuoi', 'vi thanh nien', 'chua thanh nien', 'duoi 18', 'duoi 16'], href: 'cong-cu-tuoi', t: 'Kiểm tra tuổi chịu trách nhiệm hình sự', i: 'user' },
+    { k: ['so sanh', 'phan biet', 'khac nhau'], href: 'cong-cu-so-sanh', t: 'So sánh hai điều luật', i: 'columns' },
+    { k: ['khung hinh phat', 'muc phat', 'bi phat bao nhieu', 'phat tu bao nhieu', 'loai toi'], href: 'cong-cu-khung-hinh-phat', t: 'Bảng tra khung hình phạt', i: 'table' },
+    { k: ['thi hanh an', 'thoi hieu thi hanh'], href: 'cong-cu-thi-hanh-an', t: 'Thời hiệu thi hành bản án', i: 'calendar' }
   ];
 
   /* =========================================================================
@@ -165,7 +172,7 @@
       var j = function (u) {
         return fetch(u, { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); });
       };
-      return Promise.all([j('data/toc.json'), j('data/meta.json')]).then(function (res) {
+      return Promise.all([j(abs('data/toc.json')), j(abs('data/meta.json'))]).then(function (res) {
         var toc = res[0];
         DB.toc = toc; DB.meta = res[1]; DB.v = toc.v;
         toc.chapters.forEach(function (c, ci) {
@@ -194,7 +201,7 @@
     },
     chapter: function (cid) {
       if (!DB.cache[cid]) {
-        DB.cache[cid] = fetch('data/' + cid + '.json?v=' + DB.v).then(function (r) {
+        DB.cache[cid] = fetch(abs('data/' + cid + '.json?v=' + DB.v)).then(function (r) {
           if (!r.ok) throw new Error('HTTP ' + r.status);
           return r.json();
         }).then(function (arr) {
@@ -295,7 +302,7 @@
         if (k.ct) bar += '<span class="pen-cell ct" title="Tù chung thân"></span>';
         if (k.th) bar += '<span class="pen-cell th" title="Tử hình"></span>';
         var lab = k.n ? 'Khoản ' + k.n : 'Điều luật';
-        var nm = link && k.n ? '<a href="#/dieu/' + a.id + '?k=' + k.n + '" data-k="' + k.n + '">' + lab + '</a>' : lab;
+        var nm = link && k.n ? '<a href="dieu-' + a.id + '?k=' + k.n + '" data-k="' + k.n + '">' + lab + '</a>' : lab;
         return '<div class="pen-row"><div class="pen-lab"><b>' + nm + '</b><span>' + esc(Pen.label(k)) + '</span></div>' +
           '<div class="pen-track" title="' + esc(k.txt) + ' – tội ' + CLS[k.c].n.toLowerCase() + '">' + bar + '</div></div>';
       }).join('');
@@ -351,17 +358,19 @@
       if (open) { UI.fillDrawer(); var f = $('.drawer-panel a'); if (f) f.focus(); }
     },
     fillDrawer: function () {
-      var cur = location.hash.split('?')[0];
-      var L = function (href, icon, t) { return '<a href="' + href + '"' + (cur === href ? ' class="on"' : '') + '>' + ic(icon) + t + '</a>'; };
+      var cur = parseRoute().key;
+      var L = function (href, icon, t) { return '<a href="' + href + '"' + ((href === './' ? '' : href) === cur ? ' class="on" aria-current="page"' : '') + '>' + ic(icon) + t + '</a>'; };
+      // Cỡ chữ, kiểu chữ chỉ áp dụng cho văn bản điều luật và bình luận → chỉ hiện khi đang đọc một điều
+      var reading = !!(Router.view && Router.view.a);
       $('#drawerNav').innerHTML =
-        L('#/', 'home', 'Trang chủ') + L('#/muc-luc', 'list', 'Mục lục Bộ luật') + L('#/tim-kiem', 'search', 'Tìm kiếm toàn văn') +
-        L('#/da-luu', 'bookmark', 'Đã lưu & ghi chú') +
+        L('./', 'home', 'Trang chủ') + L('muc-luc', 'list', 'Mục lục Bộ luật') + L('tim-kiem', 'search', 'Tìm kiếm toàn văn') +
+        L('da-luu', 'bookmark', 'Đã lưu & ghi chú') +
         '<div class="dn-h">Công cụ nghiên cứu</div>' +
-        L('#/cong-cu/thoi-hieu', 'clock', 'Phân loại tội & thời hiệu') + L('#/cong-cu/tuoi', 'user', 'Tuổi chịu trách nhiệm hình sự') +
-        L('#/cong-cu/thi-hanh-an', 'calendar', 'Thời hiệu thi hành bản án') + L('#/cong-cu/so-sanh', 'columns', 'So sánh điều luật') +
-        L('#/cong-cu/khung-hinh-phat', 'table', 'Bảng khung hình phạt') +
-        '<hr><button type="button" data-act="settings">' + ic('text') + 'Cỡ chữ & giao diện</button>' +
-        L('#/gioi-thieu', 'info', 'Giới thiệu & nguồn dữ liệu') +
+        L('cong-cu-thoi-hieu', 'clock', 'Phân loại tội & thời hiệu') + L('cong-cu-tuoi', 'user', 'Tuổi chịu trách nhiệm hình sự') +
+        L('cong-cu-thi-hanh-an', 'calendar', 'Thời hiệu thi hành bản án') + L('cong-cu-so-sanh', 'columns', 'So sánh điều luật') +
+        L('cong-cu-khung-hinh-phat', 'table', 'Bảng khung hình phạt') +
+        '<hr>' + (reading ? '<button type="button" data-act="settings">' + ic('text') + 'Tùy chỉnh hiển thị</button>' : '') +
+        L('gioi-thieu', 'info', 'Giới thiệu & nguồn dữ liệu') +
         '<div class="dn-h">Liên hệ luật sư</div>' +
         '<a href="tel:0983498499">' + ic('phone') + 'Gọi 0983 498 499</a>' +
         '<a href="https://zalo.me/0983498499" target="_blank" rel="noopener">' + ic('chat') + 'Nhắn Zalo</a>' +
@@ -406,8 +415,8 @@
     return { art: art, a: DB.byId[art] || null, k: k || null, pt: pt || null };
   }
   function refHref(r) {
-    if (r.chap) return '#/chuong/' + r.chap.slug;
-    var h = '#/dieu/' + r.art;
+    if (r.chap) return 'chuong-' + r.chap.slug;
+    var h = 'dieu-' + r.art;
     if (r.k) h += '?k=' + r.k + (r.pt ? '&d=' + r.pt : '');
     return h;
   }
@@ -421,9 +430,9 @@
     var raw = q.trim();
     if (!raw) {
       var rq = Store.get('recentQ', []);
-      rq.slice(0, 5).forEach(function (x) { out.push({ kind: 'recent', q: x, href: '#/tim-kiem?q=' + encodeURIComponent(x) }); });
+      rq.slice(0, 5).forEach(function (x) { out.push({ kind: 'recent', q: x, href: 'tim-kiem?q=' + encodeURIComponent(x) }); });
       Hist.list().slice(0, 4).forEach(function (h) {
-        var a = DB.byId[h.id]; if (a) out.push({ kind: 'art', a: a, href: '#/dieu/' + a.id, sec: 'Đã xem gần đây' });
+        var a = DB.byId[h.id]; if (a) out.push({ kind: 'art', a: a, href: 'dieu-' + a.id, sec: 'Đã xem gần đây' });
       });
       return out;
     }
@@ -445,18 +454,18 @@
         hits.push({ a: a, s: s });
       });
       hits.sort(function (x, y) { return y.s - x.s || x.a.i - y.a.i; });
-      hits.slice(0, 6).forEach(function (h, i) { seen[h.a.id] = 1; out.push({ kind: 'art', a: h.a, href: '#/dieu/' + h.a.id + '?q=' + encodeURIComponent(raw), sec: i ? null : 'Tên điều luật' }); });
+      hits.slice(0, 6).forEach(function (h, i) { seen[h.a.id] = 1; out.push({ kind: 'art', a: h.a, href: 'dieu-' + h.a.id + '?q=' + encodeURIComponent(raw), sec: i ? null : 'Tên điều luật' }); });
       // Cách gọi thông dụng
       var fw = ' ' + f + ' ', syn = [];
       Object.keys(SYN).forEach(function (key) {
         var hit = fw.indexOf(' ' + key + ' ') > -1 || (f.length >= 3 && key.indexOf(f) === 0);
         if (hit) SYN[key].forEach(function (id) { if (!seen[id] && DB.byId[id]) { seen[id] = 1; syn.push(DB.byId[id]); } });
       });
-      syn.slice(0, 5).forEach(function (a, i) { out.push({ kind: 'art', a: a, href: '#/dieu/' + a.id, sec: i ? null : 'Có thể bạn đang tìm' }); });
+      syn.slice(0, 5).forEach(function (a, i) { out.push({ kind: 'art', a: a, href: 'dieu-' + a.id, sec: i ? null : 'Có thể bạn đang tìm' }); });
       TOOL_KW.forEach(function (t) {
         if (t.k.some(function (k) { return f.indexOf(k) > -1; })) out.push({ kind: 'tool', t: t, href: t.href, sec: 'Công cụ' });
       });
-      out.push({ kind: 'full', q: raw, href: '#/tim-kiem?q=' + encodeURIComponent(raw), sec: 'Tìm trong toàn văn' });
+      out.push({ kind: 'full', q: raw, href: 'tim-kiem?q=' + encodeURIComponent(raw), sec: 'Tìm trong toàn văn' });
     }
     return out;
   }
@@ -547,7 +556,7 @@
       if (opt.onSubmit) { opt.onSubmit(v); return; }
       if (r && (r.chap || r.a)) { go(refHref(r)); return; }
       rememberQ(v);
-      go('#/tim-kiem?q=' + encodeURIComponent(v));
+      go('tim-kiem?q=' + encodeURIComponent(v));
     });
     inp.addEventListener('blur', function () { setTimeout(close, 150); });
     return { input: inp, close: close, set: function (v) { inp.value = v; clr.hidden = !v; } };
@@ -564,7 +573,7 @@
       var chapters = DB.chaps.map(function (c) { return c.id; });
       var titles = DB.arts.map(function (a) { return [a.id, 'Điều ' + a.id + '. ' + a.t]; });
       try {
-        var w = new Worker('assets/js/search-worker.js?v=' + VER);
+        var w = new Worker(abs('assets/js/search-worker.js?v=' + VER));
         w.onmessage = function (e) {
           var m = e.data;
           if (m.type === 'progress') { FT.progress = m; FT.emit('progress', m); }
@@ -573,18 +582,18 @@
           else if (m.type === 'error') { w.terminate(); FT.worker = null; FT.fallback(chapters, titles); }
         };
         w.onerror = function () { w.terminate(); FT.worker = null; FT.fallback(chapters, titles); };
-        w.postMessage({ type: 'init', chapters: chapters, titles: titles, v: DB.v, base: new URL('data/', location.href).href });
+        w.postMessage({ type: 'init', chapters: chapters, titles: titles, v: DB.v, base: abs('data/') });
         FT.worker = w;
       } catch (e) { FT.fallback(chapters, titles); }
     },
     fallback: function (chapters, titles) {
       if (FT.engine) return;
       var load = window.LXEngine ? Promise.resolve() : new Promise(function (res, rej) {
-        var s = document.createElement('script'); s.src = 'assets/js/search-engine.js?v=' + VER; s.onload = res; s.onerror = rej; document.head.appendChild(s);
+        var s = document.createElement('script'); s.src = abs('assets/js/search-engine.js?v=' + VER); s.onload = res; s.onerror = rej; document.head.appendChild(s);
       });
       load.then(function () {
         return Promise.all(chapters.map(function (c) {
-          return fetch('data/' + c + '.json?v=' + DB.v).then(function (r) { return r.json(); });
+          return fetch(abs('data/' + c + '.json?v=' + DB.v)).then(function (r) { return r.json(); });
         }));
       }).then(function (lists) {
         FT.engine = new window.LXEngine();
@@ -614,29 +623,60 @@
   var Router = { cur: null, view: null, byClick: false, pos: {} };
   try { history.scrollRestoration = 'manual'; } catch (e) { /* bỏ qua */ }
 
-  function parseHash() {
-    var h = location.hash.replace(/^#\/?/, '');
-    var i = h.indexOf('?');
-    var path = i > -1 ? h.slice(0, i) : h, qs = i > -1 ? h.slice(i + 1) : '';
-    return { parts: path.split('/').filter(Boolean).map(function (x) { try { return decodeURIComponent(x); } catch (e) { return x; } }), q: new URLSearchParams(qs), key: path, full: h };
+  // Đường dẫn sạch → tuyến nội bộ: dieu-173?tab=binh-luan → ['dieu', '173', 'binh-luan']; cong-cu-tuoi → ['cong-cu', 'tuoi']
+  function parseRoute() {
+    var rest = location.pathname.indexOf(ROOT_PATH) === 0 ? location.pathname.slice(ROOT_PATH.length) : location.pathname;
+    try { rest = decodeURIComponent(rest); } catch (e) { /* giữ nguyên */ }
+    rest = rest.replace(/\.html$/, '').replace(/\/+$/, '');
+    if (rest === 'index') rest = '';
+    var q = new URLSearchParams(location.search), m, parts;
+    if ((m = rest.match(/^dieu-(.+)$/))) parts = ['dieu', m[1]].concat(q.get('tab') ? [q.get('tab')] : []);
+    else if ((m = rest.match(/^chuong-(.+)$/))) parts = ['chuong', m[1]];
+    else if ((m = rest.match(/^cong-cu(?:-(.+))?$/))) parts = ['cong-cu'].concat(m[1] ? [m[1]] : []);
+    else parts = rest ? rest.split('/') : [];
+    return { parts: parts, q: q, key: rest, full: rest + location.search };
   }
-  function go(href) {
+  // Liên kết kiểu cũ (#/dieu/173/binh-luan?k=2, #d173) → đường dẫn sạch tương ứng; null nếu không phải
+  function legacyHash() {
+    var h = location.hash, m;
+    if ((m = h.match(/^#d(\d{1,3}[a-z]?)$/))) return 'dieu-' + m[1];
+    if (h.indexOf('#/') !== 0) return null;
+    h = h.slice(2);
+    var i = h.indexOf('?'), p = (i > -1 ? h.slice(0, i) : h).split('/').filter(Boolean), q = new URLSearchParams(i > -1 ? h.slice(i + 1) : ''), out;
+    if (p[0] === 'dieu' && p[1]) { out = 'dieu-' + p[1]; if (p[2]) q.set('tab', p[2]); }
+    else if (p[0] === 'chuong' && p[1]) out = 'chuong-' + p[1];
+    else if (p[0] === 'cong-cu') out = 'cong-cu' + (p[1] ? '-' + p[1] : '');
+    else out = p[0] || './';
+    var qs = q.toString();
+    return out + (qs ? '?' + qs : '');
+  }
+  function go(href, replace) {
+    var u = abs(href);
     Router.byClick = true;
-    if (location.hash === href) route(); else location.hash = href;
+    if (u !== location.href) history[replace ? 'replaceState' : 'pushState'](null, '', u);
+    route();
+  }
+  // Liên kết trỏ tới một trang của ứng dụng (cùng thư mục gốc, không phải tệp tĩnh) → URL, ngược lại null
+  function appUrl(a) {
+    var h = a.getAttribute('href');
+    if (!h || h.charAt(0) === '#' || (a.target && a.target !== '_self') || a.hasAttribute('download')) return null;
+    var u = new URL(a.href);
+    if (u.origin !== location.origin || u.pathname.indexOf(ROOT_PATH) !== 0) return null;
+    return /[\/.]/.test(u.pathname.slice(ROOT_PATH.length).replace(/\.html$/, '')) ? null : u;
   }
   function setNav(name) {
     $$('[data-nav]').forEach(function (a) { a.classList.toggle('on', a.dataset.nav === name); if (a.dataset.nav === name) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
     document.body.classList.toggle('is-home', name === 'home');
   }
-  function setTitle(t) { document.title = t ? t + ' – Tra cứu Bộ luật Hình sự' : 'Tra cứu Bộ luật Hình sự 2015 (sửa đổi 2017, 2025) – Luật Sư Nam'; }
+  // Phải khớp với tiêu đề trong trang dựng tĩnh (tools/build_seo.py) vì công cụ tìm kiếm đọc tiêu đề sau khi chạy JavaScript
+  function setTitle(t) { document.title = t ? t + ' – Bộ luật Hình sự 2015 (sửa đổi 2025)' : 'Tra cứu Bộ luật Hình sự 2015 (sửa đổi 2017, 2025) – Luật Sư Nam'; }
 
   var VIEWS = {};
   function route() {
-    var ctx = parseHash(), main = $('#main');
+    var legacy = legacyHash();
+    if (legacy != null) history.replaceState(null, '', abs(legacy));
+    var ctx = parseRoute(), main = $('#main');
     var name = ctx.parts[0] || '';
-    // Liên kết kiểu cũ: #d173
-    var legacy = location.hash.match(/^#d(\d{1,3}[a-z]?)$/);
-    if (legacy) { location.replace('#/dieu/' + legacy[1]); return; }
     var prevKey = Router.cur && Router.cur.full;
     if (prevKey != null) Router.pos[prevKey] = window.scrollY;
     var back = !Router.byClick;
@@ -649,6 +689,8 @@
     if (Router.view && Router.view.leave) Router.view.leave();
     var V = VIEWS[name] || VIEWS._404;
     Router.cur = ctx;
+    // Đường dẫn chuẩn theo trang đang xem (trình duyệt dùng khi chia sẻ trang)
+    var can = $('link[rel="canonical"]'); if (can) can.href = abs(ctx.key || './');
     Router.view = null;
     setNav(V.nav || name || 'home');
     // Mỗi trang được vẽ trong một vùng chứa mới để không giữ lại trình nghe sự kiện cũ
@@ -656,7 +698,10 @@
     main.innerHTML = ''; main.appendChild(host);
     var res = V.render(ctx, host);
     Router.view = (res && typeof res === 'object' && !res.then) ? res : V;
+    var first = !Router.booted;
+    Router.booted = true;
     var restore = function () {
+      if (first && !ctx.q.get('k')) return;
       if (back && Router.pos[ctx.full] != null) window.scrollTo(0, Router.pos[ctx.full]);
       else if (!(Router.view && Router.view.keepScroll)) window.scrollTo(0, 0);
     };
@@ -669,7 +714,7 @@
      ========================================================================= */
   function artCard(a, extra) {
     var k = Pen.maxOf(a);
-    return '<a class="pa" href="#/dieu/' + a.id + '"><span class="pn">Điều ' + esc(a.id) + '</span><h3>' + esc(a.t) + '</h3>' +
+    return '<a class="pa" href="dieu-' + a.id + '"><span class="pn">Điều ' + esc(a.id) + '</span><h3>' + esc(a.t) + '</h3>' +
       '<span class="pm">' + (k ? '<span class="tag tag--c' + k.c + '">' + esc(Pen.maxText(a).replace('Cao nhất: ', '')) + '</span>' : '<span class="tag tag--soft">' + esc(a.ch.label) + '</span>') +
       artTags(a, true) + (extra || '') + '</span></a>';
   }
@@ -709,11 +754,11 @@
           return '<button type="button" data-try="' + esc(x) + '">' + esc(x) + '</button>';
         }).join('') + '</div></div>' +
         '<aside class="intent" aria-label="Lối tắt theo nhu cầu"><h2>Bạn đang cần gì?</h2><p>Chọn nhanh theo tình huống nghiên cứu</p>' +
-        [['#/tim-kiem', 'search', 'Tra tội danh theo hành vi', 'Mô tả hành vi, ví dụ: “vay tiền không trả”'],
-          ['#/cong-cu/thoi-hieu', 'clock', 'Phân loại tội & tính thời hiệu', 'Theo Điều 9, Điều 27, Điều 28'],
-          ['#/cong-cu/tuoi', 'user', 'Kiểm tra tuổi chịu TNHS', 'Tính tuổi chính xác theo Điều 12'],
-          ['#/cong-cu/so-sanh', 'columns', 'So sánh hai tội danh', 'Đối chiếu dấu hiệu & khung hình phạt']].map(function (x) {
-          return '<a href="' + x[0] + '"' + (x[0] === '#/tim-kiem' ? ' data-act="focus-hero"' : '') + '><span class="ii">' + ic(x[1]) + '</span><span><b>' + x[2] + '</b><small>' + x[3] + '</small></span><span class="go">' + ic('chev-r') + '</span></a>';
+        [['tim-kiem', 'search', 'Tra tội danh theo hành vi', 'Mô tả hành vi, ví dụ: “vay tiền không trả”'],
+          ['cong-cu-thoi-hieu', 'clock', 'Phân loại tội & tính thời hiệu', 'Theo Điều 9, Điều 27, Điều 28'],
+          ['cong-cu-tuoi', 'user', 'Kiểm tra tuổi chịu TNHS', 'Tính tuổi chính xác theo Điều 12'],
+          ['cong-cu-so-sanh', 'columns', 'So sánh hai tội danh', 'Đối chiếu dấu hiệu & khung hình phạt']].map(function (x) {
+          return '<a href="' + x[0] + '"' + (x[0] === 'tim-kiem' ? ' data-act="focus-hero"' : '') + '><span class="ii">' + ic(x[1]) + '</span><span><b>' + x[2] + '</b><small>' + x[3] + '</small></span><span class="go">' + ic('chev-r') + '</span></a>';
         }).join('') + '</aside></div></section>' +
 
         '<div class="wrap stats"><div class="stats-in">' +
@@ -722,15 +767,15 @@
         stat('spark', st.n25, 'điều sửa đổi', 'theo Luật số 86/2025/QH15') +
         stat('note', nCm, 'điều có bình luận', 'phân tích khoa học kèm theo') + '</div></div>' +
 
-        (hist.length ? '<section class="wrap sec"><div class="sec-h"><div><h2>Tiếp tục đọc</h2><p>Các điều bạn xem gần đây trên thiết bị này</p></div><a class="more" href="#/da-luu?tab=lich-su">Lịch sử ' + ic('chev-r') + '</a></div>' +
-          '<div class="recent">' + hist.map(function (a) { return '<a href="#/dieu/' + a.id + '"><b>Điều ' + esc(a.id) + '</b><span>' + esc(a.t) + '</span></a>'; }).join('') + '</div></section>' : '') +
+        (hist.length ? '<section class="wrap sec"><div class="sec-h"><div><h2>Tiếp tục đọc</h2><p>Các điều bạn xem gần đây trên thiết bị này</p></div><a class="more" href="da-luu?tab=lich-su">Lịch sử ' + ic('chev-r') + '</a></div>' +
+          '<div class="recent">' + hist.map(function (a) { return '<a href="dieu-' + a.id + '"><b>Điều ' + esc(a.id) + '</b><span>' + esc(a.t) + '</span></a>'; }).join('') + '</div></section>' : '') +
 
-        '<section class="wrap sec"><div class="sec-h"><div><span class="eyebrow">Phần thứ hai</span><h2>Tra cứu theo nhóm tội phạm</h2><p>14 chương, từ an ninh quốc gia đến tội phạm chiến tranh</p></div><a class="more" href="#/muc-luc">Toàn bộ mục lục ' + ic('chev-r') + '</a></div>' +
+        '<section class="wrap sec"><div class="sec-h"><div><span class="eyebrow">Phần thứ hai</span><h2>Tra cứu theo nhóm tội phạm</h2><p>14 chương, từ an ninh quốc gia đến tội phạm chiến tranh</p></div><a class="more" href="muc-luc">Toàn bộ mục lục ' + ic('chev-r') + '</a></div>' +
         '<div class="groups">' + p2.map(function (c) {
-          return '<a class="grp" href="#/chuong/' + c.slug + '"><span class="gi">' + ic(ICONS[c.id]) + '</span><span><span class="gn">' + esc(c.label) + '</span><h3>' + esc(c.name) + '</h3><span class="gm">' + c.arts.length + ' điều · Điều ' + c.first.id + ' – ' + c.last.id + '</span></span></a>';
+          return '<a class="grp" href="chuong-' + c.slug + '"><span class="gi">' + ic(ICONS[c.id]) + '</span><span><span class="gn">' + esc(c.label) + '</span><h3>' + esc(c.name) + '</h3><span class="gm">' + c.arts.length + ' điều · Điều ' + c.first.id + ' – ' + c.last.id + '</span></span></a>';
         }).join('') +
-        '<a class="grp grp--more" href="#/cong-cu/khung-hinh-phat"><span class="gi">' + ic('table') + '</span><span><span class="gn">Tra nhanh</span><h3>Bảng khung hình phạt của mọi tội danh</h3><span class="gm">Lọc theo tử hình, chung thân, độ tuổi</span></span></a>' +
-        '<a class="grp grp--more" href="#/muc-luc"><span class="gi">' + ic('list') + '</span><span><span class="gn">Toàn bộ</span><h3>Mục lục ' + DB.arts.length + ' điều luật</h3><span class="gm">Lọc tức thì theo tên hoặc số điều</span></span></a>' +
+        '<a class="grp grp--more" href="cong-cu-khung-hinh-phat"><span class="gi">' + ic('table') + '</span><span><span class="gn">Tra nhanh</span><h3>Bảng khung hình phạt của mọi tội danh</h3><span class="gm">Lọc theo tử hình, chung thân, độ tuổi</span></span></a>' +
+        '<a class="grp grp--more" href="muc-luc"><span class="gi">' + ic('list') + '</span><span><span class="gn">Toàn bộ</span><h3>Mục lục ' + DB.arts.length + ' điều luật</h3><span class="gm">Lọc tức thì theo tên hoặc số điều</span></span></a>' +
         '</div></section>' +
 
         '<section class="wrap sec"><div class="sec-h"><div><h2>Thường được tra cứu</h2><p>Những tội danh phổ biến trong thực tiễn tố tụng</p></div></div>' +
@@ -738,10 +783,10 @@
 
         '<section class="wrap sec"><div class="sec-h"><div><span class="eyebrow">Phần thứ nhất & thứ ba</span><h2>Những quy định chung</h2><p>Nguyên tắc, hình phạt, quyết định hình phạt, thời hiệu, xóa án tích…</p></div></div>' +
         '<div class="gen">' + p1.map(function (c) {
-          return '<a href="#/chuong/' + c.slug + '"><span class="gr">' + esc(c.num || '—') + '</span><span class="gt">' + esc(c.name) + (CH_NOTE[c.id] ? ' <span class="tag tag--rep26">' + CH_NOTE[c.id].short + '</span>' : '') + '</span><span class="gc">Đ.' + c.first.id + (c.first !== c.last ? '–' + c.last.id : '') + '</span></a>';
+          return '<a href="chuong-' + c.slug + '"><span class="gr">' + esc(c.num || '—') + '</span><span class="gt">' + esc(c.name) + (CH_NOTE[c.id] ? ' <span class="tag tag--rep26">' + CH_NOTE[c.id].short + '</span>' : '') + '</span><span class="gc">Đ.' + c.first.id + (c.first !== c.last ? '–' + c.last.id : '') + '</span></a>';
         }).join('') + '</div></section>' +
 
-        '<section class="wrap sec"><div class="sec-h"><div><h2>Công cụ hỗ trợ nghiên cứu</h2><p>Tính toán tự động từ chính văn bản điều luật</p></div><a class="more" href="#/cong-cu">Tất cả công cụ ' + ic('chev-r') + '</a></div>' +
+        '<section class="wrap sec"><div class="sec-h"><div><h2>Công cụ hỗ trợ nghiên cứu</h2><p>Tính toán tự động từ chính văn bản điều luật</p></div><a class="more" href="cong-cu">Tất cả công cụ ' + ic('chev-r') + '</a></div>' +
         toolCards() + '</section>' +
 
         '<section class="wrap sec"><div class="law-info">' +
@@ -754,7 +799,7 @@
         '</dl></div>' +
         '<div class="li-card"><h3>' + ic('info') + 'Lưu ý khi sử dụng</h3>' +
         '<p class="muted" style="font-size:.93rem;line-height:1.65">Văn bản điều luật cập nhật đến Luật số 86/2025/QH15. Phần bình luận là tài liệu khoa học tham khảo, không phải văn bản quy phạm pháp luật. Các chỉ dẫn tự động (loại tội, thời hiệu, khung hình phạt) được tính từ câu chữ điều luật để hỗ trợ nghiên cứu; khi áp dụng cho vụ việc cụ thể cần đối chiếu văn bản gốc và hướng dẫn hiện hành.</p>' +
-        '<p style="margin-top:14px"><a class="btn btn--sm" href="#/gioi-thieu">' + ic('info') + 'Nguồn dữ liệu & phương pháp</a></p></div>' +
+        '<p style="margin-top:14px"><a class="btn btn--sm" href="gioi-thieu">' + ic('info') + 'Nguồn dữ liệu & phương pháp</a></p></div>' +
         '</div></section>' +
         ctaBlock();
       SearchBox($('#heroSearch'), { lg: true, ph: 'Nhập số điều, tên tội hoặc từ khóa…' });
@@ -771,7 +816,7 @@
       ['so-sanh', 'columns', 'So sánh điều luật', 'Đặt hai điều cạnh nhau để phân biệt dấu hiệu và khung hình phạt.'],
       ['khung-hinh-phat', 'table', 'Bảng khung hình phạt', 'Lọc toàn bộ tội danh theo mức phạt cao nhất, tử hình, chung thân, độ tuổi.']
     ].map(function (x) {
-      return '<a class="tl" href="#/cong-cu/' + x[0] + '"><span class="ti">' + ic(x[1]) + '</span><h3>' + x[2] + '</h3><p>' + x[3] + '</p><span class="lk">Mở công cụ ' + ic('arrow-r') + '</span></a>';
+      return '<a class="tl" href="cong-cu-' + x[0] + '"><span class="ti">' + ic(x[1]) + '</span><h3>' + x[2] + '</h3><p>' + x[3] + '</p><span class="lk">Mở công cụ ' + ic('arrow-r') + '</span></a>';
     }).join('') + '</div>';
   }
   function ctaBlock() {
@@ -787,10 +832,10 @@
   VIEWS['muc-luc'] = {
     nav: 'muc-luc',
     render: function (ctx, main) {
-      setTitle('Mục lục');
+      setTitle('Mục lục ' + DB.arts.length + ' điều');
       var filter = ctx.q.get('loc') || 'all';
       main.innerHTML =
-        '<section class="ph">' + drum() + '<div class="wrap ph-in">' + crumb([['Trang chủ', '#/'], ['Mục lục']]) +
+        '<section class="ph">' + drum() + '<div class="wrap ph-in">' + crumb([['Trang chủ', './'], ['Mục lục']]) +
         '<span class="eyebrow">Cấu trúc Bộ luật</span><h1>Mục lục Bộ luật Hình sự</h1>' +
         '<p>3 phần · 26 chương · ' + DB.arts.length + ' điều. Gõ để lọc tức thì theo số điều hoặc tên điều (có dấu hay không dấu đều được).</p></div></section>' +
         '<div class="toc-bar"><div class="wrap"><div class="sb"><div class="sb-box">' + ic('filter') + '<input class="sb-in" id="tocQ" type="search" placeholder="Lọc mục lục… (vd: tai san, 250)" aria-label="Lọc mục lục"></div></div>' +
@@ -820,16 +865,16 @@
             var list = '', lastM = null;
             arts.forEach(function (a) {
               if (a.m && a.m !== lastM) { lastM = a.m; var mn = c.muc.filter(function (m) { return m.n === a.m; })[0]; if (mn) list += '<div class="tmuc">' + esc(mn.name) + '</div>'; }
-              list += '<a class="ta' + (a.rep ? ' is-rep' : '') + '" href="#/dieu/' + a.id + '"><span class="an">Điều ' + esc(a.id) + '</span><span class="at">' + hl(a.t, cq) + '</span><span class="tags">' + artTags(a, true) + '</span></a>';
+              list += '<a class="ta' + (a.rep ? ' is-rep' : '') + '" href="dieu-' + a.id + '"><span class="an">Điều ' + esc(a.id) + '</span><span class="at">' + hl(a.t, cq) + '</span><span class="tags">' + artTags(a, true) + '</span></a>';
             });
             ph += '<details class="tch" data-c="' + c.id + '"' + (open ? ' open' : '') + '><summary><span class="cn">' + esc(c.num || 'TH') + '</span><span class="ct"><b>' + esc(c.title) + '</b>' +
               '<small>' + c.arts.length + ' điều · Điều ' + c.first.id + ' – ' + c.last.id + (c.muc.length ? ' · ' + c.muc.length + ' mục' : '') + ' · ~' + readMin(c.sz[0]) + ' phút đọc luật' + '</small>' +
               (CH_NOTE[c.id] ? ' <span class="tag tag--rep26">' + CH_NOTE[c.id].short + '</span>' : '') +
-              '</span><a class="btn btn--sm btn--ghost" href="#/chuong/' + c.slug + '" onclick="event.stopPropagation()">Xem</a>' + ic('chev-d', 'chev') + '</summary><div class="tch-body"><a class="ta ch-open" href="#/chuong/' + c.slug + '">Xem trang tổng quan ' + esc(c.label) + ' ' + ic('arrow-r') + '</a>' + list + '</div></details>';
+              '</span><a class="btn btn--sm btn--ghost" href="chuong-' + c.slug + '">Xem</a>' + ic('chev-d', 'chev') + '</summary><div class="tch-body"><a class="ta ch-open" href="chuong-' + c.slug + '">Xem trang tổng quan ' + esc(c.label) + ' ' + ic('arrow-r') + '</a>' + list + '</div></details>';
           });
           if (ph) h += '<section class="toc-part"><h2><small>' + esc(p.label) + '</small>' + esc(p.name) + '</h2>' + ph + '</section>';
         });
-        body.innerHTML = h || '<div class="empty">' + ic('search') + '<h3>Không có điều nào phù hợp</h3><p>Thử từ khóa khác hoặc <a href="#/tim-kiem?q=' + encodeURIComponent(v) + '">tìm trong toàn văn</a>.</p></div>';
+        body.innerHTML = h || '<div class="empty">' + ic('search') + '<h3>Không có điều nào phù hợp</h3><p>Thử từ khóa khác hoặc <a href="tim-kiem?q=' + encodeURIComponent(v) + '">tìm trong toàn văn</a>.</p></div>';
       };
       q.addEventListener('input', debounce(draw, 120));
       main.addEventListener('click', function (e) {
@@ -864,19 +909,19 @@
       c.arts.forEach(function (a) {
         if (a.m && a.m !== lastM) { lastM = a.m; var mn = c.muc.filter(function (m) { return m.n === a.m; })[0]; if (mn) list += '<h2 class="muc-h">' + esc(mn.name) + '</h2>'; }
         var k = Pen.maxOf(a);
-        list += '<a class="ca" href="#/dieu/' + a.id + '"><span class="cn"><small>Điều</small><b>' + esc(a.id) + '</b></span><h3>' + esc(a.t) + '</h3>' +
+        list += '<a class="ca" href="dieu-' + a.id + '"><span class="cn"><small>Điều</small><b>' + esc(a.id) + '</b></span><h3>' + esc(a.t) + '</h3>' +
           '<p>' + esc(a.M.ex || '') + '</p><span class="cm">' + (k ? '<span class="tag tag--c' + k.c + '">' + esc(Pen.maxText(a)) + '</span>' : '') + artTags(a, true) +
           (a.M.a14 ? '<span class="tag tag--a14">Từ đủ 14 tuổi chịu TNHS</span>' : '') + '</span></a>';
       });
       main.innerHTML =
-        '<section class="ph">' + drum() + '<div class="wrap ph-in">' + crumb([['Trang chủ', '#/'], ['Mục lục', '#/muc-luc'], [c.label]]) +
+        '<section class="ph">' + drum() + '<div class="wrap ph-in">' + crumb([['Trang chủ', './'], ['Mục lục', 'muc-luc'], [c.label]]) +
         '<span class="eyebrow">' + esc(DB.partName(c.part)) + '</span><h1>' + esc(c.title) + '</h1>' +
         '<div class="ph-meta"><span>' + ic('book') + c.arts.length + ' điều (Điều ' + c.first.id + ' – ' + c.last.id + ')</span>' +
         '<span>' + ic('clock') + '~' + lawMin + ' phút đọc luật · ~' + cmMin + ' phút bình luận</span>' +
         (nTH ? '<span>' + ic('alert') + nTH + ' điều có khung tử hình</span>' : '') + '</div>' +
-        '<div class="ph-acts"><a class="btn btn--g" href="#/dieu/' + c.first.id + '">' + ic('book') + 'Đọc từ Điều ' + c.first.id + '</a>' +
-        (prev ? '<a class="btn" href="#/chuong/' + prev.slug + '">' + ic('chev-l') + esc(prev.label) + '</a>' : '') +
-        (next ? '<a class="btn" href="#/chuong/' + next.slug + '">' + esc(next.label) + ic('chev-r') + '</a>' : '') + '</div></div></section>' +
+        '<div class="ph-acts"><a class="btn btn--g" href="dieu-' + c.first.id + '">' + ic('book') + 'Đọc từ Điều ' + c.first.id + '</a>' +
+        (prev ? '<a class="btn" href="chuong-' + prev.slug + '">' + ic('chev-l') + esc(prev.label) + '</a>' : '') +
+        (next ? '<a class="btn" href="chuong-' + next.slug + '">' + esc(next.label) + ic('chev-r') + '</a>' : '') + '</div></div></section>' +
         '<div class="wrap page">' + (CH_NOTE[c.id] ? '<div class="callout callout--warn" style="margin-bottom:18px">' + ic('alert') + '<div><b>Lưu ý hiệu lực:</b> ' + esc(CH_NOTE[c.id].text) + '</div></div>' : '') +
         '<div class="chap-list">' + list + '</div></div>';
       return null;
@@ -898,7 +943,7 @@
       var kn = gr.n, inner = gr.items.map(function (p) {
         var kind = p[0], h = fixHtml(p[1], fnMap, function () { return ++fnN; });
         if (kind === 'k') {
-          h = h.replace(/^(\d{1,2})\.\s*/, '<a class="kn" href="#/dieu/' + a.id + '?k=$1" data-k="$1" title="Liên kết tới khoản $1">$1.</a> ');
+          h = h.replace(/^(\d{1,2})\.\s*/, '<a class="kn" href="dieu-' + a.id + '?k=$1" data-k="$1" title="Liên kết tới khoản $1">$1.</a> ');
           return '<p class="lk">' + h + '</p>';
         }
         if (kind === 'p') {
@@ -922,7 +967,7 @@
   }
   // Chuẩn hoá HTML nguồn: liên kết chéo, dấu (*), chú thích đánh số lại theo từng điều
   function fixHtml(h, fnMap, next) {
-    h = h.replace(/href="#d(\w+)"/g, 'href="#/dieu/$1" data-pv="$1"');
+    h = h.replace(/href="#d(\w+)"/g, 'href="dieu-$1" data-pv="$1"');
     h = h.replace(/<sup class="fn" data-fn="(\d+)">\d+<\/sup>/g, function (_, n) {
       if (!fnMap[n]) fnMap[n] = next();
       return '<sup class="fn" data-fn="' + n + '" role="button" tabindex="0" aria-label="Chú thích ' + fnMap[n] + '">' + fnMap[n] + '</sup>';
@@ -978,8 +1023,8 @@
       '<div class="wrap"><div class="reader">' +
       '<aside class="side" aria-label="Mục lục điều luật"><div class="side-h"><input class="inp" id="sideQ" type="search" placeholder="Lọc nhanh điều luật…" aria-label="Lọc mục lục"></div><div class="side-b" id="sideB"></div></aside>' +
       '<article class="art" id="art">' +
-      '<header class="art-h">' + crumb([['Trang chủ', '#/'], [c.label, '#/chuong/' + c.slug], ['Điều ' + a.id]]) +
-      '<div class="art-tags"><span class="tag tag--soft">' + esc(DB.partName(c.part).split(':')[0]) + '</span><a class="tag tag--soft" href="#/chuong/' + c.slug + '">' + esc(c.label) + '</a>' + artTags(a) + (M.a14 ? '<span class="tag tag--a14" title="Người từ đủ 14 đến dưới 16 tuổi chịu TNHS ở khung rất nghiêm trọng, đặc biệt nghiêm trọng">Từ đủ 14 tuổi chịu TNHS (khoản 2 Điều 12)</span>' : '') + '</div>' +
+      '<header class="art-h">' + crumb([['Trang chủ', './'], [c.label, 'chuong-' + c.slug], ['Điều ' + a.id]]) +
+      '<div class="art-tags"><span class="tag tag--soft">' + esc(DB.partName(c.part).split(':')[0]) + '</span><a class="tag tag--soft" href="chuong-' + c.slug + '">' + esc(c.label) + '</a>' + artTags(a) + (M.a14 ? '<span class="tag tag--a14" title="Người từ đủ 14 đến dưới 16 tuổi chịu TNHS ở khung rất nghiêm trọng, đặc biệt nghiêm trọng">Từ đủ 14 tuổi chịu TNHS (khoản 2 Điều 12)</span>' : '') + '</div>' +
       '<h1><span class="dn">Điều ' + esc(a.id) + '.</span> ' + esc(a.t) + '</h1>' +
       '<div class="art-sum"><span>' + ic(ICONS[c.id] || 'book') + esc(c.name) + '</span>' + (muc ? '<span>' + ic('list') + esc(muc) + '</span>' : '') +
       '<span>' + ic('clock') + '~' + readMin(M.ln ? M.ln[0] : 0) + ' phút đọc' + (hasCm ? ' · bình luận ~' + readMin(M.ln[1]) + ' phút' : '') + '</span>' +
@@ -988,9 +1033,9 @@
       '<button type="button" class="btn btn--p" data-act="save" aria-pressed="' + Saved.has(a.id) + '">' + ic(Saved.has(a.id) ? 'bookmark-fill' : 'bookmark') + '<span>' + (Saved.has(a.id) ? 'Đã lưu' : 'Lưu điều này') + '</span></button>' +
       '<button type="button" class="btn" data-act="copy-art" title="Sao chép toàn văn điều luật">' + ic('copy') + '<span>Sao chép</span></button>' +
       '<button type="button" class="btn" data-act="share" title="Chia sẻ">' + ic('share') + '<span>Chia sẻ</span></button>' +
-      '<a class="btn" href="#/cong-cu/so-sanh?a=' + a.id + '" title="So sánh với điều khác">' + ic('columns') + '<span>So sánh</span></a>' +
+      '<a class="btn" href="cong-cu-so-sanh?a=' + a.id + '" title="So sánh với điều khác">' + ic('columns') + '<span>So sánh</span></a>' +
       '<button type="button" class="btn btn--ic" data-act="print" title="In điều luật" aria-label="In điều luật">' + ic('print') + '</button>' +
-      '<button type="button" class="btn btn--ic" data-act="settings" title="Cỡ chữ & giao diện" aria-label="Cỡ chữ và giao diện">' + ic('text') + '</button>' +
+      '<button type="button" class="btn btn--ic" data-act="settings" title="Tùy chỉnh hiển thị: cỡ chữ, kiểu chữ, giao diện" aria-label="Tùy chỉnh hiển thị" aria-haspopup="dialog">' + ic('text') + '</button>' +
       '</div></header>' +
       '<div class="tabs" role="tablist" aria-label="Nội dung điều luật">' +
       tabBtn('noi-dung', '<span class="tl-l">Nội dung điều luật</span><span class="tl-s">Điều luật</span>', null, tab) +
@@ -998,8 +1043,8 @@
       tabBtn('lien-quan', 'Liên quan', relN || null, tab) + '</div>' +
       '<div id="panels"><div class="panel"><div class="skel" style="width:60%"></div><div class="skel"></div><div class="skel" style="width:85%"></div><div class="skel"></div></div></div>' +
       '<nav class="pager no-print" aria-label="Điều trước, điều sau">' +
-      (prev ? '<a href="#/dieu/' + prev.id + '" rel="prev"><small>' + ic('chev-l') + 'Điều trước</small><span>Điều ' + esc(prev.id) + '. ' + esc(prev.t) + '</span></a>' : '<span></span>') +
-      (next ? '<a class="nx" href="#/dieu/' + next.id + '" rel="next"><small>Điều sau' + ic('chev-r') + '</small><span>Điều ' + esc(next.id) + '. ' + esc(next.t) + '</span></a>' : '') +
+      (prev ? '<a href="dieu-' + prev.id + '" rel="prev"><small>' + ic('chev-l') + 'Điều trước</small><span>Điều ' + esc(prev.id) + '. ' + esc(prev.t) + '</span></a>' : '<span></span>') +
+      (next ? '<a class="nx" href="dieu-' + next.id + '" rel="next"><small>Điều sau' + ic('chev-r') + '</small><span>Điều ' + esc(next.id) + '. ' + esc(next.t) + '</span></a>' : '') +
       '</nav></article>' +
       '<aside class="rail" id="rail" aria-label="Thông tin bổ trợ"></aside>' +
       '</div></div>';
@@ -1014,8 +1059,8 @@
     });
     this.onKey = function (e) {
       if (e.target.closest('input,textarea,select,[contenteditable]') || e.metaKey || e.ctrlKey || e.altKey) return;
-      if (e.key === 'ArrowLeft' && prev) go('#/dieu/' + prev.id);
-      if (e.key === 'ArrowRight' && next) go('#/dieu/' + next.id);
+      if (e.key === 'ArrowLeft' && prev) go('dieu-' + prev.id);
+      if (e.key === 'ArrowRight' && next) go('dieu-' + next.id);
     };
     document.addEventListener('keydown', this.onKey);
     this.onScroll = function () {
@@ -1045,7 +1090,7 @@
         if (c.part !== lastP) { lastP = c.part; h += '<div class="sp">' + esc((DB.parts.filter(function (p) { return p.id === c.part; })[0] || {}).label || '') + '</div>'; }
         var open = c === a.ch || !!v;
         h += '<div class="sc' + (open ? ' open' : '') + '"><button type="button" aria-expanded="' + open + '">' + ic('chev-r') + '<span class="r">' + esc(c.num || 'TH') + '</span><span>' + esc(c.name) + '</span></button><div class="sc-l">' +
-          arts.map(function (x) { return '<a href="#/dieu/' + x.id + '"' + (x === a ? ' class="on" aria-current="page"' : x.rep ? ' class="is-rep"' : '') + '><b>' + esc(x.id) + '</b><span>' + esc(x.t) + '</span></a>'; }).join('') + '</div></div>';
+          arts.map(function (x) { return '<a href="dieu-' + x.id + '"' + (x === a ? ' class="on" aria-current="page"' : x.rep ? ' class="is-rep"' : '') + '><b>' + esc(x.id) + '</b><span>' + esc(x.t) + '</span></a>'; }).join('') + '</div></div>';
       });
       box.innerHTML = h;
     };
@@ -1093,9 +1138,9 @@
     if (k) setTimeout(function () { self.focusK(k, ctx.q.get('d')); }, 30);
     $('.tabs').addEventListener('click', function (e) {
       var b = e.target.closest('[data-tab]'); if (!b) return;
-      var t = b.dataset.tab, base = '#/dieu/' + a.id + (t === 'noi-dung' ? '' : '/' + t);
-      history.replaceState(null, '', base);
-      Router.cur = parseHash();
+      var t = b.dataset.tab;
+      history.replaceState(null, '', abs('dieu-' + a.id + (t === 'noi-dung' ? '' : '?tab=' + t)));
+      Router.cur = parseRoute();
       self.show(t);
     });
     $('.tabs').addEventListener('keydown', function (e) {
@@ -1194,12 +1239,12 @@
     var kl = (M.k || []).length ? '<div class="rc"><h3>' + ic('list') + 'Đi tới khoản</h3><div class="kl">' +
       $$('#lawBody .kh[data-k]').map(function (el) {
         var k = el.dataset.k, p = plain(el.querySelector('.lk') ? el.querySelector('.lk').innerHTML : '').replace(/^\d+\.\s*/, '');
-        return '<a href="#/dieu/' + a.id + '?k=' + k + '" data-k="' + k + '"><b>Khoản ' + k + '</b><span>' + esc(p.length > 70 ? p.slice(0, 68) + '…' : p) + '</span></a>';
+        return '<a href="dieu-' + a.id + '?k=' + k + '" data-k="' + k + '"><b>Khoản ' + k + '</b><span>' + esc(p.length > 70 ? p.slice(0, 68) + '…' : p) + '</span></a>';
       }).join('') + '</div></div>' : '';
     var pen = (M.k || []).some(function (k) { return !k.bs; }) ? '<div class="rc"><h3>' + ic('scale') + 'Khung hình phạt</h3>' + Pen.chart(a, true) + '</div>' : '';
     var refs = (M.ol || []).concat(M.in || []).filter(function (x, i, arr) { return arr.indexOf(x) === i && DB.byId[x]; }).slice(0, 8);
     var rl = refs.length ? '<div class="rc"><h3>' + ic('link') + 'Điều luật liên quan</h3><div class="rl">' + refs.map(function (id) {
-      var x = DB.byId[id]; return '<a href="#/dieu/' + id + '" data-pv="' + id + '"><b>Điều ' + esc(id) + '</b><span>' + esc(x.t) + '</span></a>';
+      var x = DB.byId[id]; return '<a href="dieu-' + id + '" data-pv="' + id + '"><b>Điều ' + esc(id) + '</b><span>' + esc(x.t) + '</span></a>';
     }).join('') + '</div></div>' : '';
     $('#rail').innerHTML = pen + kl + rl + '<div class="rc"><h3>' + ic('note') + 'Ghi chú của tôi</h3>' + noteBox(a.id, 'r') + '</div>';
   };
@@ -1212,11 +1257,11 @@
       var scope = ctx.q.get('pv') || 'all', chap = ctx.q.get('ch') || '', sort = ctx.q.get('sx') || 'rel';
       setTitle(q ? 'Tìm “' + q + '”' : 'Tìm kiếm');
       main.innerHTML =
-        '<section class="ph">' + drum() + '<div class="wrap ph-in">' + crumb([['Trang chủ', '#/'], ['Tìm kiếm']]) +
+        '<section class="ph">' + drum() + '<div class="wrap ph-in">' + crumb([['Trang chủ', './'], ['Tìm kiếm']]) +
         '<h1>Tìm kiếm trong Bộ luật Hình sự</h1><p>Tìm đồng thời trong tên điều, văn bản điều luật và phần bình luận. Gõ không dấu, dùng “ngoặc kép” để tìm cụm từ chính xác.</p>' +
         '<div id="srBox" style="margin-top:18px;max-width:760px"></div></div></section>' +
         '<div class="wrap"><div id="srOut"></div></div>';
-      var box = SearchBox($('#srBox'), { value: q, ph: 'Nhập từ khóa, cụm từ hoặc số điều…', onSubmit: function (v) { rememberQ(v); go('#/tim-kiem?q=' + encodeURIComponent(v)); } });
+      var box = SearchBox($('#srBox'), { value: q, ph: 'Nhập từ khóa, cụm từ hoặc số điều…', onSubmit: function (v) { rememberQ(v); go('tim-kiem?q=' + encodeURIComponent(v)); } });
       if (!q) { box.input.focus(); }
       var out = $('#srOut');
       if (!q) { out.innerHTML = tipsHtml(); return null; }
@@ -1230,7 +1275,7 @@
         if (fq.indexOf(' ' + key + ' ') > -1) SYN[key].forEach(function (x) { if (sids.indexOf(x) < 0 && DB.byId[x]) sids.push(x); });
       });
       var sugg = sids.length ? '<div class="sugg"><span>' + ic('spark') + ' Tội danh thường gắn với từ khóa này:</span>' + sids.slice(0, 6).map(function (x) {
-        return '<a class="chip" href="#/dieu/' + x + '" data-pv="' + x + '">Điều ' + x + ' · ' + esc(DB.byId[x].t.replace(/^Tội /, '')) + '</a>';
+        return '<a class="chip" href="dieu-' + x + '" data-pv="' + x + '">Điều ' + x + ' · ' + esc(DB.byId[x].t.replace(/^Tội /, '')) + '</a>';
       }).join('') + '</div>' : '';
       out.innerHTML = '<div style="margin-top:22px">' + goCard + sugg + '</div><div class="sr-meta" id="srMeta"><span class="spinner"></span> Đang nạp toàn văn để tìm kiếm…</div><div id="srRes"></div>';
       var onFt = function (t, m) {
@@ -1266,7 +1311,7 @@
       return true;
     });
     if (o.sort === 'order') list.sort(function (x, y) { return x.o - y.o; });
-    var base = '#/tim-kiem?q=' + encodeURIComponent(o.q);
+    var base = 'tim-kiem?q=' + encodeURIComponent(o.q);
     var url = function (k, v) {
       var p = { pv: o.scope, ch: o.chap, sx: o.sort }; p[k] = v;
       return base + (p.pv !== 'all' ? '&pv=' + p.pv : '') + (p.ch ? '&ch=' + p.ch : '') + (p.sx !== 'rel' ? '&sx=' + p.sx : '');
@@ -1280,7 +1325,7 @@
     meta.innerHTML = all.length ? 'Tìm thấy <b>' + all.length + '</b> điều có nội dung phù hợp' + (res.loose.length && res.exact.length ? ' (' + res.exact.length + ' điều khớp liền cụm từ)' : '') + ' · ' + Math.max(1, o.ms) + ' ms' : '';
     var pageSize = 25, shown = 0;
     var item = function (r) {
-      var a = DB.byId[r.id], href = '#/dieu/' + a.id + '?q=' + encodeURIComponent(o.q);
+      var a = DB.byId[r.id], href = 'dieu-' + a.id + '?q=' + encodeURIComponent(o.q);
       var sn = r.sn.slice(0, 3).map(function (s) {
         var t = s[2], m = s[3], h = '', last = 0;
         m.forEach(function (x) { h += esc(t.slice(last, x[0])) + '<mark>' + esc(t.slice(x[0], x[1])) + '</mark>'; last = x[1]; });
@@ -1326,19 +1371,19 @@
       var when = function (t) { var d = new Date(t); return fmtDate(d) + ' ' + d.toTimeString().slice(0, 5); };
       var row = function (id, t, extra, kind) {
         var a = DB.byId[id];
-        return '<div class="sv"><a class="t" href="#/dieu/' + a.id + '"><b>Điều ' + esc(a.id) + ' · ' + esc(a.ch.label) + '</b><span>' + esc(a.t) + '</span>' + (extra || '') + '</a>' +
-          '<time>' + when(t) + '</time><button type="button" class="hd-ic" style="color:var(--faint)" data-rm="' + kind + ':' + esc(a.id) + '" aria-label="Xóa">' + ic('trash') + '</button></div>';
+        return '<div class="sv"><a class="t" href="dieu-' + a.id + '"><b>Điều ' + esc(a.id) + ' · ' + esc(a.ch.label) + '</b><span>' + esc(a.t) + '</span>' + (extra || '') + '</a>' +
+          '<time>' + when(t) + '</time><button type="button" class="hd-ic sv-rm" data-rm="' + kind + ':' + esc(a.id) + '" aria-label="Xóa">' + ic('trash') + '</button></div>';
       };
       var body;
       if (tab === 'ghi-chu') body = nk.length ? nk.sort(function (x, y) { return notes[y].t - notes[x].t; }).map(function (id) { return row(id, notes[id].t, '<div class="note">' + esc(notes[id].x) + '</div>', 'note'); }).join('') : emptyHtml('note', 'Chưa có ghi chú', 'Mở một điều luật và ghi chú ở khung “Ghi chú của tôi”.');
       else if (tab === 'lich-su') body = hist.length ? hist.map(function (x) { return row(x.id, x.t, '', 'hist'); }).join('') : emptyHtml('history', 'Chưa có lịch sử', 'Các điều bạn đã xem sẽ xuất hiện ở đây.');
       else body = saved.length ? saved.map(function (x) { return row(x.id, x.t, '', 'saved'); }).join('') : emptyHtml('bookmark', 'Chưa lưu điều luật nào', 'Nhấn “Lưu điều này” trên trang điều luật để đánh dấu và đọc lại nhanh.');
       main.innerHTML =
-        '<section class="ph">' + drum() + '<div class="wrap ph-in">' + crumb([['Trang chủ', '#/'], ['Đã lưu']]) +
+        '<section class="ph">' + drum() + '<div class="wrap ph-in">' + crumb([['Trang chủ', './'], ['Đã lưu']]) +
         '<h1>Đã lưu, ghi chú & lịch sử</h1><p>Dữ liệu chỉ lưu trên trình duyệt của thiết bị này, không gửi đi đâu.</p></div></section>' +
         '<div class="wrap page"><div class="filters">' +
         [['luu', 'Đã lưu', saved.length], ['ghi-chu', 'Ghi chú', nk.length], ['lich-su', 'Lịch sử', hist.length]].map(function (x) {
-          return '<a class="chip' + (tab === x[0] ? ' on' : '') + '" href="#/da-luu' + (x[0] === 'luu' ? '' : '?tab=' + x[0]) + '">' + x[1] + ' <span class="n">' + x[2] + '</span></a>';
+          return '<a class="chip' + (tab === x[0] ? ' on' : '') + '" href="da-luu' + (x[0] === 'luu' ? '' : '?tab=' + x[0]) + '">' + x[1] + ' <span class="n">' + x[2] + '</span></a>';
         }).join('') +
         (tab === 'ghi-chu' && nk.length ? '<button type="button" class="btn btn--sm" data-act="export-notes" style="margin-left:auto">' + ic('download') + 'Xuất ghi chú (.txt)</button>' : '') +
         (tab === 'lich-su' && hist.length ? '<button type="button" class="btn btn--sm" data-act="clear-hist" style="margin-left:auto">' + ic('trash') + 'Xóa lịch sử</button>' : '') +
@@ -1371,7 +1416,7 @@
       setTitle('Giới thiệu & nguồn dữ liệu');
       var st = DB.toc.stats;
       main.innerHTML =
-        '<section class="ph">' + drum() + '<div class="wrap ph-in">' + crumb([['Trang chủ', '#/'], ['Giới thiệu']]) +
+        '<section class="ph">' + drum() + '<div class="wrap ph-in">' + crumb([['Trang chủ', './'], ['Giới thiệu']]) +
         '<h1>Giới thiệu & nguồn dữ liệu</h1><p>Công cụ tra cứu Bộ luật Hình sự do Công ty Luật TNHH Luật Sư Nam xây dựng nhằm phục vụ nghiên cứu, học tập và thực hành pháp luật.</p></div></section>' +
         '<div class="wrap page" style="max-width:900px"><div class="cm" style="font-size:1rem">' +
         '<h3 class="ch" style="margin-top:0">Phạm vi văn bản</h3>' +
@@ -1394,7 +1439,7 @@
     render: function (ctx, main, msg) {
       setTitle('Không tìm thấy');
       main.innerHTML = '<div class="wrap page"><div class="empty">' + ic('alert') + '<h3>Không tìm thấy trang</h3><p>' + esc(msg || 'Đường dẫn không tồn tại hoặc đã thay đổi.') + '</p>' +
-        '<p style="margin-top:16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><a class="btn btn--p" href="#/">Về trang chủ</a><a class="btn" href="#/muc-luc">Xem mục lục</a></p></div></div>';
+        '<p style="margin-top:16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><a class="btn btn--p" href="./">Về trang chủ</a><a class="btn" href="muc-luc">Xem mục lục</a></p></div></div>';
       return null;
     }
   };
@@ -1407,7 +1452,7 @@
     var k = Pen.maxOf(a);
     return '<div class="pv-n">Điều ' + esc(a.id) + ' · ' + esc(a.ch.label) + '</div><div class="pv-t" id="sheetTitle">' + esc(a.t) + '</div>' +
       '<div class="pv-x">' + esc(a.M.ex || '') + '</div><div class="pv-m">' + (k ? '<span class="tag tag--c' + k.c + '">' + esc(Pen.maxText(a)) + '</span>' : '') + artTags(a, true) + '</div>' +
-      '<div class="pv-a"><a class="btn btn--p btn--sm" href="#/dieu/' + a.id + '">Mở Điều ' + esc(a.id) + ic('arrow-r') + '</a>' +
+      '<div class="pv-a"><a class="btn btn--p btn--sm" href="dieu-' + a.id + '">Mở Điều ' + esc(a.id) + ic('arrow-r') + '</a>' +
       (isTouch ? '<button type="button" class="btn btn--sm" data-act="sheet-close">Đóng</button>' : '') + '</div>';
   }
   function fnHtml(n) {
@@ -1421,8 +1466,6 @@
   function bindGlobal() {
     document.addEventListener('click', function (e) {
       var t = e.target;
-      var link = t.closest('a[href^="#/"]');
-      if (link && !e.defaultPrevented && !e.metaKey && !e.ctrlKey && !e.shiftKey) Router.byClick = true;
       var pv = t.closest('a[data-pv]');
       if (pv && isTouch && !pv.closest('.pop, .sheet, .rl')) { e.preventDefault(); UI.sheet(previewHtml(pv.dataset.pv)); return; }
       var fn = t.closest('sup.fn');
@@ -1433,15 +1476,15 @@
       if (tr) {
         var v = tr.dataset.try, inp = $('#heroSearch .sb-in') || $('#srBox .sb-in');
         if (inp) { inp.value = v; inp.dispatchEvent(new Event('input')); inp.focus(); }
-        else go('#/tim-kiem?q=' + encodeURIComponent(v));
+        else go('tim-kiem?q=' + encodeURIComponent(v));
         return;
       }
       var kk = t.closest('a.kn, .rc .kl a[data-k], .pen-row a[data-k]');
       if (kk && Router.view && Router.view.focusK) {
         e.preventDefault();
         var k = kk.dataset.k;
-        history.replaceState(null, '', '#/dieu/' + Router.view.a.id + '?k=' + k);
-        Router.cur = parseHash();
+        history.replaceState(null, '', abs('dieu-' + Router.view.a.id + '?k=' + k));
+        Router.cur = parseRoute();
         Router.view.focusK(k);
         return;
       }
@@ -1453,7 +1496,7 @@
         return;
       }
       var kl = t.closest('[data-klink]');
-      if (kl && Router.view && Router.view.a) { UI.copy(location.href.split('#')[0] + '#/dieu/' + Router.view.a.id + '?k=' + kl.dataset.klink, 'Đã sao chép liên kết'); return; }
+      if (kl && Router.view && Router.view.a) { UI.copy(abs('dieu-' + Router.view.a.id + '?k=' + kl.dataset.klink), 'Đã sao chép liên kết'); return; }
       var act = t.closest('[data-act]');
       if (!act) return;
       var A = act.dataset.act, V = Router.view;
@@ -1465,7 +1508,7 @@
         var cur = Prefs.get().theme || 'light', dark = cur === 'dark' || (cur === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
         Prefs.set('theme', dark ? 'light' : 'dark'); UI.toast(dark ? 'Đã chuyển sang giao diện sáng' : 'Đã chuyển sang giao diện tối');
       }
-      else if (A === 'find') { go('#/tim-kiem'); }
+      else if (A === 'find') { go('tim-kiem'); }
       else if (A === 'focus-hero') { var hi = $('#heroSearch .sb-in'); if (hi) { e.preventDefault(); hi.placeholder = 'Mô tả hành vi, vd: vay tiền không trả, đánh nhau…'; hi.focus(); hi.scrollIntoView({ block: 'center', behavior: 'smooth' }); } }
       else if (A === 'offline') offline(act);
       else if (V && V.a) {
@@ -1479,7 +1522,7 @@
           var txt = 'Điều ' + art.id + '. ' + art.t + '\n\n' + V.d.law.map(function (p) { return plain(p[1]).replace(/\*$/, ''); }).join('\n') + '\n\n(' + CITE + ')';
           UI.copy(txt, 'Đã sao chép toàn văn Điều ' + art.id);
         } else if (A === 'share') {
-          var url = location.href.split('?')[0].replace(/\/(binh-luan|lien-quan)$/, '');
+          var url = abs('dieu-' + art.id);
           if (navigator.share) navigator.share({ title: 'Điều ' + art.id + '. ' + art.t, text: 'Điều ' + art.id + '. ' + art.t + ' – ' + CITE, url: url }).catch(function () { });
           else UI.copy(url, 'Đã sao chép liên kết Điều ' + art.id);
         } else if (A === 'print') { window.print(); }
@@ -1524,20 +1567,35 @@
       if (e.key === '/' && !e.target.closest('input,textarea,select,[contenteditable]')) {
         var inp = $('#heroSearch .sb-in') || $('#srBox .sb-in') || $('#hdSearch .sb-in');
         if (inp && inp.offsetParent) { e.preventDefault(); inp.focus(); inp.select(); }
-        else { e.preventDefault(); go('#/tim-kiem'); }
+        else { e.preventDefault(); go('tim-kiem'); }
       }
       if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('sup.fn')) { e.preventDefault(); e.target.click(); }
     });
     var tt = $('#toTop');
     window.addEventListener('scroll', function () { tt.classList.toggle('on', window.scrollY > 900); }, { passive: true });
     tt.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
-    window.addEventListener('hashchange', route);
+    // Điều hướng trong ứng dụng: liên kết nội bộ chuyển trang tại chỗ, không tải lại (các trình nghe phía trên đã xử lý trước)
+    document.addEventListener('click', function (e) {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      var a = e.target.closest('a[href]'), u = a && appUrl(a);
+      if (!u) return;
+      e.preventDefault();
+      go(u.href);
+    });
+    // Quay lại/tiến tới; bỏ qua khi chỉ đổi phần #neo trong cùng trang (vd. liên kết “Bỏ qua thanh điều hướng”)
+    var onPop = function () {
+      if (!DB.toc) return; // chưa nạp xong dữ liệu: lần vẽ đầu tiên sẽ đọc đường dẫn hiện tại
+      if (legacyHash() == null && Router.cur && parseRoute().full === Router.cur.full) return;
+      route();
+    };
+    window.addEventListener('popstate', onPop);
+    window.addEventListener('hashchange', onPop);
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', Prefs.apply);
   }
 
   function offline(btn) {
     if (!('caches' in window)) { UI.toast('Trình duyệt không hỗ trợ lưu ngoại tuyến'); return; }
-    var files = DB.chaps.map(function (c) { return 'data/' + c.id + '.json?v=' + DB.v; });
+    var files = DB.chaps.map(function (c) { return abs('data/' + c.id + '.json?v=' + DB.v); });
     var done = 0, label = btn.innerHTML;
     btn.disabled = true;
     Promise.all(files.map(function (u) {
@@ -1553,7 +1611,8 @@
   window.App = {
     $: $, $$: $$, esc: esc, ic: ic, fold: fold, plain: plain, fmtDate: fmtDate, vnNum: vnNum, debounce: debounce,
     DB: DB, Pen: Pen, CLS: CLS, CH_NOTE: CH_NOTE, UI: UI, VIEWS: VIEWS, go: go, crumb: crumb, drum: drum, setTitle: setTitle,
-    SearchBox: SearchBox, artCard: artCard, artTags: artTags, toolCards: toolCards, lawHtml: lawHtml, Router: Router, citeText: citeText
+    SearchBox: SearchBox, artCard: artCard, artTags: artTags, toolCards: toolCards, lawHtml: lawHtml, Router: Router, citeText: citeText,
+    parseRoute: parseRoute, abs: abs
   };
 
   Prefs.apply();
@@ -1563,15 +1622,22 @@
   });
   Promise.all([DB.init(), domReady]).then(function () {
     SearchBox($('#hdSearch'), { kbd: true, go: false });
-    if (!location.hash) history.replaceState(null, '', '#/');
-    route();
+    // Chuẩn hoá: index.html, dieu-173.html → đường dẫn sạch
+    var clean = location.pathname.replace(/(^|\/)index(\.html)?$/, '$1').replace(/\.html$/, '');
+    if (clean !== location.pathname) history.replaceState(null, '', clean + location.search + location.hash);
+    // Mở thẳng một điều: nạp sẵn dữ liệu chương để thay nội dung tĩnh mà không chớp khung chờ
+    var c0 = legacyHash() == null ? parseRoute() : null, a0 = c0 && c0.parts[0] === 'dieu' && DB.byId[(c0.parts[1] || '').toLowerCase()];
+    return (a0 ? DB.article(a0.id).catch(function () { }) : Promise.resolve()).then(route);
+  }).then(function () {
     // Khởi động trước luồng tìm kiếm nền khi trình duyệt rảnh
     var idle = window.requestIdleCallback || function (f) { return setTimeout(f, 2500); };
     idle(function () { FT.start(); });
   }).catch(function (err) {
+    // Trang dựng tĩnh vẫn đọc được khi không tải được dữ liệu tương tác → giữ nguyên nội dung
+    if ($('#main [data-prerender]')) { UI.toast('Không tải được dữ liệu tra cứu, đang hiển thị bản đọc tĩnh'); return; }
     $('#main').innerHTML = '<div class="wrap page"><div class="empty">' + ic('alert') + '<h3>Không tải được dữ liệu</h3><p>Vui lòng kiểm tra kết nối mạng rồi <a href="javascript:location.reload()">tải lại trang</a>.</p><p class="muted" style="font-size:.8rem;margin-top:8px">' + esc(err && err.message) + '</p></div></div>';
   });
   if ('serviceWorker' in navigator && location.protocol === 'https:') {
-    window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () { }); });
+    window.addEventListener('load', function () { navigator.serviceWorker.register(abs('sw.js')).catch(function () { }); });
   }
 })();

@@ -4,11 +4,11 @@
  *  - Phông chữ, hình ảnh: ưu tiên bộ nhớ đệm.
  *  - Dữ liệu điều luật (data/*.json): trả ngay bản đã lưu, đồng thời cập nhật ngầm.
  */
-var VERSION = 'blhs-20261014c';
+var VERSION = 'blhs-20261014d';
 var SHELL = [
   './', 'index.html', 'manifest.webmanifest',
-  'assets/css/app.css?v=20261014c', 'assets/js/lx-core.js?v=20261014c', 'assets/js/app.js?v=20261014c',
-  'assets/js/tools.js?v=20261014c', 'assets/js/search-engine.js?v=20261014c', 'assets/js/search-worker.js?v=20261014c',
+  'assets/css/app.css?v=20261014d', 'assets/js/lx-core.js?v=20261014d', 'assets/js/app.js?v=20261014d',
+  'assets/js/tools.js?v=20261014d', 'assets/js/search-engine.js?v=20261014d', 'assets/js/search-worker.js?v=20261014d',
   'assets/img/logo.webp', 'assets/img/trong-dong.svg', 'assets/img/favicon-32.png', 'assets/img/icon-192.png',
   'assets/fonts/be-vietnam-pro-400-normal-vietnamese.woff2', 'assets/fonts/be-vietnam-pro-400-normal-latin.woff2',
   'assets/fonts/be-vietnam-pro-600-normal-vietnamese.woff2', 'assets/fonts/be-vietnam-pro-600-normal-latin.woff2',

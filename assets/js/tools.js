@@ -40,7 +40,7 @@
   }
   function today() { var t = new Date(); return new Date(t.getFullYear(), t.getMonth(), t.getDate()); }
   var fd = A.fmtDate;
-  function lk(id, label) { return '<a href="#/dieu/' + id + '" data-pv="' + id + '">' + (label || 'Điều ' + id) + '</a>'; }
+  function lk(id, label) { return '<a href="dieu-' + id + '" data-pv="' + id + '">' + (label || 'Điều ' + id) + '</a>'; }
 
   /* ---------- Ô chọn điều luật ---------- */
   function ArtPicker(host, opt) {
@@ -84,16 +84,16 @@
 
   function page(title, sub, crumbName, body) {
     return '<section class="ph">' + A.drum() + '<div class="wrap ph-in">' +
-      A.crumb([['Trang chủ', '#/'], ['Công cụ', '#/cong-cu']].concat(crumbName ? [[crumbName]] : [])) +
+      A.crumb([['Trang chủ', './'], ['Công cụ', 'cong-cu']].concat(crumbName ? [[crumbName]] : [])) +
       '<span class="eyebrow">Công cụ nghiên cứu</span><h1>' + title + '</h1><p>' + sub + '</p></div></section>' +
       '<div class="wrap page">' + body + '</div>';
   }
   function replaceQuery(params) {
-    var base = location.hash.split('?')[0], q = new URLSearchParams();
+    var q = new URLSearchParams();
     Object.keys(params).forEach(function (k) { if (params[k] != null && params[k] !== '') q.set(k, params[k]); });
     var s = q.toString();
-    history.replaceState(null, '', base + (s ? '?' + s : ''));
-    A.Router.cur = { parts: base.replace(/^#\/?/, '').split('/').filter(Boolean), q: q, full: base.replace(/^#\/?/, '') + (s ? '?' + s : '') };
+    history.replaceState(null, '', location.pathname + (s ? '?' + s : ''));
+    A.Router.cur = A.parseRoute();
   }
   var disclaimer = '<div class="callout callout--info">' + ic('info') + '<div>Kết quả được tính tự động từ câu chữ điều luật để hỗ trợ nghiên cứu. Việc xác định tội danh, khung hình phạt và thời hiệu trong vụ án cụ thể thuộc thẩm quyền của cơ quan tiến hành tố tụng, căn cứ hồ sơ và hướng dẫn áp dụng pháp luật hiện hành.</div></div>';
 
@@ -243,7 +243,7 @@
     else if (a.M.a14) s = 'Điều ' + a.id + ' thuộc danh sách tại ' + AGE14_NOTE + ', nhưng khung này là tội ' + CLS[k.c].n.toLowerCase() + ' nên <b>người từ đủ 14 đến dưới 16 tuổi không phải chịu TNHS</b> ở khung này; người từ đủ 16 tuổi trở lên phải chịu TNHS.';
     else s = 'Điều ' + a.id + ' không thuộc danh sách tại ' + AGE14_NOTE + ': <b>chủ thể phải từ đủ 16 tuổi trở lên</b> (trừ trường hợp điều luật quy định độ tuổi cao hơn).';
     if (k.cb && (a.id === '123' || a.id === '168')) s += ' Riêng hành vi chuẩn bị phạm tội tại Điều ' + a.id + ', người từ đủ 14 đến dưới 16 tuổi phải chịu TNHS (khoản 3 ' + lk('14', 'Điều 14') + ').';
-    return '<div class="res"><h3>Độ tuổi chịu trách nhiệm hình sự</h3><p style="line-height:1.6">' + s + '</p><p class="legal-src">' + ic('scale') + 'Căn cứ: ' + lk('12', 'Điều 12') + ' · <a href="#/cong-cu/tuoi?a=' + a.id + '&k=' + k.n + '">Tính tuổi cụ thể ' + ic('arrow-r') + '</a></p></div>';
+    return '<div class="res"><h3>Độ tuổi chịu trách nhiệm hình sự</h3><p style="line-height:1.6">' + s + '</p><p class="legal-src">' + ic('scale') + 'Căn cứ: ' + lk('12', 'Điều 12') + ' · <a href="cong-cu-tuoi?a=' + a.id + '&k=' + k.n + '">Tính tuổi cụ thể ' + ic('arrow-r') + '</a></p></div>';
   }
 
   /* =========================================================================
@@ -316,7 +316,7 @@
     }
     function age14List() {
       var ids = DB.arts.filter(function (a) { return a.M.a14; });
-      return '<h3 style="margin-top:14px">28 điều tại khoản 2 Điều 12</h3><div class="kpick">' + ids.map(function (a) { return '<a class="chip" href="#/dieu/' + a.id + '" data-pv="' + a.id + '" title="' + esc(a.t) + '">Điều ' + a.id + '</a>'; }).join('') + '</div>';
+      return '<h3 style="margin-top:14px">28 điều tại khoản 2 Điều 12</h3><div class="kpick">' + ids.map(function (a) { return '<a class="chip" href="dieu-' + a.id + '" data-pv="' + a.id + '" title="' + esc(a.t) + '">Điều ' + a.id + '</a>'; }).join('') + '</div>';
     }
     main.addEventListener('click', function (e) { var k = e.target.closest('#kpick [data-k]'); if (k) { st.k = k.dataset.k; drawK(); calc(); } });
     $('#dob').addEventListener('change', calc); $('#dact').addEventListener('change', calc);
@@ -422,7 +422,7 @@
         var age = function (x) { return ks(x).length ? (x.M.a14 ? 'Từ đủ 14 tuổi (khung rất/đặc biệt nghiêm trọng)' : ['145', '146', '147'].indexOf(x.id) > -1 ? 'Từ đủ 18 tuổi' : 'Từ đủ 16 tuổi') : '—'; };
         var thr = function (x) { var l = ks(x); if (!l.length) return '—'; if (x.M.nl === 1) return 'Không áp dụng (Điều 28)'; var t = l.map(function (k) { return CLS[k.c].th; }); return Math.min.apply(0, t) + ' – ' + Math.max.apply(0, t) + ' năm' + (x.M.nl ? ' (khoản ' + x.M.nl.join(', ') + ': không áp dụng)' : ''); };
         var col = function (x, d) {
-          return '<div class="cmp-col"><h3><a href="#/dieu/' + x.id + '"><b>Điều ' + esc(x.id) + '.</b> ' + esc(x.t) + '</a></h3><div class="law-paper"><div class="law">' + A.lawHtml(x, d).html + '</div></div></div>';
+          return '<div class="cmp-col"><h3><a href="dieu-' + x.id + '"><b>Điều ' + esc(x.id) + '.</b> ' + esc(x.t) + '</a></h3><div class="law-paper"><div class="law">' + A.lawHtml(x, d).html + '</div></div></div>';
         };
         out.innerHTML = '<section class="sec" style="margin-top:24px"><div class="sec-h"><div><h2>Đối chiếu nhanh</h2></div></div><div style="overflow:auto"><table class="cmp-tbl"><thead><tr><th></th><th>Điều ' + esc(a.id) + '</th><th>Điều ' + esc(b.id) + '</th></tr></thead><tbody>' +
           row('Tội danh', esc(a.t), esc(b.t)) + row('Vị trí', esc(a.ch.title), esc(b.ch.title)) +
@@ -486,12 +486,12 @@
       var cr = function (r) { return r.cmin === r.cmax ? '<span class="tag tag--c' + r.cmin + '">' + CLS[r.cmin].n + '</span>' : '<span class="tag tag--c' + r.cmin + '">' + CLS[r.cmin].n + '</span> → <span class="tag tag--c' + r.cmax + '">' + CLS[r.cmax].n + '</span>'; };
       $('#tb').innerHTML = list.map(function (r) {
         var a = r.a;
-        return '<tr><td class="n"><a href="#/dieu/' + a.id + '" data-pv="' + a.id + '">' + esc(a.id) + '</a></td><td><a href="#/dieu/' + a.id + '" style="color:var(--ink);font-weight:500">' + esc(a.t) + '</a> ' + A.artTags(a, true) + '</td>' +
+        return '<tr><td class="n"><a href="dieu-' + a.id + '" data-pv="' + a.id + '">' + esc(a.id) + '</a></td><td><a href="dieu-' + a.id + '" style="color:var(--ink);font-weight:500">' + esc(a.t) + '</a> ' + A.artTags(a, true) + '</td>' +
           '<td>' + esc(Pen.label(r.min)) + '</td><td><span class="tag tag--c' + r.max.c + '">' + esc(Pen.label(r.max)) + '</span></td><td>' + cr(r) + '</td><td>' + age(a) + '</td></tr>';
       }).join('') || '<tr><td colspan="6" class="muted" style="text-align:center;padding:30px">Không có tội danh phù hợp bộ lọc</td></tr>';
       $('#mc').innerHTML = list.slice(0, 150).map(function (r) {
         var a = r.a;
-        return '<a class="mc" href="#/dieu/' + a.id + '"><b>Điều ' + esc(a.id) + '</b> · <span class="muted" style="font-size:.8rem">' + esc(a.ch.label) + '</span><div class="mt">' + esc(a.t) + '</div>' +
+        return '<a class="mc" href="dieu-' + a.id + '"><b>Điều ' + esc(a.id) + '</b> · <span class="muted" style="font-size:.8rem">' + esc(a.ch.label) + '</span><div class="mt">' + esc(a.t) + '</div>' +
           '<div class="kpick"><span class="tag tag--soft">Thấp nhất: ' + esc(Pen.label(r.min)) + '</span><span class="tag tag--c' + r.max.c + '">Cao nhất: ' + esc(Pen.label(r.max)) + '</span><span class="tag tag--soft">Từ ' + age(a) + ' tuổi</span></div></a>';
       }).join('') + (list.length > 150 ? '<p class="muted" style="text-align:center">Hiển thị 150/' + list.length + ' – dùng bộ lọc để thu hẹp.</p>' : '') || '<div class="empty">' + ic('search') + '<h3>Không có tội danh phù hợp</h3></div>';
       replaceQuery({ q: st.q, ch: st.ch, f: st.f.join(','), sx: st.sort === 'id' ? '' : st.sort });

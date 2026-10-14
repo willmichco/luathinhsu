@@ -3,7 +3,7 @@
   "short_name": "BLHS Luật Sư Nam",
   "description": "Tra cứu toàn văn Bộ luật Hình sự 2015 (sửa đổi 2017, 2025), bình luận khoa học, khung hình phạt và công cụ nghiên cứu.",
   "lang": "vi",
-  "start_url": "./#/",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f6f2eb",
@@ -15,8 +15,8 @@
     { "src": "assets/img/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
-    { "name": "Mục lục", "url": "./#/muc-luc" },
-    { "name": "Tìm kiếm", "url": "./#/tim-kiem" },
-    { "name": "Công cụ thời hiệu", "url": "./#/cong-cu/thoi-hieu" }
+    { "name": "Mục lục", "url": "./muc-luc" },
+    { "name": "Tìm kiếm", "url": "./tim-kiem" },
+    { "name": "Công cụ thời hiệu", "url": "./cong-cu-thoi-hieu" }
   ]
 }
