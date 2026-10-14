@@ -10,11 +10,12 @@ Luật số 59/2024/QH15 và Luật số 86/2025/QH15) dành cho luật sư, sin
 | Nhóm | Chi tiết |
 |---|---|
 | Tra cứu | 428 điều (kể cả Điều 217a, 256a), mục lục Phần → Chương → Mục → Điều, lọc tức thì |
+| Tất cả điều luật | Bảng mở đè lên trang (nút “Tất cả điều” ở đầu trang, thanh bên, giữa “Điều trước/Điều sau”, menu; phím `Ctrl/⌘ + K`): toàn bộ 428 điều liên tục theo chương, cột chương để cuộn nhanh, đánh dấu điều đang đọc, “Vừa xem”; lọc theo số, không dấu, `khoản 2 điều 134`, `chương 16`; ↑ ↓ Enter để mở |
 | Tìm kiếm thông minh | Gõ không dấu; `173`, `khoản 2 điều 134`, `điểm a khoản 1 điều 51`, `chương 20`; “cụm từ chính xác”; gợi ý theo cách gọi thông dụng (“vay tiền không trả” → Điều 175) |
 | Trình đọc điều luật | Văn bản luật, bình luận khoa học, điều liên quan; chú thích; xem nhanh điều được dẫn chiếu khi rê chuột/chạm; sao chép trích dẫn từng khoản; lưu, ghi chú cá nhân; điều trước/sau bằng phím ← → |
 | Khung hình phạt | Nhận diện tự động khung của từng khoản, phân loại tội (Điều 9), thời hiệu (Điều 27, 28), độ tuổi (Điều 12), biểu đồ trực quan |
 | Công cụ | Phân loại tội & thời hiệu truy cứu · Tuổi chịu TNHS · Thời hiệu thi hành bản án · So sánh hai điều luật · Bảng khung hình phạt |
-| Đa thiết bị | Tối ưu PC, máy tính bảng, điện thoại; giao diện sáng/tối; chỉnh cỡ chữ (trong trang điều luật); cài như ứng dụng (PWA); đọc offline |
+| Đa thiết bị | Tối ưu PC, máy tính bảng, điện thoại; giao diện sáng/tối (nền tối than chì ấm, mọi cặp chữ–nền đạt WCAG AA ≥ 4,5:1); chỉnh cỡ chữ (trong trang điều luật); cài như ứng dụng (PWA); đọc offline |
 | SEO | Mỗi điều, chương, công cụ có đường dẫn riêng (`dieu-173`, `chuong-14`, `cong-cu-thoi-hieu`…) với trang HTML dựng sẵn toàn văn; tiêu đề, mô tả, canonical, Open Graph, JSON-LD (Legislation, BreadcrumbList, WebSite, LegalService); `sitemap.xml` |
 
 Lưu ý hiệu lực đã được gắn trên trang: Chương XII (Điều 90 – 107) bị bãi bỏ từ 01/01/2026 theo Điều 177
@@ -27,7 +28,8 @@ index.html               Khung ứng dụng + khuôn cho mọi trang (vùng <!--
 dieu-*.html, chuong-*.html, muc-luc.html, cong-cu*.html, gioi-thieu.html, tim-kiem.html, da-luu.html
                          Trang dựng tĩnh cho công cụ tìm kiếm (sinh tự động, không sửa tay)
 sitemap.xml, robots.txt  Sơ đồ trang (sinh tự động)
-assets/css/app.css       Giao diện (đỏ son – vàng đồng, hoa văn trống đồng)
+assets/css/app.css       Giao diện (đỏ son – vàng đồng, hoa văn trống đồng). Màu chữ đỏ dùng --primary-ink (nền tối: đỏ san hô sáng),
+                         màu nền nút dùng --primary; không dùng --primary làm màu chữ
 assets/js/app.js         Dữ liệu, định tuyến, trang chủ, mục lục, chương, điều luật, tìm kiếm, đã lưu
 assets/js/tools.js       Các công cụ nghiên cứu
 assets/js/lx-core.js     Chuẩn hoá và so khớp tiếng Việt (tìm không dấu)
