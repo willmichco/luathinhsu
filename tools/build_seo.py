@@ -627,7 +627,8 @@ def page_chapter(c):
     names = "; ".join(a.t for a in c["arts"][:6])
     desc = clip("%s Bộ luật Hình sự 2015 (sửa đổi 2025)%s gồm %d điều (Điều %s – %s): %s"
                 % (c["label"], " – " + c["name"] if c["num"] else "", len(c["arts"]), c["first"].id, c["last"].id, names), 175)
-    return {"path": "chuong-" + c["slug"], "title": c["title"] + SUFFIX, "desc": desc, "main": main, "crumbs": crumbs, "lastmod": True}
+    return {"path": "chuong-" + c["slug"], "title": c["title"] + SUFFIX, "desc": desc, "main": main, "crumbs": crumbs, "lastmod": True,
+            "body": "is-reading"}
 
 
 def side_html(a):
@@ -729,8 +730,8 @@ def page_article(a):
         '<button type="button" class="btn" data-act="share" title="Chia sẻ">%s<span>Chia sẻ</span></button>' % ic("share") +
         '<a class="btn" href="cong-cu-so-sanh?a=%s" title="So sánh với điều khác">%s<span>So sánh</span></a>' % (a.id, ic("columns")) +
         '<button type="button" class="btn btn--ic" data-act="print" title="In điều luật" aria-label="In điều luật">%s</button>' % ic("print") +
-        '<button type="button" class="btn btn--ic" data-act="settings" title="Tùy chỉnh hiển thị: cỡ chữ, kiểu chữ, giao diện" '
-        'aria-label="Tùy chỉnh hiển thị" aria-haspopup="dialog">%s</button></div></header>' % ic("text"))
+        '<button type="button" class="btn btn--ic" data-act="settings" title="Công cụ đọc: cỡ chữ, kiểu chữ, sáng/tối" '
+        'aria-label="Công cụ đọc" aria-haspopup="dialog">%s</button></div></header>' % ic("text"))
     rel = rel_html(a)
     rel_n = len(M.get("ol") or []) + len(M.get("in") or []) + len(M.get("oc") or [])
     tabs = ('<nav class="tabs" aria-label="Nội dung điều luật"><a href="#p-noi-dung" aria-current="true"><span class="tl-l">Nội dung điều luật</span>'
@@ -790,7 +791,7 @@ def page_article(a):
         breadcrumb_ld(crumbs[:-1] + [("Điều " + a.id, "dieu-" + a.id)])]}
     preload = ['<link rel="preload" href="data/a/%s.json?v=%s" as="fetch" crossorigin>' % (a.id, TOC["v"])]
     return {"path": "dieu-" + a.id, "title": "Điều %s. %s" % (a.id, a.t) + SUFFIX, "og_type": "article",
-            "desc": desc, "main": main, "ld": ld, "preload": preload, "lastmod": True}
+            "desc": desc, "main": main, "ld": ld, "preload": preload, "lastmod": True, "body": "is-reading is-article"}
 
 
 def law_quote(ids):
