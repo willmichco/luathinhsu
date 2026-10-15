@@ -20,7 +20,7 @@
   var cap = function (s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; };
   var debounce = function (fn, ms) { var t; return function () { var a = arguments, c = this; clearTimeout(t); t = setTimeout(function () { fn.apply(c, a); }, ms); }; };
   var isTouch = window.matchMedia('(hover: none)').matches;
-  var VER = '20261014h';
+  var VER = '20261015a';
   // Thư mục gốc của trang web (…/luathinhsu/), suy ra từ vị trí tệp assets/js/app.js
   var ROOT = document.currentScript ? new URL('../../', document.currentScript.src).href : new URL('./', location.href).href;
   var ROOT_PATH = new URL(ROOT).pathname;
@@ -368,13 +368,18 @@
       document.body.style.overflow = open ? 'hidden' : '';
       if (open) { UI.fillDrawer(); var f = $('.drawer-panel a'); if (f) f.focus(); }
     },
+    // Menu là điều hướng giữa các trang: mỗi mục mở đúng trang của nó (Mục lục Bộ luật → trang muc-luc).
+    // Đang đọc một điều hoặc một chương thì mục "Mục lục Bộ luật" được tô như thanh dưới (cùng nhánh Bộ luật).
     fillDrawer: function () {
-      var cur = parseRoute().key;
-      var L = function (href, icon, t) { return '<a href="' + href + '"' + ((href === './' ? '' : href) === cur ? ' class="on" aria-current="page"' : '') + '>' + ic(icon) + t + '</a>'; };
+      var cur = parseRoute().key, sec = /^(dieu|chuong)-/.test(cur) ? 'muc-luc' : cur;
+      var L = function (href, icon, t) {
+        var k = href === './' ? '' : href;
+        return '<a href="' + href + '"' + (k === cur ? ' class="on" aria-current="page"' : k === sec ? ' class="on"' : '') + '>' + ic(icon) + t + '</a>';
+      };
       // Cỡ chữ, kiểu chữ chỉ áp dụng cho văn bản điều luật và bình luận → chỉ hiện khi đang đọc một điều
       var reading = !!(Router.view && Router.view.a);
       $('#drawerNav').innerHTML =
-        L('./', 'home', 'Trang chủ') + L('muc-luc', 'list', 'Mục lục Bộ luật').replace('<a ', '<a data-act="jump" aria-haspopup="dialog" ') +
+        L('./', 'home', 'Trang chủ') + L('muc-luc', 'list', 'Mục lục Bộ luật') +
         L('tim-kiem', 'search', 'Tìm kiếm toàn văn') +
         L('da-luu', 'bookmark', 'Đã lưu & ghi chú') +
         '<div class="dn-h">Công cụ nghiên cứu</div>' +
@@ -405,8 +410,10 @@
   };
 
   /* =========================================================================
-     6b. Mục lục điều luật: toàn bộ điều theo Phần → Chương → Mục; chọn một điều là chuyển ngay tới điều đó.
-         Mọi nút "Mục lục" (đầu trang, thanh dưới, menu, giữa Điều trước/sau, Ctrl/⌘+K) đều mở bảng này.
+     6b. Bảng tra nhanh điều luật: toàn bộ điều theo Phần → Chương → Mục; chọn một điều là chuyển ngay tới điều đó.
+         Đây là công cụ khi đang đọc: nút "Mục lục" giữa Điều trước/sau, nút cạnh ô lọc ở cột trái, tay nắm mép phải,
+         cú vuốt từ mép phải, Ctrl/⌘+K. Các mục điều hướng chung (menu ☰, đầu trang, thanh dưới, chân trang) mở trang
+         Mục lục (muc-luc) chứ không mở bảng này.
          Máy tính (≥ 1024px): hộp thoại giữa màn hình, cột chương bên trái. Điện thoại, máy tính bảng: ngăn kéo
          trượt từ mép phải — vuốt từ mép phải sang trái để mở (ngăn kéo bám theo ngón tay), vuốt sang phải để đóng.
          Ô lọc hiểu số điều (173), không dấu (trom cap), "khoản 2 điều 134", "chương 16". Phím: ↑ ↓ Enter Esc.
@@ -490,6 +497,8 @@
     show: function (opener, drag) {
       var J = Jump;
       if (!DB.toc) return false;
+      // Đang ở trang Mục lục: không mở thêm bảng mục lục chồng lên, chỉ đưa con trỏ vào ô lọc của trang
+      if (Router.view && Router.view.focusFilter) { if (drag) return false; Router.view.focusFilter(); return true; }
       if (!J.el) J.build();
       UI.closePop(); UI.closeSheet(); UI.drawer(false);
       clearTimeout(J.tHide);
@@ -569,7 +578,7 @@
       };
       document.addEventListener('touchstart', function (e) {
         s = null;
-        if (e.touches.length !== 1 || !J.isDrawer() || !DB.toc) return;
+        if (e.touches.length !== 1 || !J.isDrawer() || !DB.toc || (!J.isOpen && Router.view && Router.view.focusFilter)) return;
         var t = e.touches[0], open = J.isOpen;
         if (open) {
           if (!J.panel.contains(e.target)) return;
@@ -1023,6 +1032,8 @@
     }
     if (Router.view && Router.view.leave) Router.view.leave();
     var V = VIEWS[name] || VIEWS._404;
+    // Trang vừa rời đi: trang mục lục dùng để mở sẵn chương và đánh dấu điều người dùng đang đọc
+    Router.prev = Router.cur;
     Router.cur = ctx;
     // Đường dẫn chuẩn theo trang đang xem (trình duyệt dùng khi chia sẻ trang)
     var can = $('link[rel="canonical"]'); if (can) can.href = abs(ctx.key || './');
@@ -1163,44 +1174,84 @@
       '<a class="btn" href="mailto:luatsunam.hcm@gmail.com">' + ic('mail') + 'Gửi email</a></div></div></div></section>';
   }
 
-  /* ---------- Mục lục ---------- */
+  /* ---------- Mục lục ----------
+     Trang mục lục hiểu ngữ cảnh:
+       - luôn mở từ đầu trang; chương đang đọc (đến từ một điều/chương, hoặc điều đọc gần nhất trên thiết bị) được
+         mở sẵn, điều đó được đánh dấu, kèm lối tắt "Xem vị trí" để cuộn tới;
+       - nút Quay lại từ một điều → trả về đúng như lúc rời đi (chương đang mở, từ lọc, bộ lọc, vị trí cuộn):
+         chương đang mở lưu trong history.state, từ lọc và bộ lọc nằm trên đường dẫn (muc-luc?q=…&loc=…);
+       - ô lọc hiểu cú pháp tra nhanh: 173 · khoản 2 điều 134 · chương 16; Enter mở thẳng điều cần tìm. */
   VIEWS['muc-luc'] = {
     nav: 'muc-luc',
     render: function (ctx, main) {
       setTitle('Mục lục ' + DB.arts.length + ' điều');
       var filter = ctx.q.get('loc') || 'all';
+      if (['all', 'n25', 'am'].indexOf(filter) < 0) filter = 'all';
+      var st = history.state && history.state.toc, restoring = !!st;
+      // Ngữ cảnh: điều/chương vừa rời đi; nếu không có thì điều đọc gần nhất trên thiết bị này
+      var from = Router.prev, fromArt = null, fromCh = null;
+      if (from && from.parts[0] === 'dieu') fromArt = DB.byId[(from.parts[1] || '').toLowerCase()] || null;
+      else if (from && from.parts[0] === 'chuong') fromCh = DB.chapterBySlug(from.parts[1] || '');
+      var mark = fromArt || DB.byId[(Hist.list()[0] || {}).id] || null;
+      var ctxCh = [fromCh, mark && mark.ch].filter(Boolean);
       main.innerHTML =
         '<section class="ph">' + drum() + '<div class="wrap ph-in">' + crumb([['Trang chủ', './'], ['Mục lục']]) +
         '<span class="eyebrow">Cấu trúc Bộ luật</span><h1>Mục lục Bộ luật Hình sự</h1>' +
         '<p>3 phần · 26 chương · ' + DB.arts.length + ' điều. Gõ để lọc tức thì theo số điều hoặc tên điều (có dấu hay không dấu đều được).</p></div></section>' +
-        '<div class="toc-bar"><div class="wrap"><div class="sb"><div class="sb-box">' + ic('filter') + '<input class="sb-in" id="tocQ" type="search" placeholder="Lọc mục lục… (vd: tai san, 250)" aria-label="Lọc mục lục"></div></div>' +
+        '<div class="toc-bar"><div class="wrap"><div class="sb"><div class="sb-box">' + ic('filter') + '<input class="sb-in" id="tocQ" type="search" placeholder="Lọc mục lục… (vd: tai san, 250, chương 16)" aria-label="Lọc mục lục" enterkeyhint="search" autocomplete="off" spellcheck="false">' +
+        '<button type="button" class="sb-clear" id="tocClr" aria-label="Xóa từ lọc" hidden>' + ic('x') + '</button></div></div>' +
         '<div class="toc-open" role="group" aria-label="Bộ lọc">' +
         [['all', 'Tất cả'], ['n25', 'Sửa đổi 2025'], ['am', 'Có dấu (*)']].map(function (x) {
           return '<button type="button" class="chip" data-loc="' + x[0] + '" aria-pressed="' + (filter === x[0]) + '">' + x[1] + '</button>';
         }).join('') +
         '<button type="button" class="chip" data-exp="1">Mở hết</button><button type="button" class="chip" data-exp="0">Thu gọn</button></div></div></div>' +
-        '<div class="wrap" id="tocBody"></div>';
-      var body = $('#tocBody'), q = $('#tocQ');
-      var draw = function () {
-        var v = q.value.trim(), cq = v ? window.LX.compile(window.LX.parseQuery(v), { prefix: true }) : null;
-        var num = /^\d{1,3}[a-z]?$/.test(v) ? v : null;
-        var h = '';
+        '<div class="wrap"><p class="toc-cnt" id="tocCnt" aria-live="polite"></p>' +
+        (mark ? '<div class="toc-here" id="tocHere">' + ic('history') + '<a href="dieu-' + mark.id + '"><small>' + (fromArt ? 'Đang đọc' : 'Đọc gần nhất') + '</small>' +
+          '<b>Điều ' + esc(mark.id) + '. ' + esc(mark.t) + '</b></a><button type="button" class="btn btn--sm" data-here="1">Xem vị trí' + ic('chev-d') + '</button></div>' : '') +
+        '<div id="tocBody"></div></div>';
+      var body = $('#tocBody'), q = $('#tocQ'), clr = $('#tocClr'), cnt = $('#tocCnt'), ref = null, hits = [];
+      q.value = ctx.q.get('q') || '';
+      // Lưu trạng thái vào mục lịch sử hiện tại để nút Quay lại trả về đúng chỗ
+      var save = debounce(function () {
+        if (Router.view !== view) return;
+        var p = new URLSearchParams(), v = q.value.trim();
+        if (v) p.set('q', v);
+        if (filter !== 'all') p.set('loc', filter);
+        var s = p.toString(), open = $$('.tch[open]', body).map(function (d) { return d.dataset.c; });
+        history.replaceState({ toc: { open: open } }, '', abs('muc-luc' + (s ? '?' + s : '')));
+        Router.cur = parseRoute();
+      }, 80);
+      // openSet: danh sách chương đang mở cần khôi phục; không có thì tự quyết định theo ngữ cảnh / từ lọc
+      var draw = function (openSet) {
+        var v = q.value.trim(), r = v ? parseRef(v) : null, chap = null, only = null, num = null, cq = null;
+        if (r && r.chap) chap = r.chap;
+        else if (r && r.art) { if (r.k) only = r.art; else num = r.art; }
+        else if (v) { cq = window.LX.compile(window.LX.parseQuery(v), { prefix: true }); if (cq.empty) cq = null; }
+        ref = r && (r.a || r.chap) ? r : null;
+        clr.hidden = !v;
+        var on = !!(chap || only || num || cq), h = '', nCh = 0;
+        hits = [];
         DB.parts.forEach(function (p) {
           var ch = DB.chaps.filter(function (c) { return c.part === p.id; }), ph = '';
           ch.forEach(function (c) {
+            if (chap && c !== chap) return;
             var arts = c.arts.filter(function (a) {
               if (filter === 'n25' && !a.n25) return false;
               if (filter === 'am' && !a.am) return false;
-              if (!v) return true;
-              if (num) return a.id === num || a.id.indexOf(num) === 0;
-              return cq.test(a.t) || cq.test(c.name);
+              if (only) return a.id === only;
+              if (num) return a.id.indexOf(num) === 0;
+              if (cq) return cq.test(a.t) || cq.test(c.name);
+              return true;
             });
             if (!arts.length) return;
-            var open = !!v || filter !== 'all';
+            nCh++; hits = hits.concat(arts);
+            var open = openSet ? openSet.indexOf(c.id) > -1 : (on || filter !== 'all' || ctxCh.indexOf(c) > -1);
             var list = '', lastM = null;
             arts.forEach(function (a) {
               if (a.m && a.m !== lastM) { lastM = a.m; var mn = c.muc.filter(function (m) { return m.n === a.m; })[0]; if (mn) list += '<div class="tmuc">' + esc(mn.name) + '</div>'; }
-              list += '<a class="ta' + (a.rep ? ' is-rep' : '') + '" href="dieu-' + a.id + '"><span class="an">Điều ' + esc(a.id) + '</span><span class="at">' + hl(a.t, cq) + '</span><span class="tags">' + artTags(a, true) + '</span></a>';
+              var me = a === mark;
+              list += '<a class="ta' + (a.rep ? ' is-rep' : '') + (me ? ' on' : '') + '" href="' + (ref && ref.a === a ? refHref(ref) : 'dieu-' + a.id) + '" data-id="' + esc(a.id) + '">' +
+                '<span class="an">Điều ' + esc(a.id) + '</span><span class="at">' + hl(a.t, cq) + '</span><span class="tags">' + (me ? '<span class="tag tag--now">Vừa đọc</span>' : '') + artTags(a, true) + '</span></a>';
             });
             ph += '<details class="tch" data-c="' + c.id + '"' + (open ? ' open' : '') + '><summary><span class="cn">' + esc(c.num || 'TH') + '</span><span class="ct"><b>' + esc(c.title) + '</b>' +
               '<small>' + c.arts.length + ' điều · Điều ' + c.first.id + ' – ' + c.last.id + (c.muc.length ? ' · ' + c.muc.length + ' mục' : '') + ' · ~' + readMin(c.sz[0]) + ' phút đọc luật' + '</small>' +
@@ -1209,17 +1260,49 @@
           });
           if (ph) h += '<section class="toc-part"><h2><small>' + esc(p.label) + '</small>' + esc(p.name) + '</h2>' + ph + '</section>';
         });
-        body.innerHTML = h || '<div class="empty">' + ic('search') + '<h3>Không có điều nào phù hợp</h3><p>Thử từ khóa khác hoặc <a href="tim-kiem?q=' + encodeURIComponent(v) + '">tìm trong toàn văn</a>.</p></div>';
+        body.innerHTML = h || '<div class="empty">' + ic('search') + '<h3>Không có điều nào phù hợp</h3><p>Thử từ khóa khác, chọn bộ lọc “Tất cả” hoặc <a href="tim-kiem?q=' + encodeURIComponent(v) + '">tìm trong toàn văn điều luật và bình luận</a>.</p></div>';
+        var go1 = ref && ref.a && hits.indexOf(ref.a) > -1 ? refLabel(ref) : hits.length === 1 ? 'Điều ' + hits[0].id : '';
+        cnt.textContent = on || filter !== 'all' ? (hits.length ? 'Tìm thấy ' + hits.length + ' điều trong ' + nCh + ' chương' + (go1 ? ' · nhấn Enter để mở ' + go1 : '') : '') : '';
+        cnt.hidden = !cnt.textContent;
+        if ($('#tocHere')) $('#tocHere').hidden = on || filter !== 'all';
       };
-      q.addEventListener('input', debounce(draw, 120));
+      // Cuộn tới điều đang đọc trong danh sách (mở chương nếu đang thu gọn), tô sáng thoáng qua
+      var reveal = function () {
+        var row = $('.ta[data-id="' + mark.id + '"]', body);
+        if (!row) return;
+        var d = row.closest('.tch'); if (d && !d.open) d.open = true;
+        row.scrollIntoView({ block: 'center', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+        row.classList.remove('flash'); void row.offsetWidth; row.classList.add('flash');
+      };
+      var view = {
+        // Ctrl/⌘+K trên chính trang mục lục: đưa con trỏ vào ô lọc thay vì mở thêm bảng mục lục
+        focusFilter: function () { q.focus(); q.select(); }
+      };
+      q.addEventListener('input', debounce(function () { draw(); save(); }, 120));
+      q.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (ref && ref.a && hits.indexOf(ref.a) > -1) go(refHref(ref));
+          else if (hits.length === 1) go('dieu-' + hits[0].id);
+          else q.blur(); // điện thoại: ẩn bàn phím để xem kết quả
+        } else if (e.key === 'Escape' && q.value) {
+          e.preventDefault(); e.stopPropagation();
+          q.value = ''; draw(); save();
+        }
+      });
+      clr.addEventListener('click', function () { q.value = ''; draw(); save(); q.focus(); });
+      // Sự kiện toggle của <details> không nổi bọt → bắt ở pha capture
+      body.addEventListener('toggle', save, true);
       main.addEventListener('click', function (e) {
         var b = e.target.closest('[data-loc]');
-        if (b) { filter = b.dataset.loc; $$('[data-loc]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); draw(); return; }
+        if (b) { filter = b.dataset.loc; $$('[data-loc]', main).forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); draw(); save(); return; }
         var x = e.target.closest('[data-exp]');
         if (x) $$('.tch', body).forEach(function (d) { d.open = x.dataset.exp === '1'; });
+        if (e.target.closest('[data-here]')) reveal();
       });
-      draw();
-      return null;
+      draw(restoring ? st.open || [] : null);
+      save(); // ghi ngay trạng thái ban đầu: Quay lại về trang này luôn khôi phục đúng như khi rời đi
+      return view;
     }
   };
   function hl(text, cq) {
