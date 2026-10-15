@@ -14,10 +14,10 @@ Luật số 59/2024/QH15 và Luật số 86/2025/QH15) dành cho luật sư, sin
 | Bảng tra nhanh | Mở khi đang đọc: nút “Mục lục” thanh dưới/đầu trang, nút giữa “Điều trước/Điều sau”, nút cạnh ô lọc cột trái, `Ctrl/⌘ + K` (trên trang Mục lục: đưa con trỏ vào ô lọc). Toàn bộ 428 điều theo chương, đánh dấu điều đang đọc, “Vừa xem”; ↑ ↓ Enter; chân bảng có lối sang trang Mục lục đầy đủ. Máy tính: hộp thoại có cột chương. Điện thoại, máy tính bảng: **bảng trượt từ dưới lên** (cùng phía thanh dưới vừa bấm) — kéo thanh kéo/tiêu đề xuống, hoặc kéo danh sách xuống khi đang ở đầu danh sách, để đóng; Android: nút Quay lại đóng bảng |
 | Công cụ đọc | Sáng/tối, cỡ chữ, kiểu chữ, tải về đọc offline. Điện thoại, máy tính bảng: nút **Aa** ở góc phải trên khi đang đọc điều luật (các trang khác: nút ☀/🌙) → bảng trượt từ dưới lên, kéo xuống để đóng. Máy tính màn rộng (> 1280px): khối “Hiển thị” ở đầu cột phải; máy tính màn hẹp: nút Aa trong hàng nút của điều luật. Mỗi kích thước màn hình chỉ có một lối vào, mọi nơi đồng bộ |
 | Tìm kiếm thông minh | Gõ không dấu; `173`, `khoản 2 điều 134`, `điểm a khoản 1 điều 51`, `chương 20`; “cụm từ chính xác”; gợi ý theo cách gọi thông dụng (“vay tiền không trả” → Điều 175) |
-| Trình đọc điều luật | Văn bản luật, bình luận khoa học, điều liên quan; chú thích; xem nhanh điều được dẫn chiếu khi rê chuột/chạm; sao chép trích dẫn từng khoản; lưu, ghi chú cá nhân; điều trước/sau bằng phím ← → |
+| Trình đọc điều luật | Văn bản luật, bình luận khoa học, điều liên quan; chú thích; xem nhanh điều được dẫn chiếu khi rê chuột/chạm; sao chép trích dẫn từng khoản; lưu, ghi chú cá nhân; điều trước/sau bằng phím ← →. Điện thoại: văn bản luật lên ngay màn hình đầu (bỏ thẻ trùng với đường dẫn, biểu đồ khung hình phạt thu gọn một dòng — mở ra thì lần sau vẫn mở); cuộn xuống để đọc toàn màn hình (header, thanh dưới, nút lên đầu trang thu lại, giữ vạch tiến độ đọc), cuộn lên là hiện. Máy tính: cột phải tô khoản đang đọc khi cuộn. Quay lại một điều/kết quả tìm kiếm về đúng chỗ đang đọc |
 | Khung hình phạt | Nhận diện tự động khung của từng khoản, phân loại tội (Điều 9), thời hiệu (Điều 27, 28), độ tuổi (Điều 12), biểu đồ trực quan |
 | Công cụ | Phân loại tội & thời hiệu truy cứu · Tuổi chịu TNHS · Thời hiệu thi hành bản án · So sánh hai điều luật · Bảng khung hình phạt |
-| Đa thiết bị | Tối ưu PC, máy tính bảng, điện thoại; giao diện sáng/tối (nền tối than chì ấm, mọi cặp chữ–nền đạt WCAG AA ≥ 4,5:1); chỉnh cỡ chữ (trong trang điều luật); cài như ứng dụng (PWA); đọc offline |
+| Đa thiết bị | Tối ưu PC, laptop, máy tính bảng (dọc/ngang), điện thoại; giao diện sáng/tối (nền tối than chì ấm, mọi cặp chữ–nền đạt WCAG AA ≥ 4,5:1); chỉnh cỡ chữ (trong trang điều luật); đầu trang gọn trên điện thoại; vùng chạm ≥ 36px trên màn hình cảm ứng; phím Tab không lọt khỏi hộp thoại đang mở; cài như ứng dụng (PWA); đọc offline; có phiên bản mới → tự áp dụng ở lần chuyển trang kế tiếp, không cần tải lại |
 | SEO | Mỗi điều, chương, công cụ có đường dẫn riêng (`dieu-173`, `chuong-14`, `cong-cu-thoi-hieu`…) với trang HTML dựng sẵn toàn văn; tiêu đề, mô tả, canonical, Open Graph, JSON-LD (Legislation, BreadcrumbList, WebSite, LegalService); `sitemap.xml` |
 
 Lưu ý hiệu lực đã được gắn trên trang: Chương XII (Điều 90 – 107) bị bãi bỏ từ 01/01/2026 theo Điều 177
@@ -62,13 +62,17 @@ và sitemap. Khi chuyển sang tên miền riêng: `SITE_URL=https://ten-mien.vn
 
 ## Tốc độ tải
 
-- Mỗi trang có sẵn nội dung HTML, hiển thị trước khi JavaScript chạy; phông chữ 400 và hoa văn đầu trang được nạp sẵn.
+- Mỗi trang có sẵn nội dung HTML, hiển thị trước khi JavaScript chạy; phông chữ (4 độ đậm, ~24 KB mỗi tệp) và hoa văn đầu trang được nạp sẵn.
+- Không xô lệch bố cục (CLS ≈ 0 trên 18 trang × 6 cỡ màn hình): vùng nội dung cao tối thiểu một màn hình nên chân trang không “nhảy” khi nội dung tải xong;
+  `content-visibility` chỉ dùng cho khối nằm dưới màn hình đầu.
+- Bảng mục lục được dựng sẵn khi trình duyệt rảnh (trang điều luật, chương) để lần mở đầu tiên không khựng; hoa văn trống đồng chỉ quay ở trang chủ và dừng khi cuộn khuất.
 - Trang điều luật chỉ tải dữ liệu của chính điều đó (`data/a/…`); dữ liệu tìm kiếm toàn văn (~400 KB) chỉ tải khi người
   dùng bắt đầu gõ tìm kiếm; mã công cụ (`tools.js`) chỉ tải khi mở trang công cụ.
 - Rê chuột/chạm vào liên kết điều luật → nạp trước dữ liệu điều đó (tắt khi bật chế độ tiết kiệm dữ liệu).
 - Danh sách dài dùng `content-visibility` để trình duyệt chỉ dàn trang phần đang nhìn thấy.
 - Service worker: tệp có `?v=` (CSS, JS, dữ liệu), phông, hình lấy thẳng từ bộ nhớ đệm; HTML ưu tiên mạng (chờ tối đa 3 giây).
   Khi sửa CSS/JS, tăng mã phiên bản `?v=` trong `index.html`, `VER` trong `assets/js/app.js`, `sw.js`, `search-worker.js`.
+  Ứng dụng hỏi phiên bản mới mỗi khi người dùng quay lại tab; bản mới đã cài → lần bấm chuyển trang kế tiếp tải trang đầy đủ theo bản mới.
 
 ## Đường dẫn
 

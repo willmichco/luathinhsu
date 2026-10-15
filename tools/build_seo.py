@@ -487,7 +487,7 @@ def page_home():
     main = (
         '<section class="hero">' + drum() + '<div class="wrap hero-grid">'
         '<div><span class="eyebrow">Bộ luật số 100/2015/QH13 · cập nhật 2025</span>'
-        "<h1>Tra cứu <em>Bộ luật Hình sự</em> <br>nhanh, chính xác, dễ hiểu</h1>"
+        "<h1>Tra cứu <em>Bộ luật Hình sự</em> <br>nhanh, chính xác, dễ&nbsp;hiểu</h1>"
         '<p class="hero-sub">Toàn văn %d điều luật kèm bình luận khoa học, khung hình phạt từng khoản, phân loại tội phạm và '
         "thời hiệu — tìm được cả khi gõ không dấu.</p>" % st["arts"] +
         '<div id="heroSearch">' + search_form(lg=True) + "</div>"
@@ -709,9 +709,10 @@ def page_article(a):
             callouts += ('<div class="callout callout--new" style="margin-bottom:16px">%s<div>%s</div></div>'
                          % (ic("spark"), fix_html(raw, note_map)))
     has_pen = bool(main_frames(a))
-    pen_card = ('<details class="rc mob-only" open style="margin-bottom:16px"><summary style="cursor:pointer;font-weight:700;'
-                'display:flex;gap:8px;align-items:center">%sTóm tắt khung hình phạt</summary><div style="margin-top:12px">%s</div></details>'
-                % (ic("scale"), pen_chart(a))) if has_pen else ""
+    n_k = len(main_frames(a))
+    pen_card = ('<details class="rc pen-sum mob-only"><summary>%s<b>Biểu đồ khung hình phạt</b><span class="ps-n">%s</span>%s</summary>'
+                '<div class="pen-body">%s</div></details>'
+                % (ic("scale"), "%d khoản" % n_k if n_k > 1 else "1 khung", ic("chev-d", "chev"), pen_chart(a))) if has_pen else ""
     head = (
         '<header class="art-h">' + crumb(crumbs) +
         '<div class="art-tags"><span class="tag tag--soft">%s</span><a class="tag tag--soft" href="chuong-%s">%s</a>%s%s</div>'
@@ -719,7 +720,7 @@ def page_article(a):
            '<span class="tag tag--a14" title="Người từ đủ 14 đến dưới 16 tuổi chịu TNHS ở khung rất nghiêm trọng, đặc biệt nghiêm trọng">'
            "Từ đủ 14 tuổi chịu TNHS (khoản 2 Điều 12)</span>" if M.get("a14") else "") +
         '<h1><span class="dn">Điều %s.</span> %s</h1>' % (esc(a.id), esc(a.t)) +
-        '<div class="art-sum"><span>%s%s</span>%s<span>%s~%d phút đọc%s</span>%s</div>'
+        '<div class="art-sum"><span>%s%s</span>%s<span class="rt">%s~%d phút đọc%s</span>%s</div>'
         % (ic(ICONS.get(c["id"], "book")), esc(c["name"]), "<span>%s%s</span>" % (ic("list"), esc(muc)) if muc else "",
            ic("clock"), read_min(M["ln"][0] if M.get("ln") else 0),
            " · bình luận ~%d phút" % read_min(M["ln"][1]) if has_cm else "",

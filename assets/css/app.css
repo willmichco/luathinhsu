@@ -51,6 +51,8 @@
   --fs-step:0;
   --fs-law:calc(1.0625rem + var(--fs-step) * .0625rem);
   --hd-h:64px; --tab-h:0px;
+  /* Vị trí dính của thanh tab điều luật, thanh lọc mục lục: ngay dưới header; = 0 khi header tự thu lại lúc cuộn (điện thoại) */
+  --hd-off:var(--hd-h);
   --maxw:1280px;
   --ease:cubic-bezier(.2,.7,.2,1);
   color-scheme:light;
@@ -111,7 +113,10 @@ mark{background:#ffe79a;color:inherit;border-radius:3px;padding:0 1px;box-shadow
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 
 .wrap{width:100%;max-width:var(--maxw);margin:0 auto;padding:0 clamp(16px,3vw,32px)}
-.main{flex:1;outline:none;padding-bottom:calc(var(--tab-h) + 24px)}
+.main{flex:1;outline:none;padding-bottom:calc(var(--tab-h) + 24px);min-height:calc(100vh - var(--hd-h))}
+/* Chuyển trang trong ứng dụng: nội dung mới hiện dần rất nhanh thay vì thay tức thì (không áp dụng lần tải đầu) */
+.pg-in{animation:pgIn .2s ease-out}
+@keyframes pgIn{from{opacity:.35}}
 .boot{display:grid;place-items:center;gap:14px;padding:22vh 16px;color:var(--muted)}
 .boot img{animation:pulse 1.6s ease-in-out infinite}
 @keyframes pulse{50%{transform:scale(.92);opacity:.7}}
@@ -163,6 +168,19 @@ mark{background:#ffe79a;color:inherit;border-radius:3px;padding:0 1px;box-shadow
 @media (max-width:560px){.brand-t small{font-size:.7rem}}
 @media (max-width:420px){.brand-t b{font-size:.98rem}.brand img{width:36px;height:36px}.hd-in{gap:6px}.hd-ic{width:38px;height:38px}}
 @media (max-width:360px){.brand-t small{display:none}}
+
+/* Điện thoại, máy tính bảng: cuộn xuống để đọc → header và thanh dưới thu lại (trang điều luật giữ vạch tiến độ đọc 3px ở mép
+   trên); cuộn lên, về đầu hoặc tới cuối trang → hiện lại. Máy tính không áp dụng. */
+@media (max-width:1023px){
+  .hd,.tabbar{transition:transform .28s var(--ease)}
+  .ui-hide .hd{transform:translateY(-100%)}
+  .ui-hide.is-article .hd{transform:translateY(calc(3px - 100%))}
+  .ui-hide .tabbar{transform:translateY(100%)}
+  .ui-hide{--hd-off:0px}
+  .ui-hide.is-article{--hd-off:3px}
+  .ui-hide .to-top.on{opacity:0;transform:translateY(16px) scale(.9);pointer-events:none}
+  .tabs,.toc-bar{transition:top .28s var(--ease)}
+}
 
 /* ---------- Tab bar (di động) ---------- */
 .tabbar{display:none}
@@ -377,8 +395,9 @@ select.inp{appearance:none;-webkit-appearance:none;background-image:url("data:im
 .ok{color:var(--c1);font-weight:600}
 /* Danh sách dài: trình duyệt chỉ dàn trang, vẽ các thẻ đang ở gần màn hình (kích thước ước lượng cho phần chưa vẽ) */
 .cv{content-visibility:auto;contain-intrinsic-size:auto 900px}
-/* Các khu vực trang chủ dưới màn hình đầu; overflow-clip-margin chừa chỗ cho bóng đổ của thẻ khi rê chuột */
-.groups,.pop-grid,.gen,.tools-grid,.law-info{content-visibility:auto;contain-intrinsic-size:auto 600px;overflow-clip-margin:40px}
+/* Các khu vực trang chủ dưới màn hình đầu; overflow-clip-margin chừa chỗ cho bóng đổ của thẻ khi rê chuột.
+   Không áp dụng cho khối nằm ngay màn hình đầu (lưới công cụ, thông tin văn bản): kích thước tạm tính sẽ làm trang xô lệch */
+.groups,.pop-grid,.gen{content-visibility:auto;contain-intrinsic-size:auto 600px;overflow-clip-margin:40px}
 .ca,.sr,.mc{content-visibility:auto;contain-intrinsic-size:auto 150px}
 /* Phần ở cuối trang chỉ vẽ khi sắp cuộn tới (ảnh nền khối liên hệ cũng chỉ tải lúc đó) */
 .cta{content-visibility:auto;contain-intrinsic-size:auto 300px;position:relative;overflow:hidden;border-radius:var(--r-xl);color:#fff;background:#120807 url(../img/cta-bg.webp) right center/cover no-repeat;box-shadow:var(--sh-3)}
@@ -392,6 +411,7 @@ select.inp{appearance:none;-webkit-appearance:none;background-image:url("data:im
 .cta .btn:not(.btn--g):hover{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.34);color:#fff}
 .cta .btn--g{background:linear-gradient(180deg,var(--gold-300),var(--gold-500));color:#3b2506;border-color:transparent}
 .cta .btn--g:hover{color:#2a1803;filter:brightness(1.06)}
+@media (min-width:1024px) and (max-width:1279px){.hero h1{font-size:2.35rem}}
 @media (max-width:1023px){
   .hero-grid{grid-template-columns:minmax(0,1fr)}
   .stats-in{grid-template-columns:repeat(2,1fr)}
@@ -423,7 +443,8 @@ select.inp{appearance:none;-webkit-appearance:none;background-image:url("data:im
 
 /* ---------- Trang tiêu đề (chương, mục lục, công cụ…) ---------- */
 .ph{position:relative;background:var(--hero-bg);color:#fff;padding:clamp(24px,4vw,44px) 0 clamp(28px,4vw,48px)}
-.ph .hero-drum{width:620px;right:-180px;opacity:.12}
+.ph .hero-drum{width:620px;right:-180px;opacity:.12;animation:none;transform:translateY(-50%) rotate(18deg)}
+.hero.is-off .hero-drum{animation-play-state:paused}
 .ph-in{position:relative;z-index:5}
 .ph .crumb,.ph .crumb a{color:#f0cfc9}
 .ph .crumb a:hover{color:#fff}
@@ -437,9 +458,18 @@ select.inp{appearance:none;-webkit-appearance:none;background-image:url("data:im
 .ph .btn:not(.btn--g){background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:#fff}
 .ph .btn:not(.btn--g):hover{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.34);color:#fff}
 .page{padding-top:clamp(20px,3vw,32px)}
+@media (max-width:560px){
+  .ph{padding:16px 0 22px}
+  .ph .crumb{margin-bottom:8px}
+  .ph .eyebrow{font-size:.68rem;letter-spacing:.08em}
+  .ph h1{font-size:1.5rem;margin:4px 0 6px}
+  .ph p{font-size:.92rem;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .ph-meta{margin-top:10px;font-size:.85rem}
+  .ph-acts{margin-top:14px}
+}
 
 /* ---------- Mục lục ---------- */
-.toc-bar{position:sticky;top:var(--hd-h);z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:12px 0;border-bottom:1px solid var(--line-2)}
+.toc-bar{position:sticky;top:var(--hd-off);z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:12px 0;border-bottom:1px solid var(--line-2)}
 .toc-bar .wrap{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .toc-bar .sb{flex:1;min-width:220px}
 .toc-part{margin-top:28px}
@@ -529,10 +559,21 @@ select.inp{appearance:none;-webkit-appearance:none;background-image:url("data:im
 .art-sum{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:12px;color:var(--muted);font-size:.88rem}
 .art-sum span{display:inline-flex;align-items:center;gap:6px}
 .art-sum svg{width:16px;height:16px;color:var(--accent)}
+@media (max-width:560px){.art-tags .tag--soft,.art-sum .rt{display:none}.art-tags{margin-bottom:8px}.art-sum{gap:6px 14px;margin-top:10px}}
+/* Biểu đồ khung hình phạt thu gọn (không có cột phải): một dòng, mở ra khi cần */
+.pen-sum{margin-bottom:16px;padding:0}
+.pen-sum>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer;font-size:.95rem}
+.pen-sum>summary::-webkit-details-marker{display:none}
+.pen-sum>summary>svg{width:19px;height:19px;color:var(--accent)}
+.pen-sum>summary b{font-weight:700}
+.pen-sum .ps-n{margin-left:auto;font-size:.8rem;font-weight:600;color:var(--muted)}
+.pen-sum .chev{color:var(--faint);transition:transform .2s}
+.pen-sum[open] .chev{transform:rotate(180deg)}
+.pen-sum .pen-body{padding:2px 16px 16px}
 .tools{display:flex;flex-wrap:wrap;gap:5px;margin:16px 0 0}
 @media (max-width:1023px),(min-width:1281px){.tools [data-act="settings"]{display:none}}
 .tools .btn{height:38px;padding:0 10px;font-size:.86rem;border-radius:11px;gap:6px}
-.tabs{position:sticky;top:var(--hd-h);z-index:15;display:flex;gap:4px;margin:18px 0 0;padding:8px 0 0;background:var(--bg);border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.tabs{position:sticky;top:var(--hd-off);z-index:15;display:flex;gap:4px;margin:18px 0 0;padding:8px 0 0;background:var(--bg);border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
 .tabs::-webkit-scrollbar{display:none}
 .tabs button,.tabs a{position:relative;flex:none;padding:10px 14px 12px;font-weight:600;font-size:.95rem;color:var(--muted);border-radius:10px 10px 0 0;display:flex;align-items:center;gap:8px}
 .tabs button:hover,.tabs a:hover{color:var(--ink)}
@@ -597,13 +638,19 @@ select.inp{appearance:none;-webkit-appearance:none;background-image:url("data:im
 .rc .kl a:hover{background:var(--surface-3);color:var(--ink)}
 .rc .kl a b{flex:none;color:var(--primary-ink);min-width:52px}
 .rc textarea{min-height:110px;font-size:.9rem}
-.rc-disp .set-row{flex-direction:column;align-items:stretch;gap:6px;padding:10px 0}
-.rc-disp .set-row:first-of-type{padding-top:0}
+.rc-disp{padding:12px 14px}
+.rc-disp h3{margin-bottom:4px}
+.rc-disp .set-row{gap:8px;padding:7px 0}
+.rc-disp .set-row:first-of-type{padding-top:2px}
+.rc-disp .set-row b{font-size:.84rem;color:var(--ink-2);white-space:nowrap}
 .rc-disp .set-row small{display:none}
-.rc-disp .seg{display:flex}
-.rc-disp .seg button{flex:1;padding:0 6px;font-size:.82rem}
-.rc-disp .fs-ctl{justify-content:space-between}
-.rc-disp .fs-ctl button{flex:1}
+.rc-disp .seg{padding:3px;gap:2px;border-radius:11px}
+.rc-disp .seg button{height:30px;padding:0 8px;font-size:.78rem;border-radius:8px}
+.rc-disp .fs-ctl{gap:4px}
+.rc-disp .fs-ctl button{width:34px;height:30px;border-radius:8px;font-size:.84rem}
+.rc-disp .fs-ctl output{min-width:40px;font-size:.82rem}
+/* Khoản đang đọc (cột phải "Đi tới khoản") */
+.rc .kl a.on{background:var(--red-50);color:var(--ink)}
 .rc .saved{font-size:.75rem;color:var(--faint);margin-top:6px;min-height:1em}
 .rl a{display:flex;gap:8px;align-items:baseline;padding:7px 4px;border-bottom:1px dashed var(--line-2);font-size:.86rem;color:var(--ink-2);line-height:1.4}
 .rl a:last-child{border:0}
@@ -654,7 +701,7 @@ select.inp{appearance:none;-webkit-appearance:none;background-image:url("data:im
 .ext svg{color:var(--accent)}
 .mob-only{display:none}
 @media (max-width:1280px){.reader{grid-template-columns:260px minmax(0,1fr)}.rail{display:none}.mob-only{display:block}}
-@media (max-width:1023px){.reader{grid-template-columns:minmax(0,1fr);padding-top:14px}.side{display:none}.tabs{top:var(--hd-h)}}
+@media (max-width:1023px){.reader{grid-template-columns:minmax(0,1fr);padding-top:14px}.side{display:none}}
 @media (max-width:560px){
   .law-paper{border-radius:14px;padding:16px 14px 14px 18px}
   .tools [data-act="print"]{display:none}
@@ -676,6 +723,14 @@ select.inp{appearance:none;-webkit-appearance:none;background-image:url("data:im
 
 /* ---------- Tìm kiếm ---------- */
 .sr-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:18px 0 10px}
+/* Điện thoại: đã có từ khóa thì bỏ dòng hướng dẫn ở đầu trang; hàng bộ lọc cuộn ngang trên một dòng → kết quả lên cao hơn */
+@media (max-width:560px){
+  .ph--q p{display:none}
+  .ph--q h1{font-size:1.3rem}
+  .sr-head .filters{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 calc(-1 * clamp(16px,3vw,32px));padding:0 clamp(16px,3vw,32px) 2px;width:calc(100% + 2 * clamp(16px,3vw,32px))}
+  .sr-head .filters::-webkit-scrollbar{display:none}
+  .sr-head .filters .chip{flex:none}
+}
 .sr-head .sel{margin-left:auto;display:flex;gap:8px;align-items:center;max-width:100%;min-width:0}
 @media (max-width:700px){.sr-head .sel{width:100%;margin-left:0}.sr-head .sel select.inp{flex:1;width:0}}
 .sr-head select.inp{height:36px;font-size:.86rem;width:auto;max-width:100%;min-width:0}
@@ -935,6 +990,12 @@ select.inp{appearance:none;-webkit-appearance:none;background-image:url("data:im
   .sc>button,.sc>a{padding:10px 8px}
   .sc-l a{padding:9px 8px}
   .fs-ctl button{width:42px;height:42px}
+  .art-tags a.tag{padding:12px 12px}
+  .pen-lab b a{display:inline-block;padding:10px 8px 10px 0;margin:-10px -8px -10px 0}
+  .tbl td a{display:inline-block;padding:10px 8px;margin:-10px -8px}
+  .check input{flex:none;width:22px;height:22px;margin-top:1px}
+  .rc-disp .seg button{height:36px}
+  .rc-disp .fs-ctl button{width:38px;height:36px}
 }
 
 /* ---------- Điện thoại xoay ngang: thu gọn header và thanh điều hướng dưới để dành chỗ cho nội dung ---------- */
@@ -958,6 +1019,8 @@ select.inp{appearance:none;-webkit-appearance:none;background-image:url("data:im
 @media print{
   .hd,.tabbar,.ft,.side,.rail,.tabs,.tools,.pager,.to-top,.toast,.kact,.crumb,.mob-only,.no-print,.jp{display:none!important}
   body{background:#fff;color:#000}
+  .main{min-height:0;padding:0}
+  .pg-in{animation:none}
   .reader{display:block;padding:0}
   .law-paper{border:0;box-shadow:none;padding:0}
   .law-paper::before{display:none}

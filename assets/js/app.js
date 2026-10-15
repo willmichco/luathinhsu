@@ -20,7 +20,7 @@
   var cap = function (s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; };
   var debounce = function (fn, ms) { var t; return function () { var a = arguments, c = this; clearTimeout(t); t = setTimeout(function () { fn.apply(c, a); }, ms); }; };
   var isTouch = window.matchMedia('(hover: none)').matches;
-  var VER = '20261015c';
+  var VER = '20261015d';
   // Thư mục gốc của trang web (…/luathinhsu/), suy ra từ vị trí tệp assets/js/app.js
   var ROOT = document.currentScript ? new URL('../../', document.currentScript.src).href : new URL('./', location.href).href;
   var ROOT_PATH = new URL(ROOT).pathname;
@@ -432,15 +432,15 @@
         '<button type="button" class="btn btn--sm" data-act="offline">' + ic('offline') + 'Tải về</button></div>');
     },
     // Các dòng chỉnh hiển thị dùng chung cho bảng Công cụ đọc và khối Hiển thị ở cột phải
-    disp: function () {
+    disp: function (compact) {
       var p = Prefs.get(), th = p.theme || 'light', fs = p.fs || 0;
       return '<div class="set-row"><div><b>Giao diện</b><small>Sáng, tối hoặc theo thiết bị</small></div>' +
         '<div class="seg" data-set="theme">' + [['light', 'Sáng'], ['dark', 'Tối'], ['auto', 'Theo máy']].map(function (o) {
           return '<button type="button" data-v="' + o[0] + '" aria-pressed="' + (th === o[0]) + '">' + o[1] + '</button>';
         }).join('') + '</div></div>' +
-        '<div class="set-row"><div><b>Cỡ chữ văn bản</b><small>Điều luật và bình luận</small></div>' +
+        '<div class="set-row"><div><b>' + (compact ? 'Cỡ chữ' : 'Cỡ chữ văn bản') + '</b><small>Điều luật và bình luận</small></div>' +
         '<div class="fs-ctl"><button type="button" data-fs="-1" aria-label="Giảm cỡ chữ">A−</button><output class="fs-out" aria-live="polite">' + (100 + fs * 6) + '%</output><button type="button" data-fs="1" aria-label="Tăng cỡ chữ">A+</button></div></div>' +
-        '<div class="set-row"><div><b>Kiểu chữ điều luật</b><small>Mặc định không chân</small></div>' +
+        '<div class="set-row"><div><b>' + (compact ? 'Kiểu chữ' : 'Kiểu chữ điều luật') + '</b><small>Mặc định không chân</small></div>' +
         '<div class="seg" data-set="serif"><button type="button" data-v="0" aria-pressed="' + (p.serif !== true) + '">Không chân</button><button type="button" data-v="1" aria-pressed="' + (p.serif === true) + '">Có chân</button></div></div>';
     }
   };
@@ -502,6 +502,13 @@
   var Jump = {
     el: null, isOpen: false, hist: false, rows: [], byId: {}, secs: [], secById: {}, act: -1, cur: null, ref: null, spyCur: null,
     isSheet: function () { return SHEET.matches; },
+    // Dựng sẵn bảng lúc trình duyệt rảnh (trang điều luật, chương): lần bấm "Mục lục" đầu tiên mở ra ngay, không khựng
+    warm: function () {
+      if (Jump.el || Jump.warming || !DB.toc) return;
+      Jump.warming = true;
+      var run = function () { Jump.warming = false; if (!Jump.el) Jump.build(); };
+      if (window.requestIdleCallback) window.requestIdleCallback(run, { timeout: 4000 }); else setTimeout(run, 1200);
+    },
     build: function () {
       var J = Jump, nav = '', list = '', lastP = null;
       DB.chaps.forEach(function (c) {
@@ -738,6 +745,38 @@
         e.preventDefault(); e.stopPropagation();
         J.q.value = ''; J.filter();
       }
+    }
+  };
+
+  /* Điện thoại, máy tính bảng: cuộn xuống để đọc → header và thanh dưới thu lại; cuộn lên, về đầu hoặc tới cuối trang → hiện.
+     Chỉ đổi một lớp trên <body>, hiệu ứng do CSS đảm nhận bằng transform (không bắt trình duyệt dàn trang lại).
+     Cộng dồn quãng cuộn cùng chiều để ngón tay khẽ rung không làm thanh nhấp nháy. */
+  var Bars = {
+    hidden: false, lastY: 0, acc: 0,
+    set: function (h) {
+      if (h === Bars.hidden) return;
+      Bars.hidden = h; document.body.classList.toggle('ui-hide', h);
+    },
+    reset: function () { Bars.lastY = window.scrollY; Bars.acc = 0; Bars.set(false); },
+    init: function () {
+      var ticking = false;
+      var check = function () {
+        ticking = false;
+        var y = window.scrollY, dy = y - Bars.lastY;
+        Bars.lastY = y;
+        if (!SHEET.matches) { Bars.set(false); return; }
+        var max = document.documentElement.scrollHeight - window.innerHeight;
+        if (y < 140 || y > max - 80) { Bars.acc = 0; Bars.set(false); return; }
+        if (!dy) return;
+        if ((dy > 0) !== (Bars.acc > 0)) Bars.acc = 0;
+        Bars.acc += dy;
+        if (Bars.acc > 28) Bars.set(true);
+        else if (Bars.acc < -18) Bars.set(false);
+      };
+      window.addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(check); } }, { passive: true });
+      // Đi bằng phím Tab vào header / thanh dưới → hiện lại
+      document.addEventListener('focusin', function (e) { if (e.target.closest && e.target.closest('.hd,.tabbar')) Bars.set(false); });
+      if (SHEET.addEventListener) SHEET.addEventListener('change', function () { Bars.set(false); });
     }
   };
 
@@ -1002,6 +1041,7 @@
   }
   function go(href, replace) {
     var u = abs(href);
+    if (Router.stale && u !== location.href && !Jump.hist) { location.assign(u); return; }
     Router.byClick = true;
     // Chọn điều trong mục lục đang có mục lịch sử tạm (Android) → thay mục đó, để nút Quay lại không phải bấm hai lần
     Jump.pushLater = false;
@@ -1055,6 +1095,7 @@
     var back = !Router.byClick;
     Router.byClick = false;
     UI.closePop(); UI.closeSheet(); UI.drawer(false); Jump.hide(true);
+    Bars.reset();
     // Cùng một trang, chỉ đổi tham số (tab, khoản…) → cập nhật tại chỗ
     if (Router.view && Router.view.update && Router.cur && Router.cur.parts.join('/') === ctx.parts.join('/') && Router.view.update(ctx) !== false) {
       Router.cur = ctx; return;
@@ -1070,18 +1111,28 @@
     setNav(V.nav || name || 'home');
     // Mỗi trang được vẽ trong một vùng chứa mới để không giữ lại trình nghe sự kiện cũ
     var host = document.createElement('div');
+    var first = !Router.booted;
+    if (!first) host.className = 'pg-in';
     main.innerHTML = ''; main.appendChild(host);
     var res = V.render(ctx, host);
-    Router.view = (res && typeof res === 'object' && !res.then) ? res : V;
-    var first = !Router.booted;
+    var view = Router.view = (res && typeof res === 'object' && !res.then) ? res : V;
     Router.booted = true;
+    var pos = back ? Router.pos[ctx.full] : null;
     var restore = function () {
-      if (first && !ctx.q.get('k')) return;
-      if (back && Router.pos[ctx.full] != null) window.scrollTo(0, Router.pos[ctx.full]);
-      else if (!(Router.view && Router.view.keepScroll)) window.scrollTo(0, 0);
+      if (Router.view !== view) return;
+      if (!(first && !ctx.q.get('k'))) {
+        if (pos != null) window.scrollTo(0, pos);
+        else if (!view.keepScroll) window.scrollTo(0, 0);
+      }
+      Bars.reset();
     };
-    if (res && res.then) res.then(restore); else restore();
+    // Quay lại một trang có nội dung tải sau (điều luật, kết quả tìm kiếm): đợi nội dung xong mới về đúng vị trí cũ —
+    // khôi phục sớm khi trang còn ngắn sẽ làm vị trí bị cắt cụt rồi lệch hẳn khi nội dung chèn vào
+    if (res && res.then) res.then(restore);
+    else if (pos != null && view.ready && view.ready.then) { if (!view.keepScroll) window.scrollTo(0, 0); view.ready.then(restore, restore); }
+    else restore();
     if (!isTouch && !back && main.focus) main.focus({ preventScroll: true });
+    if (name === 'dieu' || name === 'chuong') Jump.warm();
   }
 
   /* =========================================================================
@@ -1121,7 +1172,7 @@
       main.innerHTML =
         '<section class="hero">' + drum() + '<div class="wrap hero-grid">' +
         '<div><span class="eyebrow">Bộ luật số 100/2015/QH13 · cập nhật 2025</span>' +
-        '<h1>Tra cứu <em>Bộ luật Hình sự</em> <br>nhanh, chính xác, dễ hiểu</h1>' +
+        '<h1>Tra cứu <em>Bộ luật Hình sự</em> <br>nhanh, chính xác, dễ&nbsp;hiểu</h1>' +
         '<p class="hero-sub">Toàn văn ' + st.arts + ' điều luật kèm bình luận khoa học, khung hình phạt từng khoản, phân loại tội phạm và thời hiệu — tìm được cả khi gõ không dấu.</p>' +
         '<div id="heroSearch"></div>' +
         '<div class="hero-try"><span>Thử tìm:</span>' +
@@ -1178,7 +1229,10 @@
         '</div></section>' +
         ctaBlock();
       SearchBox($('#heroSearch'), { lg: true, ph: 'Nhập số điều, tên tội hoặc từ khóa…' });
-      return null;
+      // Hoa văn trống đồng chỉ quay khi phần đầu trang còn trong màn hình (đỡ tốn pin, cuộn mượt hơn trên máy yếu)
+      var hero = $('.hero', main), io = window.IntersectionObserver && new IntersectionObserver(function (es) { hero.classList.toggle('is-off', !es[0].isIntersecting); });
+      if (io) io.observe(hero);
+      return { leave: function () { if (io) io.disconnect(); } };
     }
   };
   function stat(i, n, t, s) { return '<div class="stat"><span class="si">' + ic(i) + '</span><span><b>' + n + '</b><span>' + t + '<br>' + s + '</span></span></div>'; }
@@ -1475,7 +1529,7 @@
       '<div class="art-tags"><span class="tag tag--soft">' + esc(DB.partName(c.part).split(':')[0]) + '</span><a class="tag tag--soft" href="chuong-' + c.slug + '">' + esc(c.label) + '</a>' + artTags(a) + (M.a14 ? '<span class="tag tag--a14" title="Người từ đủ 14 đến dưới 16 tuổi chịu TNHS ở khung rất nghiêm trọng, đặc biệt nghiêm trọng">Từ đủ 14 tuổi chịu TNHS (khoản 2 Điều 12)</span>' : '') + '</div>' +
       '<h1><span class="dn">Điều ' + esc(a.id) + '.</span> ' + esc(a.t) + '</h1>' +
       '<div class="art-sum"><span>' + ic(ICONS[c.id] || 'book') + esc(c.name) + '</span>' + (muc ? '<span>' + ic('list') + esc(muc) + '</span>' : '') +
-      '<span>' + ic('clock') + '~' + readMin(M.ln ? M.ln[0] : 0) + ' phút đọc' + (hasCm ? ' · bình luận ~' + readMin(M.ln[1]) + ' phút' : '') + '</span>' +
+      '<span class="rt">' + ic('clock') + '~' + readMin(M.ln ? M.ln[0] : 0) + ' phút đọc' + (hasCm ? ' · bình luận ~' + readMin(M.ln[1]) + ' phút' : '') + '</span>' +
       (hasPen ? '<span>' + ic('scale') + esc(Pen.maxText(a)) + '</span>' : '') + '</div>' +
       '<div class="tools no-print">' +
       '<button type="button" class="btn btn--p" data-act="save" aria-pressed="' + Saved.has(a.id) + '">' + ic(Saved.has(a.id) ? 'bookmark-fill' : 'bookmark') + '<span>' + (Saved.has(a.id) ? 'Đã lưu' : 'Lưu điều này') + '</span></button>' +
@@ -1524,6 +1578,7 @@
     return '<button type="button" role="tab" id="tab-' + key + '" data-tab="' + key + '" aria-controls="p-' + key + '" aria-selected="' + (cur === key) + '">' + label + (cnt ? '<span class="cnt">' + cnt + '</span>' : '') + '</button>';
   }
   ArticleView.prototype.leave = function () {
+    if (this.spy) this.spy.disconnect();
     if (this.mq) { if (this.mq.removeEventListener) this.mq.removeEventListener('change', this.onMq); else this.mq.removeListener(this.onMq); }
     document.removeEventListener('keydown', this.onKey);
     window.removeEventListener('scroll', this.onScroll);
@@ -1575,8 +1630,11 @@
     this.fnMap = L.fnMap;
     var newNotes = d.cm.filter(function (p) { return p[0] === 'n'; });
     var chNote = CH_NOTE[a.ch.id];
-    var penCard = (M.k || []).some(function (k) { return !k.bs; }) ?
-      '<details class="rc mob-only" open style="margin-bottom:16px"><summary style="cursor:pointer;font-weight:700;display:flex;gap:8px;align-items:center">' + ic('scale') + 'Tóm tắt khung hình phạt</summary><div style="margin-top:12px">' + Pen.chart(a, true) + '</div></details>' : '';
+    // Điện thoại, máy tính bảng, máy tính màn hẹp (không có cột phải): biểu đồ khung hình phạt thu gọn thành một dòng để
+    // văn bản điều luật hiện ngay; mở ra thì lần sau vẫn mở (ghi nhớ trên thiết bị). Mỗi khoản đã có nhãn khung ngay trong văn bản.
+    var nK = (M.k || []).filter(function (k) { return !k.bs; }).length;
+    var penCard = nK ? '<details class="rc pen-sum mob-only"' + (Prefs.get().pen ? ' open' : '') + '><summary>' + ic('scale') + '<b>Biểu đồ khung hình phạt</b>' +
+      '<span class="ps-n">' + (nK > 1 ? nK + ' khoản' : '1 khung') + '</span>' + ic('chev-d', 'chev') + '</summary><div class="pen-body">' + Pen.chart(a, true) + '</div></details>' : '';
     var law =
       (chNote ? '<div class="callout callout--warn" style="margin-bottom:16px">' + ic('alert') + '<div><b>Lưu ý hiệu lực:</b> ' + esc(chNote.text) + '</div></div>' : '') +
       (a.rep ? '<div class="callout callout--rep" style="margin-bottom:16px">' + ic('info') + '<div><b>Điều luật đã bị bãi bỏ.</b> Nội dung dưới đây được giữ lại để tham khảo.</div></div>' : '') +
@@ -1595,6 +1653,8 @@
       (cm ? '<div class="panel" role="tabpanel" id="p-binh-luan" aria-labelledby="tab-binh-luan" hidden>' + cm + '</div>' : '') +
       '<div class="panel" role="tabpanel" id="p-lien-quan" aria-labelledby="tab-lien-quan" hidden>' + rel + '</div>';
     this.rail();
+    var ps = $('#panels .pen-sum');
+    if (ps) ps.addEventListener('toggle', function () { var p = Prefs.get(); p.pen = ps.open ? 1 : 0; Store.set('prefs', p); });
     this.show(ctx.parts[2] || 'noi-dung', true);
     var q = ctx.q.get('q');
     if (q) this.highlight(q);
@@ -1710,8 +1770,24 @@
     var rl = refs.length ? '<div class="rc"><h3>' + ic('link') + 'Điều luật liên quan</h3><div class="rl">' + refs.map(function (id) {
       var x = DB.byId[id]; return '<a href="dieu-' + id + '" data-pv="' + id + '"><b>Điều ' + esc(id) + '</b><span>' + esc(x.t) + '</span></a>';
     }).join('') + '</div></div>' : '';
-    var disp = '<div class="rc rc-disp"><h3>' + ic('text') + 'Hiển thị</h3>' + UI.disp() + '</div>';
+    var disp = '<div class="rc rc-disp"><h3>' + ic('text') + 'Hiển thị</h3>' + UI.disp(true) + '</div>';
     $('#rail').innerHTML = disp + pen + kl + rl + '<div class="rc"><h3>' + ic('note') + 'Ghi chú của tôi</h3>' + noteBox(a.id, 'r') + '</div>';
+    // Khoản đang nằm ở khoảng 1/3 trên màn hình được tô ở mục "Đi tới khoản" – luôn biết mình đang đọc tới đâu
+    if (kl && window.IntersectionObserver && window.matchMedia('(min-width: 1281px)').matches) {
+      var links = {}, cur = null;
+      $$('#rail .kl a[data-k]').forEach(function (l) { links[l.dataset.k] = l; });
+      this.spy = new IntersectionObserver(function (es) {
+        es.forEach(function (en) {
+          if (!en.isIntersecting) return;
+          var l = links[en.target.dataset.k];
+          if (!l || l === cur) return;
+          if (cur) cur.classList.remove('on');
+          cur = l; l.classList.add('on');
+        });
+      }, { rootMargin: '-25% 0px -65% 0px' });
+      var spy = this.spy;
+      $$('#lawBody .kh[data-k]').forEach(function (el) { spy.observe(el); });
+    }
   };
 
   /* ---------- Tìm kiếm toàn văn ---------- */
@@ -1722,7 +1798,7 @@
       var scope = ctx.q.get('pv') || 'all', chap = ctx.q.get('ch') || '', sort = ctx.q.get('sx') || 'rel';
       setTitle(q ? 'Tìm “' + q + '”' : 'Tìm kiếm');
       main.innerHTML =
-        '<section class="ph">' + drum() + '<div class="wrap ph-in">' + crumb([['Trang chủ', './'], ['Tìm kiếm']]) +
+        '<section class="ph' + (q ? ' ph--q' : '') + '">' + drum() + '<div class="wrap ph-in">' + crumb([['Trang chủ', './'], ['Tìm kiếm']]) +
         '<h1>Tìm kiếm trong Bộ luật Hình sự</h1><p>Tìm đồng thời trong tên điều, văn bản điều luật và phần bình luận. Gõ không dấu, dùng “ngoặc kép” để tìm cụm từ chính xác.</p>' +
         '<div id="srBox" style="margin-top:18px;max-width:760px"></div></div></section>' +
         '<div class="wrap"><div id="srOut"></div></div>';
@@ -1750,7 +1826,7 @@
       FT.on(onFt);
       var view = { leave: function () { FT.off(onFt); } };
       var t0 = Date.now();
-      FT.query(q).then(function (res) {
+      view.ready = FT.query(q).then(function (res) {
         if (Router.view !== view) return;
         drawResults(res, { q: q, scope: scope, chap: chap, sort: sort, ms: Date.now() - t0 });
       });
@@ -1893,7 +1969,8 @@
         '<p>Các chỉ dẫn tự động gồm: <b>khung hình phạt từng khoản</b> (nhận diện từ câu “thì bị phạt…”), <b>loại tội phạm</b> theo khoản 1 Điều 9 (căn cứ mức cao nhất của khung), <b>thời hiệu truy cứu</b> theo khoản 2 Điều 27 và trường hợp không áp dụng thời hiệu theo Điều 28, <b>độ tuổi</b> theo khoản 2 Điều 12. Đây là công cụ hỗ trợ; kết luận pháp lý cho vụ việc cụ thể phải căn cứ hồ sơ và quyết định của cơ quan có thẩm quyền.</p>' +
         '<h3 class="ch">Đọc khi không có mạng</h3><p>Trang có thể cài lên màn hình chính như một ứng dụng. Nhấn nút dưới đây để tải sẵn toàn bộ nội dung (~3 MB) vào bộ nhớ đệm của trình duyệt.</p>' +
         '<p><button type="button" class="btn btn--p" data-act="offline">' + ic('offline') + 'Tải dữ liệu để đọc offline</button></p>' +
-        '<h3 class="ch">Phím tắt</h3><p><b>/</b> – mở ô tìm kiếm · <b>←</b> <b>→</b> – điều trước/sau khi đang đọc · <b>Esc</b> – đóng gợi ý, cửa sổ.</p>' +
+        '<h3 class="ch">Phím tắt & thao tác nhanh</h3><p><b>/</b> – mở ô tìm kiếm · <b>Ctrl/⌘ + K</b> – bảng mục lục, chọn là chuyển tới điều bất kỳ · <b>←</b> <b>→</b> – điều trước/sau khi đang đọc · <b>Esc</b> – đóng gợi ý, cửa sổ.</p>' +
+        '<p>Trên điện thoại: khi đang đọc, bấm <b>Mục lục</b> ở thanh dưới để mở bảng mục lục từ dưới lên, kéo xuống để đóng; nút <b>Aa</b> ở góc phải trên để chỉnh cỡ chữ, sáng/tối. Cuộn xuống để đọc toàn màn hình, cuộn lên để hiện lại thanh điều hướng.</p>' +
         '<h3 class="ch">Miễn trừ trách nhiệm</h3><p>Nội dung trên trang nhằm mục đích tham khảo, không thay thế ý kiến tư vấn pháp lý. Khi sử dụng trong hồ sơ tố tụng, vui lòng đối chiếu văn bản đăng trên Công báo, Cơ sở dữ liệu quốc gia về pháp luật hoặc văn bản hợp nhất mới nhất của Văn phòng Quốc hội.</p>' +
         '</div></div>' + ctaBlock();
       return null;
@@ -1931,6 +2008,20 @@
   function bindGlobal() {
     Jump.swipe();
     UI.sheetDrag();
+    Bars.init();
+    // Hộp thoại đang mở (bảng mục lục, bảng dưới, menu): phím Tab chỉ đi vòng trong hộp thoại, không lọt ra trang phía sau
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Tab') return;
+      var box = Jump.isOpen ? Jump.panel : !$('#sheet').hidden ? $('#sheet .sheet-panel') : !$('#drawer').hidden ? $('#drawer .drawer-panel') : null;
+      if (!box) return;
+      var f = $$('a[href],button:not([disabled]),input:not([disabled]),select,textarea,summary,[tabindex]:not([tabindex="-1"])', box)
+        .filter(function (el) { return el.offsetParent !== null; });
+      if (!f.length) return;
+      var first = f[0], last = f[f.length - 1], cur = document.activeElement;
+      if (!box.contains(cur)) { e.preventDefault(); first.focus(); }
+      else if (e.shiftKey && cur === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && cur === last) { e.preventDefault(); first.focus(); }
+    });
     document.addEventListener('click', function (e) {
       var t = e.target;
       var pv = t.closest('a[data-pv]');
@@ -2141,6 +2232,18 @@
     $('#main').innerHTML = '<div class="wrap page"><div class="empty">' + ic('alert') + '<h3>Không tải được dữ liệu</h3><p>Vui lòng kiểm tra kết nối mạng rồi <a href="javascript:location.reload()">tải lại trang</a>.</p><p class="muted" style="font-size:.8rem;margin-top:8px">' + esc(err && err.message) + '</p></div></div>';
   });
   if ('serviceWorker' in navigator && window.isSecureContext) {
-    window.addEventListener('load', function () { navigator.serviceWorker.register(abs('sw.js')).catch(function () { }); });
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register(abs('sw.js')).then(function (reg) {
+        // Trang ứng dụng một trang không tải lại khi chuyển trang → tự hỏi máy chủ có phiên bản mới mỗi khi người dùng quay lại tab
+        var last = Date.now();
+        document.addEventListener('visibilitychange', function () {
+          if (document.visibilityState === 'visible' && Date.now() - last > 5 * 60 * 1000) { last = Date.now(); reg.update().catch(function () { }); }
+        });
+      }).catch(function () { });
+    });
+    // Phiên bản mới đã cài và nắm quyền (không phải lần cài đầu) → đánh dấu; lần bấm chuyển trang kế tiếp sẽ tải trang đầy đủ
+    // theo phiên bản mới — liền mạch, người dùng không phải tự tải lại trang
+    var hadSW = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener('controllerchange', function () { if (hadSW) Router.stale = true; hadSW = true; });
   }
 })();
