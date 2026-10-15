@@ -20,7 +20,7 @@
   var cap = function (s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; };
   var debounce = function (fn, ms) { var t; return function () { var a = arguments, c = this; clearTimeout(t); t = setTimeout(function () { fn.apply(c, a); }, ms); }; };
   var isTouch = window.matchMedia('(hover: none)').matches;
-  var VER = '20261015a';
+  var VER = '20261015b';
   // Thư mục gốc của trang web (…/luathinhsu/), suy ra từ vị trí tệp assets/js/app.js
   var ROOT = document.currentScript ? new URL('../../', document.currentScript.src).href : new URL('./', location.href).href;
   var ROOT_PATH = new URL(ROOT).pathname;
@@ -411,9 +411,10 @@
 
   /* =========================================================================
      6b. Bảng tra nhanh điều luật: toàn bộ điều theo Phần → Chương → Mục; chọn một điều là chuyển ngay tới điều đó.
-         Đây là công cụ khi đang đọc: nút "Mục lục" giữa Điều trước/sau, nút cạnh ô lọc ở cột trái, tay nắm mép phải,
-         cú vuốt từ mép phải, Ctrl/⌘+K. Các mục điều hướng chung (menu ☰, đầu trang, thanh dưới, chân trang) mở trang
-         Mục lục (muc-luc) chứ không mở bảng này.
+         Đây là công cụ khi đang đọc (trang điều, trang chương): nút "Mục lục" ở thanh dưới (điện thoại) và đầu trang
+         (máy tính), nút giữa Điều trước/sau, nút cạnh ô lọc ở cột trái, tay nắm/vuốt mép phải, Ctrl/⌘+K.
+         Ở các trang khác, nút "Mục lục" đầu trang/thanh dưới mở trang Mục lục (muc-luc); menu ☰ và chân trang
+         luôn mở trang Mục lục.
          Máy tính (≥ 1024px): hộp thoại giữa màn hình, cột chương bên trái. Điện thoại, máy tính bảng: ngăn kéo
          trượt từ mép phải — vuốt từ mép phải sang trái để mở (ngăn kéo bám theo ngón tay), vuốt sang phải để đóng.
          Ô lọc hiểu số điều (173), không dấu (trom cap), "khoản 2 điều 134", "chương 16". Phím: ↑ ↓ Enter Esc.
@@ -1015,6 +1016,8 @@
     var ctx = parseRoute(), main = $('#main');
     var name = ctx.parts[0] || '';
     document.body.classList.toggle('is-reading', name === 'dieu' || name === 'chuong');
+    // Nút "Mục lục" (thanh dưới, đầu trang) mở bảng nổi khi đang đọc → báo cho trình đọc màn hình
+    $$('[data-act="toc"]').forEach(function (a) { if (name === 'dieu' || name === 'chuong') a.setAttribute('aria-haspopup', 'dialog'); else a.removeAttribute('aria-haspopup'); });
     if (name === 'cong-cu' && !VIEWS['cong-cu']) {
       loadTools().then(route, function () {
         main.innerHTML = '<div class="wrap page"><div class="callout callout--warn">' + ic('alert') + '<div>Không tải được công cụ. Vui lòng kiểm tra kết nối mạng và <a href="javascript:location.reload()">tải lại trang</a>.</div></div></div>';
@@ -1944,6 +1947,15 @@
       else if (A === 'drawer-close') UI.drawer(false);
       else if (A === 'sheet-close') UI.closeSheet();
       else if (A === 'jump') { if (!(e.metaKey || e.ctrlKey || e.shiftKey || e.button) && Jump.show(act)) e.preventDefault(); }
+      else if (A === 'toc') {
+        // Nút "Mục lục" ở thanh dưới (điện thoại) và đầu trang (máy tính) — cùng một logic theo ngữ cảnh:
+        // đang đọc điều/chương → mở bảng tra nhanh (đọc tiếp liền mạch); đang ở trang Mục lục → về đầu trang;
+        // trang khác → liên kết mở trang Mục lục như bình thường.
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
+        var where = Router.cur && Router.cur.parts[0];
+        if (where === 'dieu' || where === 'chuong') { if (Jump.show(act)) e.preventDefault(); }
+        else if (where === 'muc-luc') { e.preventDefault(); window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); }
+      }
       else if (A === 'jump-close') Jump.hide();
       else if (A === 'settings') { UI.drawer(false); UI.settings(); }
       else if (A === 'theme') {
