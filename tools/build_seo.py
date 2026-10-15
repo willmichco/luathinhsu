@@ -583,7 +583,7 @@ def page_toc():
                "3 phần · 26 chương · %d điều. Gõ để lọc tức thì theo số điều hoặc tên điều (có dấu hay không dấu đều được)." % len(ARTS),
                "Cấu trúc Bộ luật") +
             '<div class="toc-bar js-only"><div class="wrap"><div class="sb"><div class="sb-box">' + ic("filter") +
-            '<input class="sb-in" type="search" placeholder="Lọc mục lục… (vd: tai san, 250)" aria-label="Lọc mục lục"></div></div>'
+            '<input class="sb-in" type="search" placeholder="Lọc mục lục… (vd: tai san, 250, chương 16)" aria-label="Lọc mục lục"></div></div>'
             '<div class="toc-open" role="group" aria-label="Bộ lọc">' +
             "".join('<button type="button" class="chip" aria-pressed="%s">%s</button>' % ("true" if i == 0 else "false", t)
                     for i, t in enumerate(["Tất cả", "Sửa đổi 2025", "Có dấu (*)"])) +

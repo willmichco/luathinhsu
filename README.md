@@ -10,7 +10,8 @@ Luật số 59/2024/QH15 và Luật số 86/2025/QH15) dành cho luật sư, sin
 | Nhóm | Chi tiết |
 |---|---|
 | Tra cứu | 428 điều (kể cả Điều 217a, 256a), mục lục Phần → Chương → Mục → Điều, lọc tức thì |
-| Mục lục nhanh | Mọi nút “Mục lục” (đầu trang, thanh dưới, menu ☰, giữa “Điều trước/Điều sau”, nút cạnh ô lọc thanh bên; phím `Ctrl/⌘ + K`) mở cùng một bảng: toàn bộ 428 điều liên tục theo chương, đánh dấu điều đang đọc, “Vừa xem”; lọc theo số, không dấu, `khoản 2 điều 134`, `chương 16`; ↑ ↓ Enter. Máy tính: hộp thoại có cột chương. Điện thoại, máy tính bảng: ngăn kéo bên phải — **vuốt từ mép phải sang trái** để mở (bám theo ngón tay), vuốt sang phải hoặc chạm vùng tối để đóng; tay nắm ở mép phải trang điều luật/chương; Android: nút Quay lại đóng ngăn kéo. Trang `muc-luc` (lọc sửa đổi 2025, tổng quan chương) mở từ chân bảng |
+| Mục lục | **Menu ☰, nút “Mục lục” ở đầu trang, thanh dưới, chân trang → mở trang `muc-luc`.** Trang mục lục mở sẵn chương đang đọc, đánh dấu điều vừa đọc kèm lối tắt “Xem vị trí”; nút Quay lại trả về đúng chương đang mở, từ lọc, bộ lọc và vị trí cuộn; ô lọc hiểu `173`, không dấu, `khoản 2 điều 134`, `chương 16` (Enter mở thẳng điều); lọc “Sửa đổi 2025”, “Có dấu (*)” |
+| Bảng tra nhanh | Công cụ khi **đang đọc**: nút “Mục lục” giữa “Điều trước/Điều sau”, nút cạnh ô lọc cột trái, phím `Ctrl/⌘ + K` (trên trang Mục lục: đưa con trỏ vào ô lọc). Toàn bộ 428 điều liên tục theo chương, đánh dấu điều đang đọc, “Vừa xem”; ↑ ↓ Enter. Máy tính: hộp thoại có cột chương. Điện thoại, máy tính bảng: ngăn kéo bên phải — **vuốt từ mép phải sang trái** để mở, vuốt sang phải hoặc chạm vùng tối để đóng; tay nắm ở mép phải trang điều luật/chương; Android: nút Quay lại đóng ngăn kéo |
 | Tìm kiếm thông minh | Gõ không dấu; `173`, `khoản 2 điều 134`, `điểm a khoản 1 điều 51`, `chương 20`; “cụm từ chính xác”; gợi ý theo cách gọi thông dụng (“vay tiền không trả” → Điều 175) |
 | Trình đọc điều luật | Văn bản luật, bình luận khoa học, điều liên quan; chú thích; xem nhanh điều được dẫn chiếu khi rê chuột/chạm; sao chép trích dẫn từng khoản; lưu, ghi chú cá nhân; điều trước/sau bằng phím ← → |
 | Khung hình phạt | Nhận diện tự động khung của từng khoản, phân loại tội (Điều 9), thời hiệu (Điều 27, 28), độ tuổi (Điều 12), biểu đồ trực quan |
@@ -74,7 +75,7 @@ và sitemap. Khi chuyển sang tên miền riêng: `SITE_URL=https://ten-mien.vn
 |---|---|
 | Trang chủ | `./` |
 | Điều luật · tab · khoản | `dieu-173` · `dieu-173?tab=binh-luan` · `dieu-173?k=2&d=a` |
-| Chương · Mục lục | `chuong-16`, `chuong-p3` · `muc-luc` |
+| Chương · Mục lục | `chuong-16`, `chuong-p3` · `muc-luc`, `muc-luc?q=tai+san&loc=n25` (`loc`: `n25` sửa đổi 2025, `am` có dấu *) |
 | Công cụ | `cong-cu`, `cong-cu-thoi-hieu`, `cong-cu-tuoi`, `cong-cu-thi-hanh-an`, `cong-cu-so-sanh`, `cong-cu-khung-hinh-phat` |
 | Khác | `tim-kiem?q=…`, `da-luu`, `gioi-thieu` |
 
