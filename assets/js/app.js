@@ -20,7 +20,7 @@
   var cap = function (s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; };
   var debounce = function (fn, ms) { var t; return function () { var a = arguments, c = this; clearTimeout(t); t = setTimeout(function () { fn.apply(c, a); }, ms); }; };
   var isTouch = window.matchMedia('(hover: none)').matches;
-  var VER = '20261015b';
+  var VER = '20261015c';
   // Thư mục gốc của trang web (…/luathinhsu/), suy ra từ vị trí tệp assets/js/app.js
   var ROOT = document.currentScript ? new URL('../../', document.currentScript.src).href : new URL('./', location.href).href;
   var ROOT_PATH = new URL(ROOT).pathname;
@@ -86,6 +86,10 @@
       var dark = th === 'dark' || (th === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
       var m = $('meta[name="theme-color"]'); if (m) m.setAttribute('content', dark ? '#2c0709' : '#7a1216');
       var cs = $('meta[name="color-scheme"]'); if (cs) cs.setAttribute('content', dark ? 'dark' : 'light');
+      // Đồng bộ mọi bộ điều khiển hiển thị đang có trên trang (bảng Công cụ đọc, khối Hiển thị ở cột phải)
+      $$('[data-set="theme"] button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === th)); });
+      $$('[data-set="serif"] button').forEach(function (b) { b.setAttribute('aria-pressed', String((b.dataset.v === '1') === (p.serif === true))); });
+      $$('.fs-out').forEach(function (o) { o.textContent = (100 + (p.fs || 0) * 6) + '%'; });
     }
   };
 
@@ -348,11 +352,37 @@
       ta.remove();
     },
     sheet: function (html) {
-      var s = $('#sheet'); $('#sheetBody').innerHTML = html; s.hidden = false;
+      var s = $('#sheet'); clearTimeout(UI._st);
+      s.classList.remove('is-drag', 'is-settle'); $('.sheet-panel', s).style.transform = ''; $('.sheet-bg', s).style.opacity = '';
+      $('#sheetBody').innerHTML = html; s.hidden = false;
       document.body.style.overflow = 'hidden';
       var f = $('#sheetBody button, #sheetBody a, #sheetBody input'); if (f && !isTouch) f.focus();
     },
-    closeSheet: function () { $('#sheet').hidden = true; document.body.style.overflow = ''; },
+    // animate: trượt xuống rồi mới ẩn (khi người dùng kéo bảng xuống để đóng)
+    closeSheet: function (animate) {
+      var s = $('#sheet');
+      if (s.hidden) return;
+      document.body.style.overflow = '';
+      var p = $('.sheet-panel', s), bg = $('.sheet-bg', s);
+      var done = function () { s.hidden = true; s.classList.remove('is-drag', 'is-settle'); p.style.transform = ''; bg.style.opacity = ''; };
+      clearTimeout(UI._st);
+      if (!animate) { done(); return; }
+      s.classList.remove('is-drag'); s.classList.add('is-settle');
+      p.style.transform = 'translateY(100%)'; bg.style.opacity = '0';
+      UI._st = setTimeout(done, 230);
+    },
+    // Bảng dưới (điện thoại, < 700px): kéo xuống để đóng, như bảng mục lục
+    sheetDrag: function () {
+      var S = function () { return $('#sheet'); }, P = function () { return $('#sheet .sheet-panel'); };
+      dragDown({
+        on: function () { return !S().hidden && window.innerWidth < 700; },
+        panel: P, bg: function () { return $('#sheet .sheet-bg'); },
+        scroller: P,
+        start: function () { S().classList.remove('is-settle'); S().classList.add('is-drag'); },
+        cancel: function () { S().classList.remove('is-drag'); S().classList.add('is-settle'); P().style.transform = ''; $('#sheet .sheet-bg').style.opacity = ''; },
+        close: function () { UI.closeSheet(true); }
+      });
+    },
     pop: function (anchor, html) {
       var p = $('#pop'); p.innerHTML = html; p.hidden = false;
       var r = anchor.getBoundingClientRect(), pw = p.offsetWidth, ph = p.offsetHeight;
@@ -376,8 +406,6 @@
         var k = href === './' ? '' : href;
         return '<a href="' + href + '"' + (k === cur ? ' class="on" aria-current="page"' : k === sec ? ' class="on"' : '') + '>' + ic(icon) + t + '</a>';
       };
-      // Cỡ chữ, kiểu chữ chỉ áp dụng cho văn bản điều luật và bình luận → chỉ hiện khi đang đọc một điều
-      var reading = !!(Router.view && Router.view.a);
       $('#drawerNav').innerHTML =
         L('./', 'home', 'Trang chủ') + L('muc-luc', 'list', 'Mục lục Bộ luật') +
         L('tim-kiem', 'search', 'Tìm kiếm toàn văn') +
@@ -386,46 +414,94 @@
         L('cong-cu-thoi-hieu', 'clock', 'Phân loại tội & thời hiệu') + L('cong-cu-tuoi', 'user', 'Tuổi chịu trách nhiệm hình sự') +
         L('cong-cu-thi-hanh-an', 'calendar', 'Thời hiệu thi hành bản án') + L('cong-cu-so-sanh', 'columns', 'So sánh điều luật') +
         L('cong-cu-khung-hinh-phat', 'table', 'Bảng khung hình phạt') +
-        '<hr>' + (reading ? '<button type="button" data-act="settings">' + ic('text') + 'Tùy chỉnh hiển thị</button>' : '') +
+        '<hr>' +
         L('gioi-thieu', 'info', 'Giới thiệu & nguồn dữ liệu') +
         '<div class="dn-h">Liên hệ luật sư</div>' +
         '<a href="tel:0983498499">' + ic('phone') + 'Gọi 0983 498 499</a>' +
         '<a href="https://zalo.me/0983498499" target="_blank" rel="noopener">' + ic('chat') + 'Nhắn Zalo</a>' +
         '<a href="mailto:luatsunam.hcm@gmail.com">' + ic('mail') + 'luatsunam.hcm@gmail.com</a>';
     },
+    // Bảng "Công cụ đọc": mở từ nút Aa ở góc phải trên (điện thoại, khi đang đọc) hoặc nút Aa trong hàng nút của điều
+    // luật (máy tính màn hẹp). Máy tính màn rộng có sẵn khối "Hiển thị" ở cột phải (UI.disp).
     settings: function () {
+      var a = Router.view && Router.view.a;
+      UI.sheet('<h2 id="sheetTitle">Công cụ đọc</h2>' +
+        '<p class="set-sub">' + (a ? 'Điều ' + esc(a.id) + ' · ' : '') + 'Thay đổi áp dụng ngay và được ghi nhớ trên thiết bị này</p>' +
+        UI.disp() +
+        '<div class="set-row"><div><b>Đọc khi không có mạng</b><small>Tải sẵn toàn bộ 428 điều và bình luận (~3 MB)</small></div>' +
+        '<button type="button" class="btn btn--sm" data-act="offline">' + ic('offline') + 'Tải về</button></div>');
+    },
+    // Các dòng chỉnh hiển thị dùng chung cho bảng Công cụ đọc và khối Hiển thị ở cột phải
+    disp: function () {
       var p = Prefs.get(), th = p.theme || 'light', fs = p.fs || 0;
-      UI.sheet('<h2 id="sheetTitle">Tùy chỉnh hiển thị</h2>' +
-        '<div class="set-row"><div><b>Giao diện</b><small>Sáng, tối hoặc theo thiết bị</small></div>' +
+      return '<div class="set-row"><div><b>Giao diện</b><small>Sáng, tối hoặc theo thiết bị</small></div>' +
         '<div class="seg" data-set="theme">' + [['light', 'Sáng'], ['dark', 'Tối'], ['auto', 'Theo máy']].map(function (o) {
           return '<button type="button" data-v="' + o[0] + '" aria-pressed="' + (th === o[0]) + '">' + o[1] + '</button>';
         }).join('') + '</div></div>' +
-        '<div class="set-row"><div><b>Cỡ chữ văn bản</b><small>Áp dụng cho điều luật và bình luận</small></div>' +
-        '<div class="fs-ctl"><button type="button" data-fs="-1" aria-label="Giảm cỡ chữ">A−</button><output id="fsOut">' + (100 + fs * 6) + '%</output><button type="button" data-fs="1" aria-label="Tăng cỡ chữ">A+</button></div></div>' +
-        '<div class="set-row"><div><b>Kiểu chữ điều luật</b><small>Mặc định không chân; có thể chọn kiểu có chân</small></div>' +
-        '<div class="seg" data-set="serif"><button type="button" data-v="0" aria-pressed="' + (p.serif !== true) + '">Không chân</button><button type="button" data-v="1" aria-pressed="' + (p.serif === true) + '">Có chân</button></div></div>' +
-        '<div class="set-row"><div><b>Đọc khi không có mạng</b><small>Tải sẵn toàn bộ 428 điều và bình luận (~3 MB)</small></div>' +
-        '<button type="button" class="btn btn--sm" data-act="offline">' + ic('offline') + 'Tải về</button></div>');
+        '<div class="set-row"><div><b>Cỡ chữ văn bản</b><small>Điều luật và bình luận</small></div>' +
+        '<div class="fs-ctl"><button type="button" data-fs="-1" aria-label="Giảm cỡ chữ">A−</button><output class="fs-out" aria-live="polite">' + (100 + fs * 6) + '%</output><button type="button" data-fs="1" aria-label="Tăng cỡ chữ">A+</button></div></div>' +
+        '<div class="set-row"><div><b>Kiểu chữ điều luật</b><small>Mặc định không chân</small></div>' +
+        '<div class="seg" data-set="serif"><button type="button" data-v="0" aria-pressed="' + (p.serif !== true) + '">Không chân</button><button type="button" data-v="1" aria-pressed="' + (p.serif === true) + '">Có chân</button></div></div>';
     }
   };
+
+  /* Kéo xuống để đóng một bảng trượt từ dưới lên (mục lục, công cụ đọc, xem nhanh điều luật):
+     chạm vào thanh kéo/tiêu đề — hoặc vào phần cuộn được khi phần đó đang ở trên cùng — rồi kéo xuống; bảng bám theo
+     ngón tay. Thả tay khi đã kéo quá 1/4 chiều cao hoặc vuốt nhanh xuống thì đóng, ngược lại bảng trở về chỗ cũ.
+     Kéo ngang (dải chương cuộn ngang…) hoặc kéo lên thì trả lại cho trình duyệt. */
+  function dragDown(o) {
+    var s = null;
+    document.addEventListener('touchstart', function (e) {
+      s = null;
+      if (e.touches.length !== 1 || !o.on()) return;
+      var p = o.panel(), t = e.touches[0];
+      if (!p.contains(e.target) || e.target.closest('input,textarea,select')) return;
+      var sc = o.scroller(e.target);
+      if (sc && sc.scrollTop > 0) return;
+      s = { x0: t.clientX, y0: t.clientY, sc: sc, drag: false, ly: t.clientY, lt: e.timeStamp, v: 0, off: 0, h: 1 };
+    }, { passive: true });
+    document.addEventListener('touchmove', function (e) {
+      if (!s || e.touches.length !== 1) return;
+      var t = e.touches[0], dx = t.clientX - s.x0, dy = t.clientY - s.y0;
+      if (!s.drag) {
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+        if (dy <= 0 || Math.abs(dy) < Math.abs(dx) * 1.2 || (s.sc && s.sc.scrollTop > 0)) { s = null; return; }
+        s.drag = true; s.h = o.panel().offsetHeight || 1; o.start();
+      }
+      if (e.cancelable) e.preventDefault();
+      s.off = Math.max(0, dy);
+      o.panel().style.transform = 'translateY(' + s.off + 'px)';
+      var bg = o.bg(); if (bg) bg.style.opacity = String(Math.max(0, 1 - s.off / s.h));
+      var dt = e.timeStamp - s.lt;
+      if (dt > 0) { s.v = (t.clientY - s.ly) / dt; s.ly = t.clientY; s.lt = e.timeStamp; }
+    }, { passive: false });
+    var end = function () {
+      var g = s; s = null;
+      if (!g || !g.drag) return;
+      if (g.v > 0.5 || (g.v > -0.2 && g.off > g.h / 4)) o.close(); else o.cancel();
+    };
+    document.addEventListener('touchend', end, { passive: true });
+    document.addEventListener('touchcancel', end, { passive: true });
+  }
 
   /* =========================================================================
      6b. Bảng tra nhanh điều luật: toàn bộ điều theo Phần → Chương → Mục; chọn một điều là chuyển ngay tới điều đó.
          Đây là công cụ khi đang đọc (trang điều, trang chương): nút "Mục lục" ở thanh dưới (điện thoại) và đầu trang
-         (máy tính), nút giữa Điều trước/sau, nút cạnh ô lọc ở cột trái, tay nắm/vuốt mép phải, Ctrl/⌘+K.
+         (máy tính), nút giữa Điều trước/sau, nút cạnh ô lọc ở cột trái, Ctrl/⌘+K.
          Ở các trang khác, nút "Mục lục" đầu trang/thanh dưới mở trang Mục lục (muc-luc); menu ☰ và chân trang
          luôn mở trang Mục lục.
-         Máy tính (≥ 1024px): hộp thoại giữa màn hình, cột chương bên trái. Điện thoại, máy tính bảng: ngăn kéo
-         trượt từ mép phải — vuốt từ mép phải sang trái để mở (ngăn kéo bám theo ngón tay), vuốt sang phải để đóng.
+         Máy tính (≥ 1024px): hộp thoại giữa màn hình, cột chương bên trái. Điện thoại, máy tính bảng: bảng trượt từ
+         dưới lên (cùng phía với thanh dưới vừa bấm) — kéo thanh kéo/tiêu đề xuống, hoặc kéo danh sách xuống khi đang ở
+         đầu danh sách, để đóng.
          Ô lọc hiểu số điều (173), không dấu (trom cap), "khoản 2 điều 134", "chương 16". Phím: ↑ ↓ Enter Esc.
      ========================================================================= */
-  var DRAWER = window.matchMedia('(max-width: 1023px)');
-  // Android: vuốt mép màn hình / nút Quay lại của hệ thống phải đóng ngăn kéo chứ không rời trang → thêm một mục lịch sử
-  // tạm khi mở. Không làm trên iOS: mục lịch sử thừa biến cú vuốt mép phải thành "Tiến tới" của Safari.
+  var SHEET = window.matchMedia('(max-width: 1023px)');
+  // Android: nút Quay lại của hệ thống phải đóng bảng chứ không rời trang → thêm một mục lịch sử tạm khi mở.
+  // Không làm trên iOS: Safari không có nút Quay lại của hệ thống; mục lịch sử thừa chỉ làm rối cử chỉ vuốt mép.
   var ANDROID = /Android/i.test(navigator.userAgent || '');
   var Jump = {
     el: null, isOpen: false, hist: false, rows: [], byId: {}, secs: [], secById: {}, act: -1, cur: null, ref: null, spyCur: null,
-    isDrawer: function () { return DRAWER.matches; },
+    isSheet: function () { return SHEET.matches; },
     build: function () {
       var J = Jump, nav = '', list = '', lastP = null;
       DB.chaps.forEach(function (c) {
@@ -451,7 +527,7 @@
       el.innerHTML =
         '<div class="jp-bg" data-act="jump-close"></div>' +
         '<div class="jp-panel" role="dialog" aria-modal="true" aria-labelledby="jpTitle" tabindex="-1">' +
-        '<div class="jp-hd"><div><h2 id="jpTitle">' + ic('olist') + 'Mục lục điều luật</h2><p class="jp-sub" id="jpSub" aria-live="polite"></p></div>' +
+        '<div class="jp-grip" aria-hidden="true"></div><div class="jp-hd"><div><h2 id="jpTitle">' + ic('olist') + 'Mục lục điều luật</h2><p class="jp-sub" id="jpSub" aria-live="polite"></p></div>' +
         '<button type="button" class="jp-x" data-act="jump-close" aria-label="Đóng mục lục">' + ic('x') + '</button></div>' +
         '<div class="jp-tool"><div class="sb"><div class="sb-box">' + ic('filter') +
         '<input class="sb-in" id="jpQ" type="search" autocomplete="off" spellcheck="false" enterkeyhint="go" placeholder="' + (window.matchMedia('(max-width: 560px)').matches ? 'Số điều hoặc tên điều…' : 'Gõ số điều hoặc tên điều… (vd: 173, trom cap, ma tuy)') + '" aria-label="Lọc danh sách điều luật" aria-controls="jpList">' +
@@ -461,12 +537,11 @@
         '<div class="jp-list" id="jpList">' + list + '<div class="jp-empty" id="jpEmpty" hidden></div></div></div>' +
         '<div class="jp-ft"><span class="k"><kbd>↑</kbd><kbd>↓</kbd> chọn điều</span><span class="k"><kbd>Enter</kbd> mở</span><span class="k"><kbd>Esc</kbd> đóng</span>' +
         '<span class="k"><kbd>' + mod + '</kbd>+<kbd>K</kbd> mở mục lục ở mọi trang</span>' +
-        '<p class="jp-tip" id="jpTip" hidden>' + ic('spark') + '<span>Mẹo: vuốt từ mép phải màn hình sang trái để mở nhanh mục lục, vuốt sang phải để đóng.</span></p>' +
         '<a href="muc-luc" title="Trang Mục lục: lọc điều sửa đổi 2025, tổng quan từng chương">Trang Mục lục đầy đủ ' + ic('arrow-r') + '</a></div>' +
         '</div>';
       document.body.appendChild(el);
       J.el = el; J.q = $('#jpQ', el); J.clr = $('#jpClr', el); J.sub = $('#jpSub', el); J.rec = $('#jpRecent', el);
-      J.panel = $('.jp-panel', el); J.bg = $('.jp-bg', el); J.tip = $('#jpTip', el);
+      J.panel = $('.jp-panel', el); J.bg = $('.jp-bg', el);
       J.nav = $('#jpNav', el); J.list = $('#jpList', el); J.empty = $('#jpEmpty', el);
       $$('.jp-sec', el).forEach(function (s) {
         var c = DB.chapById[s.dataset.c], x = { c: c, el: s, btn: $('[data-jc="' + c.id + '"]', J.nav), lo: c.name.toLowerCase(), fo: fold(c.name) };
@@ -494,12 +569,11 @@
         requestAnimationFrame(function () { ticking = false; J.spy(); });
       }, { passive: true });
     },
-    // drag: mở bằng cú vuốt — ngăn kéo đứng ngoài mép phải, vị trí do ngón tay quyết định (xem Jump.swipe)
-    show: function (opener, drag) {
+    show: function (opener) {
       var J = Jump;
       if (!DB.toc) return false;
       // Đang ở trang Mục lục: không mở thêm bảng mục lục chồng lên, chỉ đưa con trỏ vào ô lọc của trang
-      if (Router.view && Router.view.focusFilter) { if (drag) return false; Router.view.focusFilter(); return true; }
+      if (Router.view && Router.view.focusFilter) { Router.view.focusFilter(); return true; }
       if (!J.el) J.build();
       UI.closePop(); UI.closeSheet(); UI.drawer(false);
       clearTimeout(J.tHide);
@@ -517,8 +591,7 @@
       }).join('');
       J.q.value = '';
       J.filter();
-      J.tip.hidden = !isTouch || !!Store.get('swipeOk');
-      J.el.classList.toggle('is-drag', !!drag);
+      J.el.classList.remove('is-drag');
       J.el.hidden = false; J.isOpen = true;
       document.body.style.overflow = 'hidden';
       // Hiện tiêu đề chương ở trên cùng để thấy bối cảnh; chương dài thì đặt điều đang đọc ở khoảng 1/3 khung
@@ -531,21 +604,20 @@
       J.spyCur = null; J.spy();
       // Màn hình cảm ứng: đưa tiêu điểm vào bảng (trình đọc màn hình nhận biết) nhưng không bật bàn phím ảo
       if (isTouch) J.panel.focus({ preventScroll: true }); else J.q.focus({ preventScroll: true });
-      if (!drag) { void J.panel.offsetWidth; J.settle(true); }
+      void J.panel.offsetWidth; J.settle(true);
       return true;
     },
-    // Kết thúc mở/kéo: giữ mở (open) hoặc đóng lại; ngăn kéo trượt nốt từ vị trí đang đứng
-    settle: function (open, bySwipe) {
+    // Kết thúc mở/kéo: giữ mở (open) hoặc đóng lại; bảng trượt nốt từ vị trí đang đứng
+    settle: function (open) {
       var J = Jump;
       J.el.classList.remove('is-drag');
       J.panel.style.transform = ''; J.bg.style.opacity = '';
       if (!open) { J.hide(); return; }
       J.el.classList.add('is-open');
       // Đang chờ lệnh lùi lịch sử trước đó hoàn tất (đóng rồi mở lại rất nhanh) → thêm mục lịch sử sau, khi lệnh lùi xong
-      if (ANDROID && J.isDrawer() && !J.hist) { if (J.backing) J.pushLater = true; else J.push(); }
-      if (bySwipe) { Store.set('swipeOk', 1); J.tip.hidden = true; }
+      if (ANDROID && J.isSheet() && !J.hist) { if (J.backing) J.pushLater = true; else J.push(); }
     },
-    // Gỡ mục lịch sử tạm; đánh dấu để sự kiện popstate do chính lệnh này sinh ra (đến sau) không đóng nhầm ngăn kéo mở lại ngay
+    // Gỡ mục lịch sử tạm; đánh dấu để sự kiện popstate do chính lệnh này sinh ra (đến sau) không đóng nhầm bảng vừa mở lại
     back: function () { Jump.backing = true; history.back(); },
     push: function () { history.pushState({ jp: 1 }, '', location.href); Jump.hist = true; },
     // navigating: đóng vì đang chuyển trang → ẩn ngay, không trả tiêu điểm, không lùi lịch sử
@@ -558,68 +630,21 @@
       J.el.classList.remove('is-open', 'is-drag');
       J.panel.style.transform = ''; J.bg.style.opacity = '';
       clearTimeout(J.tHide);
-      if (J.isDrawer() && !navigating) J.tHide = setTimeout(function () { if (!J.isOpen) J.el.hidden = true; }, 300);
+      if (J.isSheet() && !navigating) J.tHide = setTimeout(function () { if (!J.isOpen) J.el.hidden = true; }, 300);
       else J.el.hidden = true;
       if (!navigating && J.opener && J.opener.focus && J.opener.offsetParent) J.opener.focus({ preventScroll: true });
     },
-    /* Cử chỉ vuốt (điện thoại, máy tính bảng):
-         - mở: chạm trong dải sát mép phải rồi kéo sang trái. Dải rộng hơn mép một chút vì Android dành mép màn hình
-           cho cử chỉ Quay lại của hệ thống;
-         - đóng: kéo ngăn kéo sang phải.
-       Bỏ qua khi chạm vào ô nhập, vùng cuộn ngang (thanh tab, bảng…), khi đang phóng to trang, đang chọn chữ
-       hoặc đang mở menu / cửa sổ khác. Thả tay quá 1/3 quãng đường hoặc vuốt nhanh thì hoàn tất. */
+    // Kéo xuống để đóng (điện thoại, máy tính bảng)
     swipe: function () {
-      var J = Jump, s = null;
-      var hScroll = function (el) {
-        for (; el && el !== document.body; el = el.parentElement) {
-          if (el.matches('input,textarea,select,[contenteditable]')) return true;
-          if (el.scrollWidth > el.clientWidth + 1) { var o = getComputedStyle(el).overflowX; if (o === 'auto' || o === 'scroll') return true; }
-        }
-        return false;
-      };
-      document.addEventListener('touchstart', function (e) {
-        s = null;
-        if (e.touches.length !== 1 || !J.isDrawer() || !DB.toc || (!J.isOpen && Router.view && Router.view.focusFilter)) return;
-        var t = e.touches[0], open = J.isOpen;
-        if (open) {
-          if (!J.panel.contains(e.target)) return;
-        } else {
-          if (t.clientX < window.innerWidth - Math.min(96, Math.max(48, window.innerWidth * 0.18))) return;
-          if (!$('#drawer').hidden || !$('#sheet').hidden) return;
-          if (window.visualViewport && window.visualViewport.scale > 1.02) return;
-          var sel = window.getSelection && window.getSelection();
-          if (sel && !sel.isCollapsed) return;
-        }
-        if (hScroll(e.target)) return;
-        s = { x0: t.clientX, y0: t.clientY, open: open, drag: false, lx: t.clientX, lt: e.timeStamp, v: 0, off: 0, w: 0 };
-      }, { passive: true });
-      document.addEventListener('touchmove', function (e) {
-        if (!s || e.touches.length !== 1) return;
-        var t = e.touches[0], dx = t.clientX - s.x0, dy = t.clientY - s.y0;
-        if (!s.drag) {
-          if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
-          // Cuộn dọc hoặc kéo sai hướng → trả lại cho trình duyệt
-          if (Math.abs(dx) < Math.abs(dy) * 1.3 || (s.open ? dx < 0 : dx > 0)) { s = null; return; }
-          if (s.open) J.el.classList.add('is-drag');
-          else if (!J.show(null, true)) { s = null; return; }
-          s.drag = true; s.w = J.panel.offsetWidth || 1;
-        }
-        if (e.cancelable) e.preventDefault();
-        s.off = Math.max(0, Math.min(s.w, s.open ? dx : s.w + dx));
-        J.panel.style.transform = 'translateX(' + s.off + 'px)';
-        J.bg.style.opacity = String(1 - s.off / s.w);
-        var dt = e.timeStamp - s.lt;
-        if (dt > 0) { s.v = (t.clientX - s.lx) / dt; s.lx = t.clientX; s.lt = e.timeStamp; }
-      }, { passive: false });
-      var end = function () {
-        var g = s; s = null;
-        if (!g || !g.drag) return;
-        // Vuốt nhanh: hướng vuốt quyết định. Kéo chậm: đã đi quá 1/3 quãng đường thì hoàn tất
-        var keep = Math.abs(g.v) > 0.4 ? g.v < 0 : g.off < g.w * (g.open ? 1 / 3 : 2 / 3);
-        J.settle(keep, !g.open);
-      };
-      document.addEventListener('touchend', end, { passive: true });
-      document.addEventListener('touchcancel', end, { passive: true });
+      var J = Jump;
+      dragDown({
+        on: function () { return J.isOpen && J.isSheet(); },
+        panel: function () { return J.panel; }, bg: function () { return J.bg; },
+        scroller: function (t) { return J.list.contains(t) ? J.list : null; },
+        start: function () { J.el.classList.add('is-drag'); },
+        cancel: function () { J.settle(true); },
+        close: function () { J.settle(false); }
+      });
     },
     filter: function () {
       var J = Jump, v = J.q.value.trim();
@@ -1016,6 +1041,7 @@
     var ctx = parseRoute(), main = $('#main');
     var name = ctx.parts[0] || '';
     document.body.classList.toggle('is-reading', name === 'dieu' || name === 'chuong');
+    document.body.classList.toggle('is-article', name === 'dieu');
     // Nút "Mục lục" (thanh dưới, đầu trang) mở bảng nổi khi đang đọc → báo cho trình đọc màn hình
     $$('[data-act="toc"]').forEach(function (a) { if (name === 'dieu' || name === 'chuong') a.setAttribute('aria-haspopup', 'dialog'); else a.removeAttribute('aria-haspopup'); });
     if (name === 'cong-cu' && !VIEWS['cong-cu']) {
@@ -1457,7 +1483,7 @@
       '<button type="button" class="btn" data-act="share" title="Chia sẻ">' + ic('share') + '<span>Chia sẻ</span></button>' +
       '<a class="btn" href="cong-cu-so-sanh?a=' + a.id + '" title="So sánh với điều khác">' + ic('columns') + '<span>So sánh</span></a>' +
       '<button type="button" class="btn btn--ic" data-act="print" title="In điều luật" aria-label="In điều luật">' + ic('print') + '</button>' +
-      '<button type="button" class="btn btn--ic" data-act="settings" title="Tùy chỉnh hiển thị: cỡ chữ, kiểu chữ, giao diện" aria-label="Tùy chỉnh hiển thị" aria-haspopup="dialog">' + ic('text') + '</button>' +
+      '<button type="button" class="btn btn--ic" data-act="settings" title="Công cụ đọc: cỡ chữ, kiểu chữ, sáng/tối" aria-label="Công cụ đọc" aria-haspopup="dialog">' + ic('text') + '</button>' +
       '</div></header>' +
       '<div class="tabs" role="tablist" aria-label="Nội dung điều luật">' +
       tabBtn('noi-dung', '<span class="tl-l">Nội dung điều luật</span><span class="tl-s">Điều luật</span>', null, tab) +
@@ -1684,7 +1710,8 @@
     var rl = refs.length ? '<div class="rc"><h3>' + ic('link') + 'Điều luật liên quan</h3><div class="rl">' + refs.map(function (id) {
       var x = DB.byId[id]; return '<a href="dieu-' + id + '" data-pv="' + id + '"><b>Điều ' + esc(id) + '</b><span>' + esc(x.t) + '</span></a>';
     }).join('') + '</div></div>' : '';
-    $('#rail').innerHTML = pen + kl + rl + '<div class="rc"><h3>' + ic('note') + 'Ghi chú của tôi</h3>' + noteBox(a.id, 'r') + '</div>';
+    var disp = '<div class="rc rc-disp"><h3>' + ic('text') + 'Hiển thị</h3>' + UI.disp() + '</div>';
+    $('#rail').innerHTML = disp + pen + kl + rl + '<div class="rc"><h3>' + ic('note') + 'Ghi chú của tôi</h3>' + noteBox(a.id, 'r') + '</div>';
   };
 
   /* ---------- Tìm kiếm toàn văn ---------- */
@@ -1903,10 +1930,7 @@
 
   function bindGlobal() {
     Jump.swipe();
-    var edge = document.createElement('button');
-    edge.type = 'button'; edge.className = 'jp-edge'; edge.setAttribute('data-act', 'jump'); edge.setAttribute('aria-haspopup', 'dialog');
-    edge.setAttribute('aria-label', 'Mở mục lục (hoặc vuốt từ mép phải sang trái)');
-    document.body.appendChild(edge);
+    UI.sheetDrag();
     document.addEventListener('click', function (e) {
       var t = e.target;
       var pv = t.closest('a[data-pv]');
@@ -1982,17 +2006,17 @@
       }
     });
     document.addEventListener('click', function (e) {
-      var s = e.target.closest('#sheetBody [data-set] button');
+      var s = e.target.closest('[data-set] button');
       if (s) {
         var key = s.parentNode.dataset.set, v = s.dataset.v;
         $$('button', s.parentNode).forEach(function (b) { b.setAttribute('aria-pressed', String(b === s)); });
         if (key === 'theme') Prefs.set('theme', v);
         if (key === 'serif') Prefs.set('serif', v === '1');
       }
-      var f = e.target.closest('#sheetBody [data-fs]');
+      var f = e.target.closest('[data-fs]');
       if (f) {
         var fs = Math.max(-2, Math.min(5, (Prefs.get().fs || 0) + (+f.dataset.fs)));
-        Prefs.set('fs', fs); $('#fsOut').textContent = (100 + fs * 6) + '%';
+        Prefs.set('fs', fs);
       }
       if (!e.target.closest('#pop') && !e.target.closest('sup.fn')) UI.closePop();
     });
