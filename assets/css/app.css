@@ -117,9 +117,6 @@ mark{background:#ffe79a;color:inherit;border-radius:3px;padding:0 1px;box-shadow
 /* Chuyển trang trong ứng dụng: nội dung mới hiện dần rất nhanh thay vì thay tức thì (không áp dụng lần tải đầu) */
 .pg-in{animation:pgIn .2s ease-out}
 @keyframes pgIn{from{opacity:.35}}
-.boot{display:grid;place-items:center;gap:14px;padding:22vh 16px;color:var(--muted)}
-.boot img{animation:pulse 1.6s ease-in-out infinite}
-@keyframes pulse{50%{transform:scale(.92);opacity:.7}}
 
 /* ---------- Header ---------- */
 .hd{position:sticky;top:0;z-index:40;background:var(--hd-bg);color:#fff;box-shadow:0 1px 0 rgba(0,0,0,.18),0 8px 24px -16px rgba(40,0,0,.8)}
@@ -252,11 +249,10 @@ mark{background:#ffe79a;color:inherit;border-radius:3px;padding:0 1px;box-shadow
 .btn--ic{width:38px;padding:0!important}
 .btn--sm{height:34px;padding:0 12px;font-size:.85rem;border-radius:10px}
 .btn[aria-pressed="true"]{background:var(--gold-50);border-color:var(--gold-400);color:var(--gold-800)}
-.chip{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:999px;font-size:.85rem;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);white-space:nowrap;cursor:pointer}
+.chip{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:999px;font-size:.85rem;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);white-space:nowrap;cursor:pointer;max-width:100%}
 .chip:hover{border-color:var(--gold-400);color:var(--ink)}
 .chip[aria-pressed="true"],.chip.on{background:var(--primary);border-color:var(--primary);color:#fff}
 .chip .n{font-size:.75rem;opacity:.75}
-.chip{max-width:100%}
 @media (max-width:560px){.presets .chip,.kpick .chip{white-space:normal;height:auto;min-height:38px;padding-top:6px;padding-bottom:6px;line-height:1.3;text-align:left}}
 .tag{display:inline-flex;align-items:center;gap:4px;font-size:.72rem;font-weight:600;line-height:1;padding:5px 8px;border-radius:999px;white-space:nowrap;vertical-align:middle}
 .tag svg{width:12px;height:12px}
@@ -598,7 +594,6 @@ select.inp{appearance:none;-webkit-appearance:none;background-image:url("data:im
 .law .kn:hover{background:var(--red-50)}
 .law .lp{padding-left:1.6em;text-indent:-1.15em}
 .law .lp b.pl{font-family:var(--f-ui);font-weight:700;color:var(--ink-2)}
-.law .lx{}
 .law .lh{font-family:var(--f-ui);font-weight:700;font-size:.95em;margin:18px 0 8px;color:var(--primary-ink)}
 .law sup.am{font-family:var(--f-ui);font-size:.62em;font-weight:700;color:var(--gold-700);background:var(--gold-100);border-radius:4px;padding:1px 4px;margin-left:3px;cursor:help;vertical-align:super}
 .law a.xr,.cm a.xr{color:var(--link);border-bottom:1px dashed color-mix(in srgb,var(--link) 50%,transparent);font-weight:500}

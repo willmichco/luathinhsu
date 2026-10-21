@@ -40,6 +40,8 @@
   }
   function today() { var t = new Date(); return new Date(t.getFullYear(), t.getMonth(), t.getDate()); }
   var fd = A.fmtDate;
+  // Khung mặc định khi chọn một điều: khoản đầu tiên có khung hình phạt chính (tội phạm ở dạng cơ bản)
+  function firstK(a) { var k = (a.M.k || []).filter(function (x) { return !x.bs; })[0]; return k ? k.n : null; }
   function lk(id, label) { return '<a href="dieu-' + id + '" data-pv="' + id + '">' + (label || 'Điều ' + id) + '</a>'; }
 
   /* ---------- Ô chọn điều luật ---------- */
@@ -140,7 +142,7 @@
       lv: +(ctx.q.get('m') || 3), nl: ctx.q.get('nl') === '1',
       d0: ctx.q.get('d') || '', nc: '', nw: ''
     };
-    if (st.a && !st.k) { var mk = Pen.maxOf(st.a); st.k = mk ? mk.n : null; }
+    if (st.a && !st.k) st.k = firstK(st.a);
     main.innerHTML = page('Phân loại tội phạm & thời hiệu truy cứu', 'Chọn điều luật và khoản (hoặc tự nhập mức cao nhất của khung hình phạt) để xác định loại tội theo Điều 9 và thời hiệu truy cứu trách nhiệm hình sự theo Điều 27, Điều 28.', 'Thời hiệu',
       '<div class="tool"><form class="tool-form" onsubmit="return false">' +
       '<div class="seg" role="group" aria-label="Cách nhập"><button type="button" data-mode="art" aria-pressed="' + (st.mode === 'art') + '">Theo điều luật</button><button type="button" data-mode="manual" aria-pressed="' + (st.mode === 'manual') + '">Tự nhập khung</button></div>' +
@@ -158,7 +160,7 @@
     var picker = ArtPicker($('#pick'), {
       value: st.a, ph: 'Ví dụ: 173 hoặc trộm cắp',
       filter: function (a) { return (a.M.k || []).some(function (k) { return !k.bs; }); },
-      onChange: function (a) { st.a = a; st.k = (a.M.k || []).filter(function (k) { return !k.bs; })[0].n; drawK(); calc(); }
+      onChange: function (a) { st.a = a; st.k = firstK(a); drawK(); calc(); }
     });
     function drawK() {
       var box = $('#kpick');
@@ -226,7 +228,7 @@
     main.addEventListener('click', function (e) {
       var b = e.target.closest('[data-mode]'); if (b) { mode(b.dataset.mode); return; }
       var k = e.target.closest('#kpick [data-k]'); if (k) { st.k = k.dataset.k; drawK(); calc(); return; }
-      var pa = e.target.closest('[data-pa]'); if (pa) { st.a = DB.byId[pa.dataset.pa]; picker.set(st.a); st.k = Pen.maxOf(st.a).n; drawK(); calc(); }
+      var pa = e.target.closest('[data-pa]'); if (pa) { st.a = DB.byId[pa.dataset.pa]; picker.set(st.a); st.k = firstK(st.a); drawK(); calc(); }
     });
     $('#lv').addEventListener('change', function () { st.lv = +this.value; calc(); });
     $('#nl').addEventListener('change', function () { st.nl = this.checked; calc(); });
@@ -241,7 +243,8 @@
     var s;
     if (a.M.a14 && k.c >= 3) s = '<b>Người từ đủ 14 tuổi đến dưới 16 tuổi phải chịu trách nhiệm hình sự</b> ở khung này (tội ' + CLS[k.c].n.toLowerCase() + ', Điều ' + a.id + ' thuộc danh sách tại ' + AGE14_NOTE + ').';
     else if (a.M.a14) s = 'Điều ' + a.id + ' thuộc danh sách tại ' + AGE14_NOTE + ', nhưng khung này là tội ' + CLS[k.c].n.toLowerCase() + ' nên <b>người từ đủ 14 đến dưới 16 tuổi không phải chịu TNHS</b> ở khung này; người từ đủ 16 tuổi trở lên phải chịu TNHS.';
-    else s = 'Điều ' + a.id + ' không thuộc danh sách tại ' + AGE14_NOTE + ': <b>chủ thể phải từ đủ 16 tuổi trở lên</b> (trừ trường hợp điều luật quy định độ tuổi cao hơn).';
+    else if (a.M.a18) s = 'Điều ' + a.id + ' quy định chủ thể là <b>người từ đủ 18 tuổi trở lên</b>; người dưới 18 tuổi không phải là chủ thể của tội này.';
+    else s = 'Điều ' + a.id + ' không thuộc danh sách tại ' + AGE14_NOTE + ': <b>chủ thể phải từ đủ 16 tuổi trở lên</b>.';
     if (k.cb && (a.id === '123' || a.id === '168')) s += ' Riêng hành vi chuẩn bị phạm tội tại Điều ' + a.id + ', người từ đủ 14 đến dưới 16 tuổi phải chịu TNHS (khoản 3 ' + lk('14', 'Điều 14') + ').';
     return '<div class="res"><h3>Độ tuổi chịu trách nhiệm hình sự</h3><p style="line-height:1.6">' + s + '</p><p class="legal-src">' + ic('scale') + 'Căn cứ: ' + lk('12', 'Điều 12') + ' · <a href="cong-cu-tuoi?a=' + a.id + '&k=' + k.n + '">Tính tuổi cụ thể ' + ic('arrow-r') + '</a></p></div>';
   }
@@ -298,8 +301,7 @@
         var a = st.a, k = (a.M.k || []).filter(function (x) { return x.n === st.k; })[0];
         var r, rc;
         if (y >= 16) {
-          var need18 = ['145', '146', '147'].indexOf(a.id) > -1;
-          if (need18 && y < 18) { rc = 'c1'; r = 'Không thuộc chủ thể của Điều ' + a.id + ': điều luật này chỉ áp dụng với người <b>đủ 18 tuổi trở lên</b>.'; }
+          if (a.M.a18 && y < 18) { rc = 'c1'; r = 'Không thuộc chủ thể của Điều ' + a.id + ': điều luật này chỉ áp dụng với người <b>đủ 18 tuổi trở lên</b>.'; }
           else { rc = 'c4'; r = '<b>Phải chịu trách nhiệm hình sự</b> về hành vi theo Điều ' + a.id + (k && k.n ? ' (khoản ' + k.n + ')' : '') + ', nếu thỏa mãn các dấu hiệu cấu thành tội phạm.'; }
         } else if (a.M.a14 && k && k.c >= 3) { rc = 'c4'; r = '<b>Phải chịu trách nhiệm hình sự</b>: Điều ' + a.id + ' thuộc danh sách tại khoản 2 Điều 12 và khung ' + (k.n ? 'khoản ' + k.n : 'này') + ' là tội ' + CLS[k.c].n.toLowerCase() + '.'; }
         else if (a.M.a14) { rc = 'c1'; r = '<b>Không phải chịu TNHS</b> ở khung ' + (k && k.n ? 'khoản ' + k.n : 'này') + ' vì đây là tội ' + (k ? CLS[k.c].n.toLowerCase() : '') + ' (khoản 2 Điều 12 chỉ áp dụng với tội rất nghiêm trọng, đặc biệt nghiêm trọng).'; }
@@ -363,9 +365,15 @@
       if (!d0) return '<p class="sub" style="margin-top:10px">Nhập ngày bản án có hiệu lực để tính mốc hết thời hiệu.</p>';
       var start = d0, steps = ['Bản án có hiệu lực pháp luật: <b>' + fd(d0) + '</b>'], end = addYears(start, n);
       var dnc = $('#cnc').checked ? parseD($('#dnc').value) : null;
-      if (dnc && dnc > start && dnc < end) { start = dnc; end = addYears(start, n); steps.push('Phạm tội mới ngày <b>' + fd(dnc) + '</b> → thời hiệu tính lại từ ngày này (khoản 4 Điều 60).'); }
+      if (dnc) {
+        if (dnc > start && dnc < end) { start = dnc; end = addYears(start, n); steps.push('Phạm tội mới ngày <b>' + fd(dnc) + '</b> (trong thời hạn) → thời hiệu tính lại từ ngày này (khoản 4 Điều 60).'); }
+        else steps.push('Ngày phạm tội mới (' + fd(dnc) + ') không nằm trong thời hạn thời hiệu nên không làm tính lại thời hiệu.');
+      }
       var dnw = sub === 'cn' && $('#cnw').checked ? parseD($('#dnw').value) : null;
-      if (dnw && dnw > start) { start = dnw; end = addYears(start, n); steps.push('Ra trình diện/bị bắt giữ ngày <b>' + fd(dnw) + '</b> → thời hiệu tính lại từ ngày này (khoản 5 Điều 60).'); }
+      if (dnw) {
+        if (dnw > start) { start = dnw; end = addYears(start, n); steps.push('Có quyết định truy nã; ra trình diện/bị bắt giữ ngày <b>' + fd(dnw) + '</b> → thời hiệu tính lại từ ngày này (khoản 5 Điều 60).'); }
+        else steps.push('Ngày ra trình diện/bị bắt giữ phải sau mốc đang tính (' + fd(start) + ').');
+      }
       var t = today();
       steps.push('Hết thời hiệu vào ngày tương ứng: <b>' + fd(end) + '</b> ' + (t < end ? '<span class="tag tag--c1">Còn khoảng ' + span(diff(t, end)) + '</span>' : '<span class="tag tag--c4">Đã hết thời hiệu (tham khảo)</span>'));
       return '<ul>' + steps.map(function (s) { return '<li>' + s + '</li>'; }).join('') + '</ul>';
@@ -419,7 +427,7 @@
         var row = function (label, fa, fb) { return '<tr><th scope="row" style="text-transform:none;letter-spacing:0;font-size:.85rem">' + label + '</th><td>' + fa + '</td><td>' + fb + '</td></tr>'; };
         var penList = function (x) { var l = ks(x); return l.length ? l.map(function (k) { return '<div style="margin:3px 0">' + (k.n ? '<b>K' + k.n + ':</b> ' : '') + '<span class="tag tag--c' + k.c + '">' + esc(Pen.label(k)) + '</span></div>'; }).join('') : '<span class="muted">Không quy định khung hình phạt</span>'; };
         var clsRange = function (x) { var l = ks(x); if (!l.length) return '—'; var lo = Math.min.apply(0, l.map(function (k) { return k.c; })), hi = Math.max.apply(0, l.map(function (k) { return k.c; })); return lo === hi ? CLS[lo].n : CLS[lo].n + ' → ' + CLS[hi].n; };
-        var age = function (x) { return ks(x).length ? (x.M.a14 ? 'Từ đủ 14 tuổi (khung rất/đặc biệt nghiêm trọng)' : ['145', '146', '147'].indexOf(x.id) > -1 ? 'Từ đủ 18 tuổi' : 'Từ đủ 16 tuổi') : '—'; };
+        var age = function (x) { return ks(x).length ? (x.M.a14 ? 'Từ đủ 14 tuổi (khung rất/đặc biệt nghiêm trọng)' : x.M.a18 ? 'Từ đủ 18 tuổi' : 'Từ đủ 16 tuổi') : '—'; };
         var thr = function (x) { var l = ks(x); if (!l.length) return '—'; if (x.M.nl === 1) return 'Không áp dụng (Điều 28)'; var t = l.map(function (k) { return CLS[k.c].th; }); return Math.min.apply(0, t) + ' – ' + Math.max.apply(0, t) + ' năm' + (x.M.nl ? ' (khoản ' + x.M.nl.join(', ') + ': không áp dụng)' : ''); };
         var col = function (x, d) {
           return '<div class="cmp-col"><h3><a href="dieu-' + x.id + '"><b>Điều ' + esc(x.id) + '.</b> ' + esc(x.t) + '</a></h3><div class="law-paper"><div class="law">' + A.lawHtml(x, d).html + '</div></div></div>';
@@ -482,7 +490,7 @@
       });
       if (st.sort === 'max') list.sort(function (x, y) { return y.score - x.score || x.a.i - y.a.i; });
       $('#cnt').textContent = list.length + ' / ' + rows.length + ' tội danh';
-      var age = function (a) { return a.M.a14 ? '14' : ['145', '146', '147'].indexOf(a.id) > -1 ? '18' : '16'; };
+      var age = function (a) { return a.M.a14 ? '14' : a.M.a18 ? '18' : '16'; };
       var cr = function (r) { return r.cmin === r.cmax ? '<span class="tag tag--c' + r.cmin + '">' + CLS[r.cmin].n + '</span>' : '<span class="tag tag--c' + r.cmin + '">' + CLS[r.cmin].n + '</span> → <span class="tag tag--c' + r.cmax + '">' + CLS[r.cmax].n + '</span>'; };
       // Chỉ dựng dạng đang hiển thị: bảng (màn hình rộng) hoặc thẻ (điện thoại) — dạng kia để trống
       var wide = mq.matches;

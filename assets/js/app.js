@@ -20,7 +20,7 @@
   var cap = function (s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; };
   var debounce = function (fn, ms) { var t; return function () { var a = arguments, c = this; clearTimeout(t); t = setTimeout(function () { fn.apply(c, a); }, ms); }; };
   var isTouch = window.matchMedia('(hover: none)').matches;
-  var VER = '20261015d';
+  var VER = '20261021a';
   // Thư mục gốc của trang web (…/luathinhsu/), suy ra từ vị trí tệp assets/js/app.js
   var ROOT = document.currentScript ? new URL('../../', document.currentScript.src).href : new URL('./', location.href).href;
   var ROOT_PATH = new URL(ROOT).pathname;
@@ -655,6 +655,7 @@
     },
     filter: function () {
       var J = Jump, v = J.q.value.trim();
+      J.lastV = J.q.value;
       J.clr.hidden = !v;
       // Hiểu cú pháp tra nhanh như ô tìm kiếm: 173 · điều 173 · khoản 2 điều 134 · chương 16
       var r = v ? parseRef(v) : null, chap = null, only = null, num = null, cq = null;
@@ -730,6 +731,8 @@
     },
     onKey: function (e) {
       var J = Jump;
+      // Gõ (hoặc dán) rồi nhấn phím ngay, trước khi bộ lọc trễ kịp chạy → lọc ngay để không mở nhầm theo kết quả cũ
+      if ((e.key === 'Enter' || e.key === 'ArrowDown' || e.key === 'ArrowUp') && J.q.value !== J.lastV) J.filter();
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         e.preventDefault();
         var d = e.key === 'ArrowDown' ? 1 : -1, i = J.act;
@@ -975,8 +978,10 @@
         FT.worker = w;
       } catch (e) { FT.fallback(chapters, titles); }
     },
+    // Chạy tìm kiếm ngay trên trang khi không dùng được Web Worker (chỉ một lần, dù worker báo lỗi theo nhiều đường)
     fallback: function (chapters, titles) {
-      if (FT.engine) return;
+      if (FT.engine || FT.fb) return;
+      FT.fb = true;
       var load = window.LXEngine ? Promise.resolve() : new Promise(function (res, rej) {
         var s = document.createElement('script'); s.src = abs('assets/js/search-engine.js?v=' + VER); s.onload = res; s.onerror = rej; document.head.appendChild(s);
       });
@@ -989,7 +994,11 @@
         FT.engine.load(titles, lists);
         FT.ready = true; FT.emit('ready', {});
         Object.keys(FT.cbs).forEach(function (k) { var x = FT.cbs[k]; delete FT.cbs[k]; FT.query(x.q).then(x.cb); });
-      }).catch(function () { FT.emit('error', {}); });
+      }).catch(function () {
+        // Mất mạng…: cho phép thử lại ở lần tìm sau thay vì kẹt ở trạng thái "đang nạp"
+        FT.fb = false; FT.started = false;
+        FT.emit('error', {});
+      });
     },
     listeners: [],
     on: function (fn) { FT.listeners.push(fn); },
@@ -1055,7 +1064,7 @@
     if (!h || h.charAt(0) === '#' || (a.target && a.target !== '_self') || a.hasAttribute('download')) return null;
     var u = new URL(a.href);
     if (u.origin !== location.origin || u.pathname.indexOf(ROOT_PATH) !== 0) return null;
-    return /[\/.]/.test(u.pathname.slice(ROOT_PATH.length).replace(/\.html$/, '')) ? null : u;
+    return /[/.]/.test(u.pathname.slice(ROOT_PATH.length).replace(/\.html$/, '')) ? null : u;
   }
   function setNav(name) {
     $$('[data-nav]').forEach(function (a) { a.classList.toggle('on', a.dataset.nav === name); if (a.dataset.nav === name) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
@@ -1566,11 +1575,18 @@
       if (e.key === 'ArrowRight' && next) go('dieu-' + next.id);
     };
     document.addEventListener('keydown', this.onKey);
+    // Thanh tiến độ đọc: cập nhật tối đa một lần mỗi khung hình
+    var bar = $('#progress'), pending = false;
     this.onScroll = function () {
-      var el = $('#art'); if (!el) return;
-      var r = el.getBoundingClientRect(), total = r.height - window.innerHeight + 120;
-      var p = total > 0 ? Math.min(1, Math.max(0, (-r.top + 80) / total)) : 0;
-      $('#progress').style.width = (p * 100) + '%';
+      if (pending) return;
+      pending = true;
+      requestAnimationFrame(function () {
+        pending = false;
+        var el = $('#art'); if (!el) return;
+        var r = el.getBoundingClientRect(), total = r.height - window.innerHeight + 120;
+        var p = total > 0 ? Math.min(1, Math.max(0, (-r.top + 80) / total)) : 0;
+        bar.style.width = (p * 100) + '%';
+      });
     };
     window.addEventListener('scroll', this.onScroll, { passive: true });
   }

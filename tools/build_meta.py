@@ -214,6 +214,10 @@ def main():
                 m["k"] = ks
             if aid in AGE14:
                 m["a14"] = 1
+            # Chủ thể đặc biệt: điều luật tự quy định người phạm tội phải "đủ 18 tuổi trở lên" (vd. Điều 145, 146, 147, 325, 329)
+            first = next((plain(h) for k, h in a["law"] if k in ("k", "x")), "")
+            if re.match(r"^(1\.\s*)?Người nào đủ 18 tuổi trở lên", first):
+                m["a18"] = 1
             if chap_of[aid] in ("c13", "c26"):
                 m["nl"] = 1  # không áp dụng thời hiệu (Điều 28, Điều 61)
             if aid in ("353", "354"):

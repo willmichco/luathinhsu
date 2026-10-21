@@ -890,7 +890,7 @@ def page_tools():
     rows = penalty_rows()
 
     def age(a):
-        return "14" if a.M.get("a14") else "18" if a.id in ("145", "146", "147") else "16"
+        return "14" if a.M.get("a14") else "18" if a.M.get("a18") else "16"
 
     def cr(r):
         t = '<span class="tag tag--c%d">%s</span>' % (r["cmin"], CLS[r["cmin"]]["n"])
@@ -981,6 +981,36 @@ def page_saved():
             "desc": "Các điều luật đã lưu, ghi chú cá nhân và lịch sử tra cứu Bộ luật Hình sự trên thiết bị này."}
 
 
+def js_const(path, name):
+    """Đọc một hằng số dạng đối tượng/mảng đơn giản khai báo `var NAME = …;` trong tệp JS (chuỗi '…', khóa không ngoặc)."""
+    src = open(os.path.join(ROOT, path), encoding="utf-8").read()
+    m = re.search(r"var %s = (.*?);\n" % name, src, re.S)
+    assert m, "Không thấy hằng số %s trong %s" % (name, path)
+    lit = re.sub(r"//[^\n]*", "", m.group(1))
+    out, i = [], 0
+    while i < len(lit):  # đổi chuỗi '…' thành "…" theo JSON
+        ch = lit[i]
+        if ch == "'":
+            j = i + 1
+            while lit[j] != "'":
+                j += 2 if lit[j] == "\\" else 1
+            out.append(json.dumps(lit[i + 1:j].replace("\\'", "'"), ensure_ascii=False)); i = j + 1
+        else:
+            out.append(ch); i += 1
+    lit = re.sub(r'"\s*\+\s*"', "", "".join(out))  # 'a' + 'b' → "ab"
+    lit = re.sub(r"([{,]\s*)([A-Za-z_]\w*|\d+)\s*:", r'\1"\2":', lit)
+    return json.loads(lit)
+
+
+def check_sync():
+    """Hằng số pháp lý khai báo cả ở giao diện (JS) và trang dựng tĩnh: phải giống hệt để hai bản không lệch nhau."""
+    pairs = [("assets/js/app.js", "CLS", {str(k): v for k, v in CLS.items()}), ("assets/js/app.js", "CH_NOTE", CH_NOTE),
+             ("assets/js/app.js", "ICONS", ICONS), ("assets/js/app.js", "POPULAR", POPULAR), ("assets/js/app.js", "GENERAL", GENERAL),
+             ("assets/js/tools.js", "PRESETS", [list(x) for x in PRESETS])]
+    bad = [n for f, n, v in pairs if js_const(f, n) != v]
+    assert not bad, "Hằng số lệch giữa tools/build_seo.py và JS: %s – sửa cho giống nhau rồi chạy lại" % ", ".join(bad)
+
+
 # =============================================================================
 # Ghép khuôn trang & ghi tệp
 # =============================================================================
@@ -1046,6 +1076,7 @@ def lastmod_date():
 
 
 def main():
+    check_sync()
     tpl_path = os.path.join(ROOT, "index.html")
     tpl = open(tpl_path, encoding="utf-8").read()
     for mark in ("<!--seo:head-->", "<!--/seo:head-->", "<!--seo:main-->", "<!--/seo:main-->"):
