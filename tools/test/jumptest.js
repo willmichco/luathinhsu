@@ -6,8 +6,8 @@ const { chromium } = require('playwright');
 (async () => {
   const b = await chromium.launch();
   const errs = [];
-  async function page(w, h, theme, mobile) {
-    const ctx = await b.newContext({ viewport: { width: w, height: h }, isMobile: !!mobile, hasTouch: !!mobile, deviceScaleFactor: 1 });
+  async function page(w, h, theme, mobile, ua) {
+    const ctx = await b.newContext({ viewport: { width: w, height: h }, isMobile: !!mobile, hasTouch: !!mobile, deviceScaleFactor: 1, userAgent: ua });
     await ctx.addInitScript(t => { localStorage.setItem('lx.prefs', JSON.stringify({ tv: 3, theme: t })); localStorage.setItem('lx.hist', JSON.stringify([{id:'168',t:1},{id:'173',t:1},{id:'51',t:1}])); }, theme);
     const p = await ctx.newPage();
     p.on('pageerror', e => errs.push(w + ' ' + e.message));
@@ -82,7 +82,11 @@ const { chromium } = require('playwright');
   await p.context().close();
   p = await page(1280, 860, 'light');
   await p.goto(BASE, { waitUntil: 'networkidle' });
-  await p.click('.hd-nav a[data-nav="muc-luc"]'); await p.waitForSelector('#jump:not([hidden])');
+  // Ngoài trang đọc, "Mục lục" là liên kết tới trang Mục lục; bảng tra nhanh vẫn mở bằng Ctrl/⌘+K
+  await p.click('.hd-nav a[data-nav="muc-luc"]'); await p.waitForTimeout(500);
+  check(p.url().endsWith('muc-luc') && await p.$eval('#jump', e => e.hidden).catch(() => true), 'trang chủ: "Mục lục" mở trang Mục lục');
+  await p.goto(BASE, { waitUntil: 'networkidle' });
+  await p.keyboard.press('Control+k'); await p.waitForSelector('#jump:not([hidden])');
   await p.waitForTimeout(400); await p.screenshot({ path: OUT + 'jp-desktop-light-home.png' });
   await p.fill('#jpQ', 'ma tuy'); await p.waitForTimeout(200); await p.screenshot({ path: OUT + 'jp-desktop-light-filter.png' });
   check(await p.$$eval('.jp-nav button:not([hidden])', b => b.length) < 27, 'khi lọc chỉ còn các chương có kết quả ở cột trái');
@@ -94,6 +98,9 @@ const { chromium } = require('playwright');
   await p.waitForSelector('#lawBody');
   await p.screenshot({ path: OUT + 'mob-dark-171.png' });
   await p.tap('.tabbar a[data-nav="muc-luc"]'); await p.waitForSelector('#jump:not([hidden])');
+  await p.waitForTimeout(450);
+  const r = await p.$eval('.jp-panel', e => { const b = e.getBoundingClientRect(); return { b: Math.round(b.bottom), l: Math.round(b.left), u: location.pathname.split('/').pop() }; });
+  check(r.b === 844 && r.l === 0 && r.u === 'dieu-171', 'điện thoại, đang đọc: tab Mục lục mở bảng từ dưới lên tại chỗ (' + JSON.stringify(r) + ')');
   check(await p.$eval('#jpQ', e => document.activeElement !== e), 'điện thoại: không tự bật bàn phím');
   check(await p.evaluate(() => !!document.activeElement.closest('.jp-panel')), 'điện thoại: tiêu điểm nằm trong bảng');
   await p.waitForTimeout(450); await p.screenshot({ path: OUT + 'jp-mob-dark.png' });
@@ -102,9 +109,20 @@ const { chromium } = require('playwright');
   await p.tap('.jp-a[data-id="134"]'); await p.waitForTimeout(600);
   check(p.url().endsWith('dieu-134'), 'điện thoại: chạm Điều 134 → chuyển trang');
   // menu
-  await p.tap('.hd-menu'); await p.waitForTimeout(200);
-  await p.tap('#drawerNav [data-act="jump"]'); await p.waitForSelector('#jump:not([hidden])');
-  check(await p.$eval('#drawer', e => e.hidden), 'mục "Mục lục Bộ luật" trong menu mở bảng và đóng menu');
+  await p.tap('.hd-menu'); await p.waitForTimeout(250);
+  await p.tap('#drawerNav a[href="muc-luc"]'); await p.waitForTimeout(600);
+  check(p.url().endsWith('muc-luc'), 'menu ☰ "Mục lục Bộ luật" mở trang Mục lục');
+  await p.context().close();
+  // Android: nút Quay lại đóng bảng, không rời trang; chọn điều rồi Quay lại một lần về đúng điều trước
+  p = await page(412, 900, 'light', true, 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Mobile Safari/537.36');
+  await p.goto(BASE + 'dieu-171', { waitUntil: 'networkidle' }); await p.waitForSelector('#lawBody');
+  await p.tap('.tabbar a[data-nav="muc-luc"]'); await p.waitForTimeout(450);
+  await p.evaluate(() => history.back()); await p.waitForTimeout(600);
+  check(await p.$eval('#jump', e => e.hidden) && p.url().endsWith('dieu-171'), 'Android: Quay lại khi bảng mở → chỉ đóng bảng');
+  await p.tap('.tabbar a[data-nav="muc-luc"]'); await p.waitForTimeout(450);
+  await p.tap('.jp-a[data-id="168"]'); await p.waitForTimeout(600);
+  await p.evaluate(() => history.back()); await p.waitForTimeout(700);
+  check(p.url().endsWith('dieu-171'), 'Android: chọn Điều 168 rồi Quay lại 1 lần → về Điều 171');
   await p.context().close();
   p = await page(360, 740, 'light', true);
   await p.goto(BASE + 'chuong-20', { waitUntil: 'networkidle' });

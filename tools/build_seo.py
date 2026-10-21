@@ -487,7 +487,7 @@ def page_home():
     main = (
         '<section class="hero">' + drum() + '<div class="wrap hero-grid">'
         '<div><span class="eyebrow">Bộ luật số 100/2015/QH13 · cập nhật 2025</span>'
-        "<h1>Tra cứu <em>Bộ luật Hình sự</em> <br>nhanh, chính xác, dễ hiểu</h1>"
+        "<h1>Tra cứu <em>Bộ luật Hình sự</em> <br>nhanh, chính xác, dễ&nbsp;hiểu</h1>"
         '<p class="hero-sub">Toàn văn %d điều luật kèm bình luận khoa học, khung hình phạt từng khoản, phân loại tội phạm và '
         "thời hiệu — tìm được cả khi gõ không dấu.</p>" % st["arts"] +
         '<div id="heroSearch">' + search_form(lg=True) + "</div>"
@@ -583,7 +583,7 @@ def page_toc():
                "3 phần · 26 chương · %d điều. Gõ để lọc tức thì theo số điều hoặc tên điều (có dấu hay không dấu đều được)." % len(ARTS),
                "Cấu trúc Bộ luật") +
             '<div class="toc-bar js-only"><div class="wrap"><div class="sb"><div class="sb-box">' + ic("filter") +
-            '<input class="sb-in" type="search" placeholder="Lọc mục lục… (vd: tai san, 250)" aria-label="Lọc mục lục"></div></div>'
+            '<input class="sb-in" type="search" placeholder="Lọc mục lục… (vd: tai san, 250, chương 16)" aria-label="Lọc mục lục"></div></div>'
             '<div class="toc-open" role="group" aria-label="Bộ lọc">' +
             "".join('<button type="button" class="chip" aria-pressed="%s">%s</button>' % ("true" if i == 0 else "false", t)
                     for i, t in enumerate(["Tất cả", "Sửa đổi 2025", "Có dấu (*)"])) +
@@ -627,7 +627,8 @@ def page_chapter(c):
     names = "; ".join(a.t for a in c["arts"][:6])
     desc = clip("%s Bộ luật Hình sự 2015 (sửa đổi 2025)%s gồm %d điều (Điều %s – %s): %s"
                 % (c["label"], " – " + c["name"] if c["num"] else "", len(c["arts"]), c["first"].id, c["last"].id, names), 175)
-    return {"path": "chuong-" + c["slug"], "title": c["title"] + SUFFIX, "desc": desc, "main": main, "crumbs": crumbs, "lastmod": True}
+    return {"path": "chuong-" + c["slug"], "title": c["title"] + SUFFIX, "desc": desc, "main": main, "crumbs": crumbs, "lastmod": True,
+            "body": "is-reading"}
 
 
 def side_html(a):
@@ -708,9 +709,10 @@ def page_article(a):
             callouts += ('<div class="callout callout--new" style="margin-bottom:16px">%s<div>%s</div></div>'
                          % (ic("spark"), fix_html(raw, note_map)))
     has_pen = bool(main_frames(a))
-    pen_card = ('<details class="rc mob-only" open style="margin-bottom:16px"><summary style="cursor:pointer;font-weight:700;'
-                'display:flex;gap:8px;align-items:center">%sTóm tắt khung hình phạt</summary><div style="margin-top:12px">%s</div></details>'
-                % (ic("scale"), pen_chart(a))) if has_pen else ""
+    n_k = len(main_frames(a))
+    pen_card = ('<details class="rc pen-sum mob-only"><summary>%s<b>Biểu đồ khung hình phạt</b><span class="ps-n">%s</span>%s</summary>'
+                '<div class="pen-body">%s</div></details>'
+                % (ic("scale"), "%d khoản" % n_k if n_k > 1 else "1 khung", ic("chev-d", "chev"), pen_chart(a))) if has_pen else ""
     head = (
         '<header class="art-h">' + crumb(crumbs) +
         '<div class="art-tags"><span class="tag tag--soft">%s</span><a class="tag tag--soft" href="chuong-%s">%s</a>%s%s</div>'
@@ -718,7 +720,7 @@ def page_article(a):
            '<span class="tag tag--a14" title="Người từ đủ 14 đến dưới 16 tuổi chịu TNHS ở khung rất nghiêm trọng, đặc biệt nghiêm trọng">'
            "Từ đủ 14 tuổi chịu TNHS (khoản 2 Điều 12)</span>" if M.get("a14") else "") +
         '<h1><span class="dn">Điều %s.</span> %s</h1>' % (esc(a.id), esc(a.t)) +
-        '<div class="art-sum"><span>%s%s</span>%s<span>%s~%d phút đọc%s</span>%s</div>'
+        '<div class="art-sum"><span>%s%s</span>%s<span class="rt">%s~%d phút đọc%s</span>%s</div>'
         % (ic(ICONS.get(c["id"], "book")), esc(c["name"]), "<span>%s%s</span>" % (ic("list"), esc(muc)) if muc else "",
            ic("clock"), read_min(M["ln"][0] if M.get("ln") else 0),
            " · bình luận ~%d phút" % read_min(M["ln"][1]) if has_cm else "",
@@ -729,8 +731,8 @@ def page_article(a):
         '<button type="button" class="btn" data-act="share" title="Chia sẻ">%s<span>Chia sẻ</span></button>' % ic("share") +
         '<a class="btn" href="cong-cu-so-sanh?a=%s" title="So sánh với điều khác">%s<span>So sánh</span></a>' % (a.id, ic("columns")) +
         '<button type="button" class="btn btn--ic" data-act="print" title="In điều luật" aria-label="In điều luật">%s</button>' % ic("print") +
-        '<button type="button" class="btn btn--ic" data-act="settings" title="Tùy chỉnh hiển thị: cỡ chữ, kiểu chữ, giao diện" '
-        'aria-label="Tùy chỉnh hiển thị" aria-haspopup="dialog">%s</button></div></header>' % ic("text"))
+        '<button type="button" class="btn btn--ic" data-act="settings" title="Công cụ đọc: cỡ chữ, kiểu chữ, sáng/tối" '
+        'aria-label="Công cụ đọc" aria-haspopup="dialog">%s</button></div></header>' % ic("text"))
     rel = rel_html(a)
     rel_n = len(M.get("ol") or []) + len(M.get("in") or []) + len(M.get("oc") or [])
     tabs = ('<nav class="tabs" aria-label="Nội dung điều luật"><a href="#p-noi-dung" aria-current="true"><span class="tl-l">Nội dung điều luật</span>'
@@ -790,7 +792,7 @@ def page_article(a):
         breadcrumb_ld(crumbs[:-1] + [("Điều " + a.id, "dieu-" + a.id)])]}
     preload = ['<link rel="preload" href="data/a/%s.json?v=%s" as="fetch" crossorigin>' % (a.id, TOC["v"])]
     return {"path": "dieu-" + a.id, "title": "Điều %s. %s" % (a.id, a.t) + SUFFIX, "og_type": "article",
-            "desc": desc, "main": main, "ld": ld, "preload": preload, "lastmod": True}
+            "desc": desc, "main": main, "ld": ld, "preload": preload, "lastmod": True, "body": "is-reading is-article"}
 
 
 def law_quote(ids):

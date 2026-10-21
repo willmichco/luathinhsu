@@ -32,9 +32,12 @@
 <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="preload" href="assets/fonts/be-vietnam-pro-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/be-vietnam-pro-700.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/be-vietnam-pro-600.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/be-vietnam-pro-500.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="data/toc.json" as="fetch" crossorigin>
 <link rel="preload" href="data/meta.json" as="fetch" crossorigin>
-<link rel="stylesheet" href="assets/css/app.css?v=20261014i">
+<link rel="stylesheet" href="assets/css/app.css?v=20261021a">
 <noscript><style>.js-only{display:none!important}</style></noscript>
 <script>
   // Áp dụng giao diện sáng/tối trước khi vẽ trang để tránh nháy màu
@@ -126,12 +129,13 @@
     </a>
     <div class="hd-search" id="hdSearch"><form class="sb" role="search" action="tim-kiem" method="get"><div class="sb-box"><svg aria-hidden="true"><use href="#i-search"/></svg><input class="sb-in" type="search" name="q" placeholder="Số điều, tên tội, từ khóa… (vd: 173, lừa đảo)" aria-label="Tìm kiếm trong Bộ luật Hình sự" enterkeyhint="search" spellcheck="false"><span class="sb-kbd" aria-hidden="true">/</span></div></form></div>
     <nav class="hd-nav" aria-label="Điều hướng chính">
-      <a href="muc-luc" data-nav="muc-luc" data-act="jump" aria-haspopup="dialog" title="Mục lục: xem nhanh toàn bộ điều luật, chọn là chuyển tới (Ctrl+K)">Mục lục</a>
+      <a href="muc-luc" data-nav="muc-luc" data-act="toc" title="Mục lục (Ctrl+K)">Mục lục</a>
       <a href="cong-cu" data-nav="cong-cu">Công cụ</a>
       <a href="da-luu" data-nav="da-luu">Đã lưu</a>
     </nav>
     <div class="hd-acts">
-      <button class="hd-ic" type="button" data-act="theme" aria-label="Đổi giao diện sáng/tối"><svg class="th-sun"><use href="#i-sun"/></svg><svg class="th-moon"><use href="#i-moon"/></svg></button>
+      <button class="hd-ic hd-aa" type="button" data-act="settings" aria-label="Công cụ đọc: cỡ chữ, sáng/tối" aria-haspopup="dialog"><svg><use href="#i-text"/></svg></button>
+      <button class="hd-ic hd-theme" type="button" data-act="theme" aria-label="Đổi giao diện sáng/tối"><svg class="th-sun"><use href="#i-sun"/></svg><svg class="th-moon"><use href="#i-moon"/></svg></button>
       <a class="hd-cta" href="tel:0983498499"><svg><use href="#i-phone"/></svg><span>0983 498 499</span></a>
     </div>
   </div>
@@ -172,7 +176,7 @@
 <nav class="tabbar" aria-label="Điều hướng nhanh">
   <a href="./" data-nav="home"><svg><use href="#i-home"/></svg><span>Trang chủ</span></a>
   <a href="tim-kiem" data-nav="tim-kiem"><svg><use href="#i-search"/></svg><span>Tra cứu</span></a>
-  <a href="muc-luc" data-nav="muc-luc" data-act="jump" aria-haspopup="dialog"><svg><use href="#i-list"/></svg><span>Mục lục</span></a>
+  <a href="muc-luc" data-nav="muc-luc" data-act="toc"><svg><use href="#i-list"/></svg><span>Mục lục</span></a>
   <a href="cong-cu" data-nav="cong-cu"><svg><use href="#i-tools"/></svg><span>Công cụ</span></a>
   <a href="da-luu" data-nav="da-luu"><svg><use href="#i-bookmark"/></svg><span>Đã lưu</span></a>
 </nav>
@@ -196,7 +200,7 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <button class="to-top" id="toTop" type="button" aria-label="Lên đầu trang"><svg><use href="#i-arrow-up"/></svg></button>
 
-<script src="assets/js/lx-core.js?v=20261014i" defer></script>
-<script src="assets/js/app.js?v=20261014i" defer></script>
+<script src="assets/js/lx-core.js?v=20261021a" defer></script>
+<script src="assets/js/app.js?v=20261021a" defer></script>
 </body>
 </html>
