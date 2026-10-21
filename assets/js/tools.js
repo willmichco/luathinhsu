@@ -105,12 +105,12 @@
   function hub(ctx, main) {
     A.setTitle('Công cụ nghiên cứu');
     var rows9 = [1, 2, 3, 4].map(function (c) {
-      return '<tr><td><span class="tag tag--c' + c + '">' + CLS[c].n + '</span></td><td>' + CLS[c].d + '</td><td>Điểm ' + POINT[c] + ' khoản 1 Điều 9</td><td><b>' + CLS[c].th + ' năm</b></td></tr>';
+      return '<tr><td><span class="tag tag--c' + c + '">' + CLS[c].n + '</span></td><td data-l="Mức cao nhất của khung">' + CLS[c].d + '</td><td data-l="Căn cứ">Điểm ' + POINT[c] + ' khoản 1 Điều 9</td><td data-l="Thời hiệu"><b>' + CLS[c].th + ' năm</b></td></tr>';
     }).join('');
     main.innerHTML = page('Công cụ hỗ trợ nghiên cứu', 'Các phép tính được xây dựng trực tiếp từ quy định của Bộ luật Hình sự, giúp luật sư, sinh viên và người dân tra cứu nhanh, có căn cứ.', null,
       A.toolCards() +
       '<section class="sec"><div class="sec-h"><div><h2>Bảng tra nhanh: phân loại tội phạm & thời hiệu</h2><p>Khoản 1 Điều 9 và khoản 2 Điều 27</p></div></div>' +
-      '<div style="overflow:auto"><table class="cmp-tbl"><thead><tr><th>Loại tội phạm</th><th>Mức cao nhất của khung hình phạt</th><th>Căn cứ</th><th>Thời hiệu truy cứu</th></tr></thead><tbody>' + rows9 + '</tbody></table></div>' +
+      '<div style="overflow:auto"><table class="cmp-tbl cmp-tbl--stack"><thead><tr><th>Loại tội phạm</th><th>Mức cao nhất của khung hình phạt</th><th>Căn cứ</th><th>Thời hiệu truy cứu</th></tr></thead><tbody>' + rows9 + '</tbody></table></div>' +
       '<p class="legal-src">' + ic('info') + 'Không áp dụng thời hiệu truy cứu đối với: các tội tại Chương XIII, Chương XXVI; tội tham ô tài sản, nhận hối lộ thuộc khoản 3, khoản 4 Điều 353, Điều 354 (' + lk('28', 'Điều 28') + ').</p></section>' +
       '<section class="sec"><div class="sec-h"><div><h2>Thời hiệu thi hành bản án</h2><p>Khoản 2, khoản 3 Điều 60</p></div></div>' +
       '<div style="overflow:auto"><table class="cmp-tbl"><thead><tr><th>Hình phạt đã tuyên</th><th>Thời hiệu</th></tr></thead><tbody>' +
@@ -424,15 +424,15 @@
       Promise.all([DB.article(st.a.id), DB.article(st.b.id)]).then(function (r) {
         var a = st.a, b = st.b;
         var ks = function (x) { return (x.M.k || []).filter(function (k) { return !k.bs; }); };
-        var row = function (label, fa, fb) { return '<tr><th scope="row" style="text-transform:none;letter-spacing:0;font-size:.85rem">' + label + '</th><td>' + fa + '</td><td>' + fb + '</td></tr>'; };
-        var penList = function (x) { var l = ks(x); return l.length ? l.map(function (k) { return '<div style="margin:3px 0">' + (k.n ? '<b>K' + k.n + ':</b> ' : '') + '<span class="tag tag--c' + k.c + '">' + esc(Pen.label(k)) + '</span></div>'; }).join('') : '<span class="muted">Không quy định khung hình phạt</span>'; };
+        var row = function (label, fa, fb) { return '<tr><th scope="row">' + label + '</th><td>' + fa + '</td><td>' + fb + '</td></tr>'; };
+        var penList = function (x) { var l = ks(x); return l.length ? l.map(function (k) { return '<div class="pk">' + (k.n ? '<b>K' + k.n + '</b>' : '') + '<span class="tag tag--c' + k.c + '">' + esc(Pen.label(k)) + '</span></div>'; }).join('') : '<span class="muted">Không quy định khung hình phạt</span>'; };
         var clsRange = function (x) { var l = ks(x); if (!l.length) return '—'; var lo = Math.min.apply(0, l.map(function (k) { return k.c; })), hi = Math.max.apply(0, l.map(function (k) { return k.c; })); return lo === hi ? CLS[lo].n : CLS[lo].n + ' → ' + CLS[hi].n; };
         var age = function (x) { return ks(x).length ? (x.M.a14 ? 'Từ đủ 14 tuổi (khung rất/đặc biệt nghiêm trọng)' : x.M.a18 ? 'Từ đủ 18 tuổi' : 'Từ đủ 16 tuổi') : '—'; };
         var thr = function (x) { var l = ks(x); if (!l.length) return '—'; if (x.M.nl === 1) return 'Không áp dụng (Điều 28)'; var t = l.map(function (k) { return CLS[k.c].th; }); return Math.min.apply(0, t) + ' – ' + Math.max.apply(0, t) + ' năm' + (x.M.nl ? ' (khoản ' + x.M.nl.join(', ') + ': không áp dụng)' : ''); };
         var col = function (x, d) {
           return '<div class="cmp-col"><h3><a href="dieu-' + x.id + '"><b>Điều ' + esc(x.id) + '.</b> ' + esc(x.t) + '</a></h3><div class="law-paper"><div class="law">' + A.lawHtml(x, d).html + '</div></div></div>';
         };
-        out.innerHTML = '<section class="sec" style="margin-top:24px"><div class="sec-h"><div><h2>Đối chiếu nhanh</h2></div></div><div style="overflow:auto"><table class="cmp-tbl"><thead><tr><th></th><th>Điều ' + esc(a.id) + '</th><th>Điều ' + esc(b.id) + '</th></tr></thead><tbody>' +
+        out.innerHTML = '<section class="sec" style="margin-top:24px"><div class="sec-h"><div><h2>Đối chiếu nhanh</h2></div></div><div style="overflow:auto"><table class="cmp-tbl cmp-tbl--2up"><thead><tr><th></th><th>Điều ' + esc(a.id) + '</th><th>Điều ' + esc(b.id) + '</th></tr></thead><tbody>' +
           row('Tội danh', esc(a.t), esc(b.t)) + row('Vị trí', esc(a.ch.title), esc(b.ch.title)) +
           row('Khung hình phạt', penList(a), penList(b)) + row('Loại tội phạm', clsRange(a), clsRange(b)) + row('Thời hiệu truy cứu', thr(a), thr(b)) +
           row('Tuổi chịu TNHS', age(a), age(b)) + row('Sửa đổi 2025', a.n25 ? 'Có' : '—', b.n25 ? 'Có' : '—') +

@@ -17,7 +17,7 @@ Luật số 59/2024/QH15 và Luật số 86/2025/QH15) dành cho luật sư, sin
 | Trình đọc điều luật | Văn bản luật, bình luận khoa học, điều liên quan; chú thích; xem nhanh điều được dẫn chiếu khi rê chuột/chạm; sao chép trích dẫn từng khoản; lưu, ghi chú cá nhân; điều trước/sau bằng phím ← →. Điện thoại: văn bản luật lên ngay màn hình đầu (bỏ thẻ trùng với đường dẫn, biểu đồ khung hình phạt thu gọn một dòng — mở ra thì lần sau vẫn mở); cuộn xuống để đọc toàn màn hình (header, thanh dưới, nút lên đầu trang thu lại, giữ vạch tiến độ đọc), cuộn lên là hiện. Máy tính: cột phải tô khoản đang đọc khi cuộn. Quay lại một điều/kết quả tìm kiếm về đúng chỗ đang đọc |
 | Khung hình phạt | Nhận diện tự động khung của từng khoản, phân loại tội (Điều 9), thời hiệu (Điều 27, 28), độ tuổi (Điều 12), biểu đồ trực quan |
 | Công cụ | Phân loại tội & thời hiệu truy cứu · Tuổi chịu TNHS · Thời hiệu thi hành bản án · So sánh hai điều luật · Bảng khung hình phạt |
-| Đa thiết bị | Tối ưu PC, laptop, máy tính bảng (dọc/ngang), điện thoại; giao diện sáng/tối (nền tối than chì ấm, mọi cặp chữ–nền đạt WCAG AA ≥ 4,5:1); chỉnh cỡ chữ (trong trang điều luật); đầu trang gọn trên điện thoại; vùng chạm ≥ 36px trên màn hình cảm ứng; phím Tab không lọt khỏi hộp thoại đang mở; cài như ứng dụng (PWA); đọc offline; có phiên bản mới → tự áp dụng ở lần chuyển trang kế tiếp, không cần tải lại |
+| Đa thiết bị | Tối ưu PC, laptop, máy tính bảng (dọc/ngang), điện thoại; giao diện sáng/tối (nền tối than chì ấm, mọi cặp chữ–nền đạt WCAG AA ≥ 4,5:1); chỉnh cỡ chữ (trong trang điều luật); đầu trang gọn trên điện thoại; vùng chạm ≥ 36px trên màn hình cảm ứng; phím Tab không lọt khỏi hộp thoại đang mở; cài như ứng dụng (PWA); đọc offline; có phiên bản mới → tự áp dụng ở lần chuyển trang kế tiếp, không cần tải lại. **Dàn chữ thống nhất:** số khoản “1.”, điểm “a)”, gạch đầu dòng bình luận “-”/“+” treo ở lề, mọi dòng của cùng một ý thẳng một mép (sao chép vẫn ra “1. Người nào…”); điện thoại: khoản và điểm chung một mép chữ, căn trái; máy tính bảng, máy tính: điểm lùi dưới khoản, thân văn bản căn đều hai bên (tự quyết theo bề rộng cột chữ, không theo loại máy); bảng nhiều cột thành thẻ có nhãn trên điện thoại; không để chữ lẻ loi ở dòng cuối |
 | SEO | Mỗi điều, chương, công cụ có đường dẫn riêng (`dieu-173`, `chuong-14`, `cong-cu-thoi-hieu`…) với trang HTML dựng sẵn toàn văn; tiêu đề, mô tả, canonical, Open Graph, JSON-LD (Legislation, BreadcrumbList, WebSite, LegalService); `sitemap.xml` |
 
 Lưu ý hiệu lực đã được gắn trên trang: Chương XII (Điều 90 – 107) bị bãi bỏ từ 01/01/2026 theo Điều 177
@@ -48,7 +48,7 @@ tools/build_seo.py       Sinh các trang dựng tĩnh, data/a/*.json, sitemap.xm
                          tự kiểm tra hằng số pháp lý trùng với assets/js (CLS, CH_NOTE, PRESETS…), lệch thì dừng
 tools/build_fonts.py     Tạo phông thu gọn (cần: pip install fonttools brotli); chỉ chạy lại khi đổi phông/bộ ký tự
 tools/serve.py           Máy chủ thử nghiệm mô phỏng GitHub Pages (đường dẫn không đuôi .html, trang 404, nén gzip)
-tools/test/              Kiểm thử trên trình duyệt (Playwright): công cụ tuổi, mục lục (hộp thoại, bảng dưới, Quay lại Android), rà toàn bộ trang
+tools/test/              Kiểm thử trên trình duyệt (Playwright): công cụ tuổi, mục lục (hộp thoại, bảng dưới, Quay lại Android), dàn chữ, rà toàn bộ trang
 sw.js, manifest.webmanifest  Đọc offline, cài đặt như ứng dụng
 ```
 
