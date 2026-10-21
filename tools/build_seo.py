@@ -108,6 +108,11 @@ def ic(name, cls=None):
     return '<svg%s aria-hidden="true"><use href="#i-%s"/></svg>' % (' class="%s"' % cls if cls else "", name)
 
 
+def nw(parts):
+    """Dòng thông tin ngắn "a · b · c": mỗi đoạn không bị ngắt giữa chừng, chỉ xuống dòng tại dấu "·" (như nw() trong app.js)."""
+    return " · ".join('<span class="nw">%s</span>' % x for x in parts if x)
+
+
 def plain(h):
     h = re.sub(r'<sup class="fn"[^>]*>.*?</sup>', "", str(h))
     return html.unescape(re.sub(r"<[^>]+>", "", h)).strip()
@@ -415,12 +420,12 @@ def law_html(a, fn_map):
         for kind, raw in gr["items"]:
             h = fix_html(raw, fn_map)
             if kind == "k":
-                h = re.sub(r"^(\d{1,2})\.\s*", r'<a class="kn" href="#k\1" title="Khoản \1">\1.</a> ', h)
+                h = re.sub(r"^(\d{1,2})\.\s*", r'<a class="kn" href="#k\1" title="Khoản \1">\1. </a>', h)
                 inner.append('<p class="lk">%s</p>' % h)
             elif kind == "p":
                 lm = re.match(r"^([a-zđ])\)", plain(raw))
                 lid = ("dd" if lm.group(1) == "đ" else lm.group(1)) if lm else ""
-                h = re.sub(r"^([a-zđ])\)\s*", r'<b class="pl">\1)</b> ', h)
+                h = re.sub(r"^([a-zđ])\)\s*", r'<b class="pl">\1) </b>', h)
                 inner.append('<p class="lp"%s>%s</p>' % (' id="k%s-%s"' % (kn, lid) if kn and lid else "", h))
             elif kind == "h":
                 inner.append('<p class="lh">%s</p>' % h)
@@ -436,15 +441,23 @@ def law_html(a, fn_map):
 
 
 def cm_html(a, fn_map):
-    out = []
+    out, dash = [], False
     for i, (kind, raw) in enumerate(a.d["cm"]):
         h = fix_html(raw, fn_map)
+        if kind != "b":
+            dash = False
         if kind == "h":
             out.append('<h3 class="ch" id="cm%d">%s</h3>' % (i, h))
         elif kind == "s":
             out.append('<p class="cs">%s</p>' % h)
         elif kind == "b":
-            out.append('<p class="cb">%s</p>' % h)
+            # Ký hiệu đầu dòng tách riêng để treo lề; "+" nằm dưới một ý "-" thì lùi thêm một bậc
+            bm = plain(raw)[:1]
+            sub = bm == "+" and dash
+            if bm != "+":
+                dash = True
+            h = re.sub(r"^(\s*(?:<(?:i|b|em|strong)>\s*)?)([-+–])\s+", r'\1<span class="bm">\2 </span>', h)
+            out.append('<p class="cb%s">%s</p>' % (" cb--2" if sub else "", h))
         elif kind == "q":
             out.append('<blockquote class="cq">%s</blockquote>' % h)
         elif kind == "n":
@@ -570,11 +583,12 @@ def page_toc():
                         % (" is-rep" if a.rep else "", a.id, esc(a.id), esc(a.t), art_tags(a, True)))
             chs.append(
                 '<details class="tch" data-c="%s"><summary><span class="cn">%s</span><span class="ct"><b>%s</b>'
-                "<small>%d điều · Điều %s – %s%s · ~%d phút đọc luật</small>%s</span>"
+                "<small>%s</small>%s</span>"
                 '<a class="btn btn--sm btn--ghost" href="chuong-%s">Xem</a>%s</summary><div class="tch-body">'
                 '<a class="ta ch-open" href="chuong-%s">Xem trang tổng quan %s %s</a>%s</div></details>'
-                % (c["id"], esc(c["num"] or "TH"), esc(c["title"]), len(c["arts"]), c["first"].id, c["last"].id,
-                   " · %d mục" % len(c["muc"]) if c["muc"] else "", read_min(c["sz"][0]),
+                % (c["id"], esc(c["num"] or "TH"), esc(c["title"]),
+                   nw(["%d điều" % len(c["arts"]), "Điều %s – %s" % (c["first"].id, c["last"].id),
+                       "%d mục" % len(c["muc"]) if c["muc"] else "", "~%d phút đọc luật" % read_min(c["sz"][0])]),
                    ' <span class="tag tag--rep26">%s</span>' % CH_NOTE[c["id"]]["short"] if c["id"] in CH_NOTE else "",
                    c["slug"], ic("chev-d", "chev"), c["slug"], esc(c["label"]), ic("arrow-r"), lst))
         parts.append('<section class="toc-part"><h2><small>%s</small>%s</h2>%s</section>' % (esc(p["label"]), esc(p["name"]), "".join(chs)))
@@ -820,10 +834,11 @@ def tool_page(key, title, h1, sub, crumb_name, body, desc=None):
 
 
 def table9():
-    rows = "".join('<tr><td><span class="tag tag--c%d">%s</span></td><td>%s</td><td>Điểm %s khoản 1 Điều 9</td><td><b>%d năm</b></td></tr>'
+    rows = "".join('<tr><td><span class="tag tag--c%d">%s</span></td><td data-l="Mức cao nhất của khung">%s</td>'
+                   '<td data-l="Căn cứ">Điểm %s khoản 1 Điều 9</td><td data-l="Thời hiệu"><b>%d năm</b></td></tr>'
                    % (c, CLS[c]["n"], CLS[c]["d"], POINT[c], CLS[c]["th"]) for c in (1, 2, 3, 4))
     return ('<section class="sec"><div class="sec-h"><div><h2>Bảng tra nhanh: phân loại tội phạm &amp; thời hiệu</h2><p>Khoản 1 Điều 9 và khoản 2 Điều 27</p></div></div>'
-            '<div style="overflow:auto"><table class="cmp-tbl"><thead><tr><th>Loại tội phạm</th><th>Mức cao nhất của khung hình phạt</th><th>Căn cứ</th>'
+            '<div style="overflow:auto"><table class="cmp-tbl cmp-tbl--stack"><thead><tr><th>Loại tội phạm</th><th>Mức cao nhất của khung hình phạt</th><th>Căn cứ</th>'
             "<th>Thời hiệu truy cứu</th></tr></thead><tbody>" + rows + "</tbody></table></div>"
             '<p class="legal-src">' + ic("info") + "Không áp dụng thời hiệu truy cứu đối với: các tội tại Chương XIII, Chương XXVI; tội tham ô "
             "tài sản, nhận hối lộ thuộc khoản 3, khoản 4 Điều 353, Điều 354 (" + lk("28", "Điều 28") + ").</p></section>")

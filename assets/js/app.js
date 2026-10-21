@@ -20,12 +20,16 @@
   var cap = function (s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; };
   var debounce = function (fn, ms) { var t; return function () { var a = arguments, c = this; clearTimeout(t); t = setTimeout(function () { fn.apply(c, a); }, ms); }; };
   var isTouch = window.matchMedia('(hover: none)').matches;
-  var VER = '20261021a';
+  var VER = '20261021b';
   // Thư mục gốc của trang web (…/luathinhsu/), suy ra từ vị trí tệp assets/js/app.js
   var ROOT = document.currentScript ? new URL('../../', document.currentScript.src).href : new URL('./', location.href).href;
   var ROOT_PATH = new URL(ROOT).pathname;
   var abs = function (p) { return new URL(p, ROOT).href; };
 
+  // Dòng thông tin ngắn "a · b · c": mỗi đoạn không bị ngắt giữa chừng, chỉ xuống dòng tại dấu "·"
+  function nw(parts) {
+    return parts.filter(Boolean).map(function (x) { return '<span class="nw">' + x + '</span>'; }).join(' · ');
+  }
   function plain(h) {
     return String(h).replace(/<sup class="fn"[^>]*>.*?<\/sup>/g, '').replace(/<[^>]+>/g, '')
       .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&quot;/g, '"').trim();
@@ -525,7 +529,7 @@
           rows += '<a class="jp-a' + (a.rep ? ' is-rep' : '') + '" href="dieu-' + a.id + '" data-id="' + esc(a.id) + '"><b>Điều ' + esc(a.id) + '</b><span class="t">' + esc(a.t) + '</span><span class="tg">' + artTags(a, true) + '</span></a>';
         });
         var range = 'Điều ' + c.first.id + (c.first !== c.last ? ' – ' + c.last.id : '');
-        list += '<section class="jp-sec" data-c="' + c.id + '"><h3 class="jp-ch"><small>' + (c.num ? esc(c.label) + ' · ' : '') + range + ' · ' + c.arts.length + ' điều</small>' + esc(c.name) +
+        list += '<section class="jp-sec" data-c="' + c.id + '"><h3 class="jp-ch"><small>' + nw([c.num ? esc(c.label) : '', range, c.arts.length + ' điều']) + '</small>' + esc(c.name) +
           (CH_NOTE[c.id] ? ' <span class="tag tag--rep26">' + CH_NOTE[c.id].short + '</span>' : '') + '</h3>' + rows + '</section>';
       });
       var mod = /Mac|iP(hone|ad|od)/.test(navigator.platform || '') ? '⌘' : 'Ctrl';
@@ -1346,7 +1350,7 @@
                 '<span class="an">Điều ' + esc(a.id) + '</span><span class="at">' + hl(a.t, cq) + '</span><span class="tags">' + (me ? '<span class="tag tag--now">Vừa đọc</span>' : '') + artTags(a, true) + '</span></a>';
             });
             ph += '<details class="tch" data-c="' + c.id + '"' + (open ? ' open' : '') + '><summary><span class="cn">' + esc(c.num || 'TH') + '</span><span class="ct"><b>' + esc(c.title) + '</b>' +
-              '<small>' + c.arts.length + ' điều · Điều ' + c.first.id + ' – ' + c.last.id + (c.muc.length ? ' · ' + c.muc.length + ' mục' : '') + ' · ~' + readMin(c.sz[0]) + ' phút đọc luật' + '</small>' +
+              '<small>' + nw([c.arts.length + ' điều', 'Điều ' + c.first.id + ' – ' + c.last.id, c.muc.length ? c.muc.length + ' mục' : '', '~' + readMin(c.sz[0]) + ' phút đọc luật']) + '</small>' +
               (CH_NOTE[c.id] ? ' <span class="tag tag--rep26">' + CH_NOTE[c.id].short + '</span>' : '') +
               '</span><a class="btn btn--sm btn--ghost" href="chuong-' + c.slug + '">Xem</a>' + ic('chev-d', 'chev') + '</summary><div class="tch-body"><a class="ta ch-open" href="chuong-' + c.slug + '">Xem trang tổng quan ' + esc(c.label) + ' ' + ic('arrow-r') + '</a>' + list + '</div></details>';
           });
@@ -1453,12 +1457,12 @@
       var kn = gr.n, inner = gr.items.map(function (p) {
         var kind = p[0], h = fixHtml(p[1], fnMap, function () { return ++fnN; });
         if (kind === 'k') {
-          h = h.replace(/^(\d{1,2})\.\s*/, '<a class="kn" href="dieu-' + a.id + '?k=$1" data-k="$1" title="Liên kết tới khoản $1">$1.</a> ');
+          h = h.replace(/^(\d{1,2})\.\s*/, '<a class="kn" href="dieu-' + a.id + '?k=$1" data-k="$1" title="Liên kết tới khoản $1">$1. </a>');
           return '<p class="lk">' + h + '</p>';
         }
         if (kind === 'p') {
           var lm = plain(p[1]).match(/^([a-zđ])\)/), lid = lm ? (lm[1] === 'đ' ? 'dd' : lm[1]) : '';
-          h = h.replace(/^([a-zđ])\)\s*/, '<b class="pl">$1)</b> ');
+          h = h.replace(/^([a-zđ])\)\s*/, '<b class="pl">$1) </b>');
           return '<p class="lp"' + (kn && lid ? ' id="k' + kn + '-' + lid + '"' : '') + '>' + h + '</p>';
         }
         if (kind === 'h') return '<p class="lh">' + h + '</p>';
@@ -1486,12 +1490,18 @@
     return h;
   }
   function cmHtml(a, d, fnMap, fnN) {
-    var n = fnN, out = [], toc = [];
+    var n = fnN, out = [], toc = [], dash = false;
     d.cm.forEach(function (p, i) {
       var kind = p[0], h = fixHtml(p[1], fnMap, function () { return ++n; });
+      if (kind !== 'b') dash = false;
       if (kind === 'h') { toc.push([i, plain(p[1])]); out.push('<h3 class="ch" id="cm' + i + '">' + h + '</h3>'); }
       else if (kind === 's') out.push('<p class="cs">' + h + '</p>');
-      else if (kind === 'b') out.push('<p class="cb">' + h + '</p>');
+      else if (kind === 'b') {
+        // Ký hiệu đầu dòng tách riêng để treo lề; "+" nằm dưới một ý "-" thì lùi thêm một bậc
+        var bm = plain(p[1]).trim().charAt(0), sub = bm === '+' && dash;
+        if (bm !== '+') dash = true;
+        out.push('<p class="cb' + (sub ? ' cb--2' : '') + '">' + h.replace(/^(\s*(?:<(?:i|b|em|strong)>\s*)?)([-+–])\s+/, '$1<span class="bm">$2 </span>') + '</p>');
+      }
       else if (kind === 'q') out.push('<blockquote class="cq">' + h + '</blockquote>');
       else if (kind === 'n') out.push('<div class="callout callout--new cn">' + ic('spark') + '<div>' + h + '</div></div>');
       else out.push('<p>' + h + '</p>');
