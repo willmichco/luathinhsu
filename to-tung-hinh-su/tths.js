@@ -208,7 +208,7 @@
     return { art: art, a: DB.byId[art] || null, k: k || null, pt: pt || null };
   }
   function refHref(r) {
-    if (r.chap) return DIR + '#chuong-' + r.chap.slug;
+    if (r.chap) return DIR + 'chuong-' + r.chap.slug;
     return DIR + 'dieu-' + r.art + (r.k ? '#k' + r.k + (r.pt ? '-' + r.pt : '') : '');
   }
   function refLabel(r) {
@@ -778,7 +778,7 @@
         '<button type="button" class="sb-clear" id="jpClr" aria-label="Xóa từ lọc" hidden>' + ic('x') + '</button></div></div><div class="jp-recent" id="jpRecent" hidden></div></div>' +
         '<div class="jp-body"><nav class="jp-nav" id="jpNav" aria-label="Đi tới chương">' + nav + '</nav><div class="jp-list" id="jpList">' + list + '<div class="jp-empty" id="jpEmpty" hidden></div></div></div>' +
         '<div class="jp-ft"><span class="k"><kbd>↑</kbd><kbd>↓</kbd> chọn điều</span><span class="k"><kbd>Enter</kbd> mở</span><span class="k"><kbd>Esc</kbd> đóng</span>' +
-        '<span class="k"><kbd>' + mod + '</kbd>+<kbd>K</kbd> mở mục lục ở mọi trang</span><a href="' + abs(DIR + '#muc-luc') + '">Trang Mục lục đầy đủ ' + ic('arrow-r') + '</a></div></div>';
+        '<span class="k"><kbd>' + mod + '</kbd>+<kbd>K</kbd> mở mục lục ở mọi trang</span><a href="' + abs(DIR + 'muc-luc') + '">Trang Mục lục đầy đủ ' + ic('arrow-r') + '</a></div></div>';
       document.body.appendChild(el);
       Jump.el = el; Jump.q = $('#jpQ', el); Jump.list = $('#jpList', el); Jump.nav = $('#jpNav', el); Jump.sub = $('#jpSub', el); Jump.clr = $('#jpClr', el);
       Jump.rows = $$('.jp-a', el).map(function (r, i) { var a = DB.byId[r.dataset.id]; return { el: r, a: a, i: i, lo: ('điều ' + a.id + ' ' + a.t).toLowerCase(), fo: fold('dieu ' + a.id + ' ' + a.t).toLowerCase() }; });
@@ -790,7 +790,7 @@
       el.addEventListener('click', function (e) { if (e.target.closest('[data-act="jump-close"]')) Jump.hide(); });
     },
     show: function () {
-      if (!DB) { loadDB().then(Jump.show, function () { go(DIR + '#muc-luc'); }); return; }
+      if (!DB) { loadDB().then(Jump.show, function () { go(DIR + 'muc-luc'); }); return; }
       if (!Jump.el) Jump.build();
       closePop(); drawer(false);
       $$('.jp-a.on', Jump.el).forEach(function (x) { x.classList.remove('on'); x.removeAttribute('aria-current'); });
@@ -1009,4 +1009,17 @@
   if ('serviceWorker' in navigator && window.isSecureContext) {
     window.addEventListener('load', function () { navigator.serviceWorker.register(abs('sw.js')).catch(function () { }); });
   }
+
+  /* ---------- Trang chủ mục: "Thử tìm", "Bạn đang cần gì?" (như trang chủ Bộ luật Hình sự) ---------- */
+  document.addEventListener('click', function (e) {
+    var tr = e.target.closest('[data-try]');
+    if (tr && !tr.closest('#srOut')) {
+      var inp = $('#heroSearch .sb-in');
+      if (inp) { inp.value = tr.dataset.try; inp.dispatchEvent(new Event('input')); inp.focus(); }
+      else go(DIR + 'tim-kiem?q=' + encodeURIComponent(tr.dataset.try));
+      return;
+    }
+    var fh = e.target.closest('[data-act="focus-hero"]'), hi = $('#heroSearch .sb-in');
+    if (fh && hi) { e.preventDefault(); hi.placeholder = 'Mô tả thủ tục, vd: kháng cáo quá hạn, trả hồ sơ điều tra bổ sung…'; hi.focus(); hi.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+  });
 })();
