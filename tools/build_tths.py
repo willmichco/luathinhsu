@@ -1053,7 +1053,7 @@ def search_index(ver):
 
 # =============================================================================
 def main():
-    ver = TODAY.replace("-", "") + "g"  # tăng chữ cuối khi sửa tths.css, tths.js
+    ver = TODAY.replace("-", "") + "h"  # tăng chữ cuối khi sửa tths.css, tths.js
     tpl = make_template().replace("__V__", ver)
     for m in ("<!--seo:head-->", "<!--seo:main-->", '<base href="../">', DIR + "tths.js"):
         assert m in tpl, "Khuôn trang thiếu " + m
