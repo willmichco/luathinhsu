@@ -11,7 +11,7 @@ Sinh phân mục "Bộ luật Tố tụng hình sự" của website: thư mục 
           to-tung-hinh-su/sua-doi.html           – bảng các văn bản sửa đổi theo thứ tự hiệu lực
           to-tung-hinh-su/luat-<số hiệu>.html     – từng văn bản sửa đổi (các điều khoản tác động tới Bộ luật)
           to-tung-hinh-su/lich-su.html, van-ban-<số hiệu>.html – Bộ luật 2003, 1988 và các luật sửa đổi trước 2015
-          to-tung-hinh-su/tim-kiem.html, to-tung-hinh-su/tim-kiem.json – tìm kiếm toàn văn (chạy trên trình duyệt)
+          to-tung-hinh-su/tim-kiem.html, tim-kiem.json (toàn văn theo đoạn), muc-luc.json (gợi ý khi gõ) – tìm kiếm trên trình duyệt
           sitemap-tths.xml                        – được tools/build_seo.py gộp vào sitemap.xml
 
 Nguyên tắc trình bày (vì văn bản tố tụng dùng trong hồ sơ vụ án):
@@ -1000,36 +1000,60 @@ def page_hist_list():
 
 def page_search():
     crumbs = [("Trang chủ", "./"), ("Tố tụng hình sự", DIR), ("Tìm kiếm", None)]
-    main = (ph(crumbs, "Tìm kiếm trong Bộ luật Tố tụng hình sự", "Gõ có dấu hoặc không dấu; số điều (143), “khoản 2 điều 173”; cụm từ "
-               "chính xác đặt trong ngoặc kép. Tìm cả trong nội dung sửa đổi, bổ sung.", "Tìm kiếm toàn văn",
-               '<form class="sb sb--lg" role="search" action="%stim-kiem" method="get" style="margin-top:18px"><div class="sb-box">%s'
-               '<input class="sb-in" id="srQ" type="search" name="q" placeholder="vd: tạm giam, bào chữa, 147" aria-label="Từ khóa" '
-               'enterkeyhint="search" spellcheck="false" autofocus><button class="sb-go" type="submit" aria-label="Tra cứu">%s<span>Tra cứu</span></button>'
-               "</div></form>" % (DIR, ic("search"), ic("search"))) +
-            '<div class="wrap page"><p class="sr-stat" id="srStat" aria-live="polite"></p><div class="sr-list" id="srList"></div>'
-            '<noscript><p>Cần bật JavaScript để tìm kiếm. Bạn có thể mở <a href="%s#muc-luc">mục lục</a>.</p></noscript></div>' % DIR)
+    form = ('<form class="sb sb--lg" role="search" action="%stim-kiem" method="get"><div class="sb-box">%s'
+            '<input class="sb-in" id="srQ" type="search" name="q" placeholder="Nhập từ khóa, cụm từ hoặc số điều…" aria-label="Tìm kiếm trong Bộ luật Tố tụng hình sự" '
+            'enterkeyhint="search" spellcheck="false"><button class="sb-go" type="submit" aria-label="Tra cứu">%s<span>Tra cứu</span></button>'
+            "</div></form>" % (DIR, ic("search"), ic("search")))
+    main = ('<section class="ph"><div class="hero-bg" aria-hidden="true"><div class="hero-drum"></div></div><div class="wrap ph-in">' + crumb(crumbs) +
+            "<h1>Tìm kiếm trong Bộ luật Tố tụng hình sự</h1><p>Tìm đồng thời trong tên điều, văn bản điều luật và nội dung sửa đổi, bổ sung. "
+            "Gõ không dấu, dùng “ngoặc kép” để tìm cụm từ chính xác.</p>"
+            '<div id="srBox" style="margin-top:18px;max-width:760px">' + form + "</div></div></section>"
+            '<div class="wrap"><div id="srOut"><noscript><p style="margin-top:22px">Cần bật JavaScript để tìm kiếm. Bạn có thể mở '
+            '<a href="%s#muc-luc">mục lục</a>.</p></noscript></div></div>' % DIR)
     return {"path": DIR + "tim-kiem", "title": "Tìm kiếm" + SUFFIX, "desc": "Tìm kiếm toàn văn Bộ luật Tố tụng hình sự 2015 và các văn bản sửa đổi, bổ sung.",
             "main": main, "crumbs": crumbs, "nav": "tim-kiem", "noindex": True, "body": "is-search"}
 
 
-def search_index():
+def strip_tags(h):
+    return html.unescape(re.sub(r"<[^>]+>", "", h))
+
+
+def law_paras(a):
+    """Các đoạn văn bản đang hiển thị là nội dung chính của điều (nội dung mới nếu điều bị thay thế toàn bộ)."""
+    if a.new or a.whole:
+        h = whole_html(a.whole or a.new)
+        return [strip_tags(x).strip() for x in re.findall(r"<p[^>]*>(.*?)</p>", h, flags=re.S) if strip_tags(x).strip()]
+    return [re.sub(r"\s+", " ", p).strip() for _, p in node_paras(a.node, [], prefix=True) if p.strip()]
+
+
+def flags(a):
+    return ("r" if a.rep else "") + ("n" if a.new else "") + ("a" if [1 for it in a.eff if it["kind"] != "repeal-chapter" and it is not a.new] else "") + \
+        ("f" if a.fut else "")
+
+
+def toc_index(ver):
+    """Mục lục gọn cho ô tìm kiếm (gợi ý khi gõ) – vài chục KB, nạp khi người dùng bấm vào ô tìm kiếm."""
+    chs = [c for c in CHAPS]
+    return {"v": ver, "ch": [[c["slug"], c["num"], sentence(c["ten"])] for c in chs],
+            "a": [[a.id, a.t, chs.index(a.ch), flags(a)] for a in ARTS]}
+
+
+def search_index(ver):
+    """Toàn văn theo đoạn: [số điều, [đoạn điều luật…], [đoạn sửa đổi, bổ sung…]]."""
     rows = []
     for a in ARTS:
-        if a.new or a.whole:
-            cur = html.unescape(re.sub(r"<[^>]+>", " ", whole_html(a.whole or a.new)))
-        else:
-            cur = plain_art(a)
-        am = " ".join(" ".join(p for _, p in node_paras(it["node"], [], prefix=False)) for it in a.items if it["kind"] != "repeal-chapter")
-        if a.whole:
-            cur += " " + plain_art(a)
-        rows.append([a.id, a.t, chap_label(a.ch), re.sub(r"\s+", " ", cur).strip(), re.sub(r"\s+", " ", am).strip(),
-                     1 if a.rep else 0])
-    return rows
+        am = []
+        for it in a.items:
+            if it["kind"] == "repeal-chapter" or it is a.new:
+                continue
+            am.extend(re.sub(r"\s+", " ", p).strip() for _, p in node_paras(it["node"], [], prefix=False) if p.strip())
+        rows.append([a.id, law_paras(a), am])
+    return {"v": ver, "a": rows}
 
 
 # =============================================================================
 def main():
-    ver = TODAY.replace("-", "") + "e"  # tăng chữ cuối khi sửa tths.css, tths.js
+    ver = TODAY.replace("-", "") + "g"  # tăng chữ cuối khi sửa tths.css, tths.js
     tpl = make_template().replace("__V__", ver)
     for m in ("<!--seo:head-->", "<!--seo:main-->", '<base href="../">', DIR + "tths.js"):
         assert m in tpl, "Khuôn trang thiếu " + m
@@ -1050,7 +1074,9 @@ def main():
                 f.write(out)
             written += 1
     with open(os.path.join(OUT, "tim-kiem.json"), "w", encoding="utf-8", newline="\n") as f:
-        json.dump({"v": ver, "a": search_index()}, f, ensure_ascii=False, separators=(",", ":"))
+        json.dump(search_index(ver), f, ensure_ascii=False, separators=(",", ":"))
+    with open(os.path.join(OUT, "muc-luc.json"), "w", encoding="utf-8", newline="\n") as f:
+        json.dump(toc_index(ver), f, ensure_ascii=False, separators=(",", ":"))
     urls = ["  <url><loc>%s</loc></url>" % esc(SITE + (p["path"][:-5] if p["path"].endswith("index") else p["path"]))
             for p in pages if not p.get("noindex")]
     with open(os.path.join(ROOT, "sitemap-tths.xml"), "w", encoding="utf-8", newline="\n") as f:
