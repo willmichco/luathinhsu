@@ -75,7 +75,8 @@ self.addEventListener('fetch', function (e) {
   var url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
   var p = url.pathname, versioned = /[?&]v=/.test(url.search);
-  if (req.mode === 'navigate') e.respondWith(networkFirst(req, VERSION, 'index.html'));
+  // Trang HTML: luôn hỏi lại máy chủ (cache: no-cache → chỉ tải lại khi trang đã đổi), tránh hiển thị bản cũ trong bộ nhớ đệm HTTP
+  if (req.mode === 'navigate') e.respondWith(networkFirst(new Request(req.url, { cache: 'no-cache', credentials: 'same-origin' }), VERSION, 'index.html'));
   else if (/\/data\/.+\.json$/.test(p)) e.respondWith(versioned ? cacheFirst(req, DATA) : networkFirst(req, DATA));
   else if (versioned || /\.(woff2|png|webp|svg|jpg)$/.test(p)) e.respondWith(cacheFirst(req, VERSION));
   else e.respondWith(networkFirst(req, VERSION));
