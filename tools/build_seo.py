@@ -32,13 +32,13 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, "data")
 SITE = os.environ.get("SITE_URL", "https://willmichco.github.io/luathinhsu/").rstrip("/") + "/"
 
-SITE_NAME = "Tra cứu Bộ luật Hình sự – Luật Sư Nam"
-HOME_TITLE = "Tra cứu Bộ luật Hình sự 2015 (sửa đổi 2017, 2025) – Luật Sư Nam"
+SITE_NAME = "Tra cứu Luật Hình sự – Luật Sư Nam"
+HOME_TITLE = "Tra cứu Luật Hình sự: Bộ luật Hình sự, Bộ luật Tố tụng hình sự – Luật Sư Nam"  # phải khớp setTitle() trong app.js
 SUFFIX = " – Bộ luật Hình sự 2015 (sửa đổi 2025)"  # phải khớp setTitle() trong assets/js/app.js
-HOME_DESC = ("Tra cứu nhanh toàn văn Bộ luật Hình sự 2015 (sửa đổi, bổ sung 2017, 2025): 428 điều luật, bình luận khoa học, "
-             "khung hình phạt, phân loại tội phạm, công cụ tính thời hiệu và tuổi chịu trách nhiệm hình sự.")
+HOME_DESC = ("Tra cứu Luật Hình sự: toàn văn Bộ luật Hình sự 2015 (sửa đổi 2017, 2025) – 428 điều, bình luận khoa học, khung hình "
+             "phạt, công cụ thời hiệu – và Bộ luật Tố tụng hình sự 2015 với các văn bản sửa đổi đến năm 2026.")
 OG_IMAGE = SITE + "assets/img/og-cover.jpg"
-OG_ALT = "Tra cứu Bộ luật Hình sự 2015 (sửa đổi 2017, 2025) – Công ty Luật TNHH Luật Sư Nam"
+OG_ALT = "Tra cứu Luật Hình sự: Bộ luật Hình sự, Bộ luật Tố tụng hình sự – Công ty Luật TNHH Luật Sư Nam"
 CITE = "Bộ luật Hình sự năm 2015 (sửa đổi, bổ sung năm 2017, 2025)"
 
 # ---- Hằng số dùng chung với assets/js/app.js ----
@@ -499,8 +499,8 @@ def page_home():
               ("cong-cu-so-sanh", "columns", "So sánh hai tội danh", "Đối chiếu dấu hiệu & khung hình phạt")]
     main = (
         '<section class="hero">' + drum() + '<div class="wrap hero-grid">'
-        '<div><span class="eyebrow">Bộ luật số 100/2015/QH13 · cập nhật 2025</span>'
-        "<h1>Tra cứu <em>Bộ luật Hình sự</em> <br>nhanh, chính xác, dễ&nbsp;hiểu</h1>"
+        '<div><span class="eyebrow">Tra cứu Luật Hình sự · Mục Bộ luật Hình sự số 100/2015/QH13</span>'
+        "<h1>Tra cứu <em>Luật Hình sự</em> <br>nhanh, chính xác, dễ&nbsp;hiểu</h1>"
         '<p class="hero-sub">Toàn văn %d điều luật kèm bình luận khoa học, khung hình phạt từng khoản, phân loại tội phạm và '
         "thời hiệu — tìm được cả khi gõ không dấu.</p>" % st["arts"] +
         '<div id="heroSearch">' + search_form(lg=True) + "</div>"
@@ -537,9 +537,13 @@ def page_home():
                    ' <span class="tag tag--rep26">%s</span>' % CH_NOTE[c["id"]]["short"] if c["id"] in CH_NOTE else "",
                    c["first"].id, "–" + c["last"].id if c["first"] is not c["last"] else "") for c in p1) +
         "</div></section>"
-        '<section class="wrap sec"><div class="callout callout--info">' + ic("book") + '<div><b>Mới: Bộ luật Tố tụng hình sự 2015</b> – '
-        'toàn văn 510 điều (và Điều 506a), kèm nguyên văn sửa đổi, bổ sung theo Luật 02/2021/QH15, 34/2024/QH15, 59/2024/QH15, 99/2025/QH15 '
-        'và các luật năm 2025, 2026. <a href="to-tung-hinh-su/">Mở tra cứu Bộ luật Tố tụng hình sự ›</a></div></div></section>'
+        '<section class="wrap sec"><div class="sec-h"><div><span class="eyebrow">Tra cứu Luật Hình sự</span><h2>Hai mục tra cứu</h2>'
+        '<p>Luật nội dung và luật hình thức trong cùng một trang</p></div></div><div class="law-2">'
+        '<a class="law-2c on" href="./">' + ic("scale") + '<span><small>Mục 1 · Bạn đang xem</small><b>Bộ luật Hình sự</b>'
+        '<em>Số 100/2015/QH13 – 428 điều, bình luận khoa học, khung hình phạt, công cụ thời hiệu</em></span></a>'
+        '<a class="law-2c" href="to-tung-hinh-su/">' + ic("gavel") + '<span><small>Mục 2</small><b>Bộ luật Tố tụng hình sự</b>'
+        '<em>Số 101/2015/QH13 – 510 điều và Điều 506a, nguyên văn sửa đổi theo 9 văn bản đến năm 2026</em></span>'
+        + ic("chev-r", "go") + '</a></div></section>'
         '<section class="wrap sec"><div class="sec-h"><div><h2>Công cụ hỗ trợ nghiên cứu</h2><p>Tính toán tự động từ chính văn bản điều luật</p></div>'
         '<a class="more" href="cong-cu">Tất cả công cụ ' + ic("chev-r") + "</a></div>" + tool_cards() + "</section>"
         '<section class="wrap sec"><div class="law-info">'

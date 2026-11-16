@@ -151,6 +151,30 @@ mark{background:#ffe79a;color:inherit;border-radius:3px;padding:0 1px;box-shadow
 :root[data-theme="dark"] .th-sun{display:none}
 :root[data-theme="dark"] .th-moon{display:block}
 @media (prefers-color-scheme:dark){:root[data-theme="auto"] .th-sun{display:none}:root[data-theme="auto"] .th-moon{display:block}}
+/* Thanh chọn mục: Tra cứu Luật Hình sự gồm 2 mục riêng – Bộ luật Hình sự, Bộ luật Tố tụng hình sự (cuộn theo trang, không dính) */
+.secbar{background:var(--surface);border-bottom:1px solid var(--line-2)}
+.secbar-in{max-width:var(--maxw);margin:0 auto;padding:8px clamp(12px,3vw,32px);display:grid;grid-template-columns:repeat(2,minmax(0,max-content));gap:8px}
+.secbar a{display:flex;align-items:center;gap:10px;padding:7px 16px 7px 12px;border-radius:12px;color:var(--ink-2);border:1px solid var(--line-2);background:var(--surface);transition:border-color .15s,background .15s;min-width:0}
+.secbar a:hover{border-color:var(--gold-400);color:var(--ink)}
+.secbar a svg{flex:none;width:22px;height:22px;color:var(--accent)}
+.secbar a span{display:flex;flex-direction:column;line-height:1.2;min-width:0}
+.secbar a b{font-weight:600;font-size:.93rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.secbar a small{font-size:.74rem;color:var(--muted);white-space:nowrap}
+.secbar a.on{background:var(--red-50);border-color:color-mix(in srgb,var(--primary) 35%,transparent);color:var(--primary-ink);box-shadow:inset 0 -2px 0 var(--gold-400)}
+.secbar a.on svg{color:var(--primary-ink)}
+@media (max-width:640px){.secbar-in{grid-template-columns:1fr 1fr;padding:6px 10px;gap:6px}.secbar a{padding:6px 10px;gap:8px}.secbar a svg{width:18px;height:18px}.secbar a b{font-size:.84rem;white-space:normal;line-height:1.2}.secbar a small{display:none}.secbar a{min-height:44px}}
+@media (max-width:380px){.secbar a svg{display:none}}
+@media print{.secbar{display:none}}
+.law-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.law-2c{display:flex;align-items:center;gap:16px;padding:18px 20px;border-radius:var(--r-l);background:var(--surface);border:1px solid var(--line-2);color:var(--ink);transition:border-color .15s,box-shadow .15s}
+.law-2c:hover{border-color:var(--gold-400);box-shadow:var(--sh-2);color:var(--ink)}
+.law-2c>svg{flex:none;width:34px;height:34px;color:var(--accent)}
+.law-2c>svg.go{width:20px;height:20px;margin-left:auto;color:var(--muted)}
+.law-2c span{display:flex;flex-direction:column;gap:3px;min-width:0}
+.law-2c small{font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--gold-700)}
+.law-2c b{font-family:var(--f-head);font-size:1.15rem;color:var(--primary-ink)}
+.law-2c em{font-style:normal;font-size:.88rem;color:var(--muted);line-height:1.5}
+.law-2c.on{background:var(--red-50);border-color:color-mix(in srgb,var(--primary) 30%,transparent)}
 .hd-progress{position:absolute;left:0;bottom:0;height:3px;width:0;background:linear-gradient(90deg,var(--gold-400),#ffe6a6);z-index:2;transition:width .1s linear}
 .is-home .hd-search{visibility:hidden}
 

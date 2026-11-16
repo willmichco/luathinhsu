@@ -38,8 +38,8 @@ SITE = os.environ.get("SITE_URL", "https://willmichco.github.io/luathinhsu/").rs
 TODAY = os.environ.get("TTHS_TODAY") or datetime.date.today().isoformat()
 
 NAME = "Bộ luật Tố tụng hình sự"
-SUFFIX = " – Bộ luật Tố tụng hình sự 2015"
-SITE_NAME = "Tra cứu Bộ luật Tố tụng hình sự – Luật Sư Nam"
+SUFFIX = " – Bộ luật Tố tụng hình sự 2015 – Tra cứu Luật Hình sự"
+SITE_NAME = "Tra cứu Luật Hình sự – Luật Sư Nam"
 OG_IMAGE = SITE + "assets/img/og-cover.jpg"
 
 # Văn bản sửa đổi, bổ sung, bãi bỏ BLTTHS 2015 và vị trí các điều khoản tác động trong từng văn bản.
@@ -527,30 +527,26 @@ def make_template():
     t = t.replace('<link rel="manifest" href="manifest.webmanifest">', '<link rel="manifest" href="manifest.webmanifest">\n'
                   '<link rel="stylesheet" href="%stths.css?v=__V__">' % DIR)
     # Thương hiệu, ô tìm kiếm, điều hướng: trỏ vào phân mục Tố tụng hình sự
-    t = t.replace('<a class="brand" href="./" aria-label="Trang chủ – Tra cứu Bộ luật Hình sự">',
-                  '<a class="brand" href="%s" aria-label="Trang chủ – Tra cứu Bộ luật Tố tụng hình sự">' % DIR)
-    t = t.replace("<b>Tra cứu Bộ luật Hình sự</b><small>Luật Sư Nam · Từ điển pháp luật</small>",
-                  "<b>Bộ luật Tố tụng hình sự</b><small>Luật Sư Nam · Từ điển pháp luật</small>")
+    # Thanh chọn mục: đánh dấu mục Bộ luật Tố tụng hình sự
+    t = t.replace('data-sec="blhs" class="on" aria-current="true"', 'data-sec="blhs"', 1)
+    t = t.replace('<a href="to-tung-hinh-su/" data-sec="tths">', '<a href="to-tung-hinh-su/" data-sec="tths" class="on" aria-current="true">', 1)
     t = re.sub(r'<form class="sb" role="search" action="tim-kiem" method="get">(.*?)</form>',
                lambda m: ('<form class="sb" role="search" action="%stim-kiem" method="get">' % DIR) + m.group(1)
                .replace("Số điều, tên tội, từ khóa… (vd: 173, lừa đảo)", "Số điều, từ khóa… (vd: 143, tạm giam)")
                .replace("Tìm kiếm trong Bộ luật Hình sự", "Tìm kiếm trong Bộ luật Tố tụng hình sự") + "</form>", t, count=1, flags=re.S)
     t = re.sub(r'<nav class="hd-nav" aria-label="Điều hướng chính">.*?</nav>',
                '<nav class="hd-nav" aria-label="Điều hướng chính"><a href="%s" data-nav="muc-luc">Mục lục</a>'
-               '<a href="%ssua-doi" data-nav="sua-doi">Sửa đổi</a><a href="./" data-nav="blhs">Bộ luật Hình sự</a></nav>' % (DIR, DIR),
+               '<a href="%ssua-doi" data-nav="sua-doi">Sửa đổi</a><a href="%slich-su" data-nav="lich-su">Lịch sử</a></nav>' % (DIR, DIR, DIR),
                t, count=1, flags=re.S)
     t = re.sub(r'<nav class="tabbar" aria-label="Điều hướng nhanh">.*?</nav>',
                '<nav class="tabbar" aria-label="Điều hướng nhanh">'
-               '<a href="%s" data-nav="muc-luc">%s<span>Mục lục</span></a>'
+               '<a href="./" data-nav="home">%s<span>Trang chủ</span></a>'
                '<a href="%stim-kiem" data-nav="tim-kiem">%s<span>Tra cứu</span></a>'
+               '<a href="%s" data-nav="muc-luc">%s<span>Mục lục</span></a>'
                '<a href="%ssua-doi" data-nav="sua-doi">%s<span>Sửa đổi</span></a>'
-               '<a href="%slich-su" data-nav="lich-su">%s<span>Lịch sử</span></a>'
-               '<a href="./" data-nav="blhs">%s<span>BL Hình sự</span></a></nav>'
-               % (DIR, ic("list"), DIR, ic("search"), DIR, ic("history"), DIR, ic("book"), ic("scale")), t, count=1, flags=re.S)
+               '<a href="%slich-su" data-nav="lich-su">%s<span>Lịch sử</span></a></nav>'
+               % (ic("home"), DIR, ic("search"), DIR, ic("list"), DIR, ic("history"), DIR, ic("book")), t, count=1, flags=re.S)
     t = t.replace('<nav class="drawer-nav" id="drawerNav"></nav>', '<nav class="drawer-nav" id="drawerNav">' + drawer_html() + "</nav>")
-    t = re.sub(r'(<div class="ft-brand">.*?<p>).*?(</p>)',
-               r"\1Trang tra cứu Bộ luật Tố tụng hình sự số 101/2015/QH13 và các văn bản sửa đổi, bổ sung, bãi bỏ "
-               r"(cập nhật đến Luật số 11/2026/QH16).\2", t, count=1, flags=re.S)
     t = re.sub(r'(<div class="ft-col">\s*<h2>Tra cứu</h2>).*?(</div>)',
                lambda m: m.group(1) + '\n      <a href="%s">Mục lục Bộ luật Tố tụng hình sự</a>\n      <a href="%stim-kiem">Tìm kiếm toàn văn</a>'
                '\n      <a href="%ssua-doi">Các văn bản sửa đổi, bổ sung</a>\n      <a href="%slich-su">Bộ luật 2003, 1988</a>'
@@ -563,10 +559,10 @@ def make_template():
 
 def drawer_html():
     L = lambda href, icon, t: '<a href="%s">%s%s</a>' % (href, ic(icon), t)
-    return (L(DIR, "list", "Mục lục Bộ luật Tố tụng hình sự") + L(DIR + "tim-kiem", "search", "Tìm kiếm toàn văn") +
+    return ('<div class="dn-h">Bộ luật Tố tụng hình sự</div>' + L(DIR, "list", "Mục lục Bộ luật Tố tụng hình sự") + L(DIR + "tim-kiem", "search", "Tìm kiếm toàn văn") +
             L(DIR + "sua-doi", "history", "Các văn bản sửa đổi, bổ sung") + L(DIR + "lich-su", "book", "Bộ luật 2003, 1988") +
-            '<hr><div class="dn-h">Bộ luật Hình sự</div>' + L("./", "scale", "Tra cứu Bộ luật Hình sự 2015") +
-            L("cong-cu", "tools", "Công cụ nghiên cứu hình sự") +
+            '<div class="dn-h">Bộ luật Hình sự</div>' + L("./", "home", "Trang chủ") + L("muc-luc", "scale", "Mục lục Bộ luật Hình sự") +
+            L("tim-kiem", "search", "Tìm kiếm Bộ luật Hình sự") + L("cong-cu", "tools", "Công cụ nghiên cứu") +
             '<div class="dn-h">Liên hệ luật sư</div>' +
             '<a href="tel:0983498499">%sGọi 0983 498 499</a>' % ic("phone") +
             '<a href="https://zalo.me/0983498499" target="_blank" rel="noopener">%sNhắn Zalo</a>' % ic("chat") +
@@ -710,7 +706,7 @@ def stats():
 def page_index():
     n_am, n_rep, n_fut = stats()
     rep = [c for c in CHAPS if c["rep"]]
-    crumbs = [("Bộ luật Hình sự", "./"), ("Bộ luật Tố tụng hình sự", None)]
+    crumbs = [("Trang chủ", "./"), ("Bộ luật Tố tụng hình sự", None)]
     sub = ("Toàn văn Bộ luật số 101/2015/QH13: %d phần, %d chương, %d điều (kể cả Điều 506a bổ sung năm 2025). "
            "Mỗi điều kèm nguyên văn mọi lần sửa đổi, bổ sung, bãi bỏ của %d văn bản, ghi rõ ngày có hiệu lực."
            % (len(PARTS), len([c for c in CHAPS if c["num"]]), len(ARTS), len(LAWS)))
@@ -749,8 +745,8 @@ def page_index():
             '<p class="toc-empty" hidden>Không có điều nào khớp.</p>%s</section></div>' % (ic("filter"), toc_html()))
     desc = ("Tra cứu toàn văn Bộ luật Tố tụng hình sự 2015 (số 101/2015/QH13): %d điều, mục lục 9 phần 36 chương; nguyên văn sửa đổi "
             "theo Luật 02/2021/QH15, 34/2024/QH15, 59/2024/QH15, 99/2025/QH15 và các luật năm 2025, 2026." % len(ARTS))
-    ld = {"@context": "https://schema.org", "@graph": [dict(CODE_LD, description=desc), breadcrumb_ld([("Bộ luật Hình sự", ""), ("Bộ luật Tố tụng hình sự", DIR)])]}
-    return {"path": DIR + "index", "title": "Tra cứu Bộ luật Tố tụng hình sự 2015 (sửa đổi 2021, 2025) – Luật Sư Nam", "desc": desc,
+    ld = {"@context": "https://schema.org", "@graph": [dict(CODE_LD, description=desc), breadcrumb_ld([("Trang chủ", ""), ("Bộ luật Tố tụng hình sự", DIR)])]}
+    return {"path": DIR + "index", "title": "Bộ luật Tố tụng hình sự 2015 (sửa đổi 2021, 2025) – Tra cứu Luật Hình sự – Luật Sư Nam", "desc": desc,
             "main": main, "ld": ld, "nav": "muc-luc", "body": "is-toc"}
 
 
@@ -1027,7 +1023,7 @@ def search_index():
 
 # =============================================================================
 def main():
-    ver = TODAY.replace("-", "") + "b"  # tăng chữ cuối khi sửa tths.css, tths.js
+    ver = TODAY.replace("-", "") + "d"  # tăng chữ cuối khi sửa tths.css, tths.js
     tpl = make_template().replace("__V__", ver)
     for m in ("<!--seo:head-->", "<!--seo:main-->", '<base href="../">', DIR + "tths.js"):
         assert m in tpl, "Khuôn trang thiếu " + m
