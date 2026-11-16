@@ -5,6 +5,7 @@
  *  - Trang HTML, data/toc.json, data/meta.json: ưu tiên mạng để luôn mới; mạng chậm quá NET_WAIT ms thì dùng bản đã lưu.
  *  - Dữ liệu điều luật nằm ở bộ nhớ đệm riêng (DATA), không bị xóa khi phát hành phiên bản giao diện mới;
  *    ứng dụng báo mã phiên bản dữ liệu hiện hành để xóa các bản cũ.
+ *  - Bộ nhớ đệm 'tths-offline': trang Bộ luật Tố tụng hình sự người dùng chủ động tải về đọc offline (giữ qua các phiên bản).
  */
 var VERSION = 'blhs-20261116d';
 var DATA = 'blhs-data';
@@ -24,7 +25,7 @@ self.addEventListener('install', function (e) {
 
 self.addEventListener('activate', function (e) {
   e.waitUntil(caches.keys().then(function (keys) {
-    return Promise.all(keys.filter(function (k) { return k !== VERSION && k !== DATA; }).map(function (k) { return caches.delete(k); }));
+    return Promise.all(keys.filter(function (k) { return k !== VERSION && k !== DATA && k !== 'tths-offline'; }).map(function (k) { return caches.delete(k); }));
   }).then(function () { return self.clients.claim(); }));
 });
 

@@ -374,6 +374,9 @@ def law_label(L):
 # =============================================================================
 # Hiển thị văn bản
 # =============================================================================
+REFS = {}   # điều → các điều của Bộ luật được dẫn chiếu trong văn bản (thu thập khi dựng trang)
+
+
 def link_refs(h, self_id=None):
     """Liên kết "Điều N" (của Bộ luật này) → trang điều đó. h đã thoát HTML."""
     def rep(m):
@@ -383,7 +386,11 @@ def link_refs(h, self_id=None):
         if re.match(r"\s*(?:,\s*\d+\s*)*(?:và\s+\d+\s*)?(?:của|tại)\s+(?:các\s+)?(?:Luật|Bộ luật [Hh]ình sự|Bộ luật Dân sự|Bộ luật Tố tụng dân sự|"
                     r"Bộ luật Lao động|Nghị|Pháp lệnh|Hiến pháp|Công ước|điều ước)", rest):
             return m.group(0)
-        return '<a href="%sdieu-%s">Điều %s</a>' % (DIR, n, n)
+        if REFS is not None and self_id:
+            REFS.setdefault(self_id, [])
+            if n not in REFS[self_id]:
+                REFS[self_id].append(n)
+        return '<a href="%sdieu-%s" data-pv="%s">Điều %s</a>' % (DIR, n, n, n)
     return re.sub(r"(?<![\w>])Điều (\d{1,3}[a-z]?)(?![\w.])", rep, h)
 
 
@@ -461,7 +468,10 @@ def art_law_html(a):
                     inner.append('<p class="lnote">%sGhi chú của nguồn dữ liệu: %s</p>' % (ic("info"), esc(clean(dd.get("text")))))
                 else:
                     inner.append(paras_html(node_paras(dd, [])))
-            out.append('<div class="kh" id="k%s" data-k="%s">%s</div>' % (kn, kn, "".join(inner)))
+            act = ('<div class="kact no-print js-only"><button type="button" data-cite="%s" title="Sao chép trích dẫn khoản %s" aria-label="Sao chép trích dẫn khoản %s">%s</button>'
+                   '<button type="button" data-klink="%s" title="Sao chép liên kết tới khoản %s" aria-label="Sao chép liên kết khoản %s">%s</button></div>'
+                   % (kn, kn, kn, ic("copy"), kn, kn, kn, ic("link"))) if kn else ""
+            out.append('<div class="kh" id="k%s" data-k="%s">%s%s</div>' % (kn, kn, "".join(inner), act))
         elif cap == "ket":
             out.append('<div class="kh law-end">%s</div>' % "".join('<p class="lx">%s</p>' % esc(p) for p in clean(k.get("text")).split("\n")))
         elif cap == "ghi-chu":
@@ -536,22 +546,23 @@ def make_template():
                .replace("Số điều, tên tội, từ khóa… (vd: 173, lừa đảo)", "Số điều, từ khóa… (vd: 143, tạm giam)")
                .replace("Tìm kiếm trong Bộ luật Hình sự", "Tìm kiếm trong Bộ luật Tố tụng hình sự") + "</form>", t, count=1, flags=re.S)
     t = re.sub(r'<nav class="hd-nav" aria-label="Điều hướng chính">.*?</nav>',
-               '<nav class="hd-nav" aria-label="Điều hướng chính"><a href="%s" data-nav="muc-luc">Mục lục</a>'
-               '<a href="%ssua-doi" data-nav="sua-doi">Sửa đổi</a><a href="%slich-su" data-nav="lich-su">Lịch sử</a></nav>' % (DIR, DIR, DIR),
+               '<nav class="hd-nav" aria-label="Điều hướng chính"><a href="%s#muc-luc" data-nav="muc-luc" data-act="jump" title="Mục lục (Ctrl+K)">Mục lục</a>'
+               '<a href="%scong-cu" data-nav="cong-cu">Công cụ</a><a href="%sda-luu" data-nav="da-luu">Đã lưu</a></nav>' % (DIR, DIR, DIR),
                t, count=1, flags=re.S)
     t = re.sub(r'<nav class="tabbar" aria-label="Điều hướng nhanh">.*?</nav>',
                '<nav class="tabbar" aria-label="Điều hướng nhanh">'
-               '<a href="./" data-nav="home">%s<span>Trang chủ</span></a>'
+               '<a href="%s" data-nav="home">%s<span>Trang chủ</span></a>'
                '<a href="%stim-kiem" data-nav="tim-kiem">%s<span>Tra cứu</span></a>'
-               '<a href="%s" data-nav="muc-luc">%s<span>Mục lục</span></a>'
-               '<a href="%ssua-doi" data-nav="sua-doi">%s<span>Sửa đổi</span></a>'
-               '<a href="%slich-su" data-nav="lich-su">%s<span>Lịch sử</span></a></nav>'
-               % (ic("home"), DIR, ic("search"), DIR, ic("list"), DIR, ic("history"), DIR, ic("book")), t, count=1, flags=re.S)
+               '<a href="%s#muc-luc" data-nav="muc-luc" data-act="jump">%s<span>Mục lục</span></a>'
+               '<a href="%scong-cu" data-nav="cong-cu">%s<span>Công cụ</span></a>'
+               '<a href="%sda-luu" data-nav="da-luu">%s<span>Đã lưu</span></a></nav>'
+               % (DIR, ic("home"), DIR, ic("search"), DIR, ic("list"), DIR, ic("tools"), DIR, ic("bookmark")), t, count=1, flags=re.S)
     t = t.replace('<nav class="drawer-nav" id="drawerNav"></nav>', '<nav class="drawer-nav" id="drawerNav">' + drawer_html() + "</nav>")
     t = re.sub(r'(<div class="ft-col">\s*<h2>Tra cứu</h2>).*?(</div>)',
-               lambda m: m.group(1) + '\n      <a href="%s">Mục lục Bộ luật Tố tụng hình sự</a>\n      <a href="%stim-kiem">Tìm kiếm toàn văn</a>'
-               '\n      <a href="%ssua-doi">Các văn bản sửa đổi, bổ sung</a>\n      <a href="%slich-su">Bộ luật 2003, 1988</a>'
-               '\n      <a href="./">Bộ luật Hình sự 2015</a>\n    ' % (DIR, DIR, DIR, DIR) + m.group(2), t, count=1, flags=re.S)
+               lambda m: m.group(1) + '\n      <a href="%s#muc-luc">Mục lục Bộ luật Tố tụng hình sự</a>\n      <a href="%stim-kiem">Tìm kiếm toàn văn</a>'
+               '\n      <a href="%sthoi-han">Bảng thời hạn tố tụng</a>\n      <a href="%sso-sanh">So sánh điều luật</a>'
+               '\n      <a href="%ssua-doi">Các văn bản sửa đổi, bổ sung</a>\n      <a href="%sgioi-thieu">Giới thiệu &amp; nguồn dữ liệu</a>\n    '
+               % (DIR, DIR, DIR, DIR, DIR, DIR) + m.group(2), t, count=1, flags=re.S)
     t = re.sub(r'<script src="assets/js/app\.js\?v=[^"]+" defer></script>',
                '<script src="%stths.js?v=__V__" defer></script>' % DIR, t, count=1)
     t = t.replace(' data-act="toc"', "")
@@ -560,8 +571,11 @@ def make_template():
 
 def drawer_html():
     L = lambda href, icon, t: '<a href="%s">%s%s</a>' % (href, ic(icon), t)
-    return ('<div class="dn-h">Bộ luật Tố tụng hình sự</div>' + L(DIR, "list", "Mục lục Bộ luật Tố tụng hình sự") + L(DIR + "tim-kiem", "search", "Tìm kiếm toàn văn") +
+    return ('<div class="dn-h">Bộ luật Tố tụng hình sự</div>' + L(DIR, "home", "Trang chủ Tố tụng hình sự") + L(DIR + "#muc-luc", "list", "Mục lục Bộ luật") +
+            L(DIR + "tim-kiem", "search", "Tìm kiếm toàn văn") + L(DIR + "da-luu", "bookmark", "Đã lưu & ghi chú") +
+            '<div class="dn-h">Công cụ nghiên cứu</div>' + L(DIR + "thoi-han", "clock", "Thời hạn tố tụng") + L(DIR + "so-sanh", "columns", "So sánh điều luật") +
             L(DIR + "sua-doi", "history", "Các văn bản sửa đổi, bổ sung") + L(DIR + "lich-su", "book", "Bộ luật 2003, 1988") +
+            '<hr>' + L(DIR + "gioi-thieu", "info", "Giới thiệu & nguồn dữ liệu") +
             '<div class="dn-h">Bộ luật Hình sự</div>' + L("./", "home", "Trang chủ") + L("muc-luc", "scale", "Mục lục Bộ luật Hình sự") +
             L("tim-kiem", "search", "Tìm kiếm Bộ luật Hình sự") + L("cong-cu", "tools", "Công cụ nghiên cứu") +
             '<div class="dn-h">Liên hệ luật sư</div>' +
@@ -672,11 +686,12 @@ def toc_html():
             rep = c["rep"]
             chs.append(
                 '<details class="tch" id="chuong-%s"><summary><span class="cn">%s</span><span class="ct"><b>%s</b>'
-                '<small>%d điều · Điều %s – %s</small>%s</span>%s</summary><div class="tch-body">%s</div></details>'
+                '<small>%d điều · Điều %s – %s</small>%s</span><a class="btn btn--sm btn--ghost" href="%schuong-%s">Xem</a>%s</summary><div class="tch-body">'
+                '<a class="ta ch-open" href="%schuong-%s">Xem trang tổng quan %s %s</a>%s</div></details>'
                 % (c["slug"], esc(c["num"] or "TH"), esc(c["ten"].capitalize() if c["ten"].isupper() else c["ten"]), len(c["arts"]),
                    c["arts"][0].id, c["arts"][-1].id,
                    ' <span class="tag tag--rep26">Bãi bỏ từ %s</span>' % vnd(rep["law"]["hl"]) if rep and not rep["law"]["future"] else "",
-                   ic("chev-d", "chev"), lst))
+                   DIR, c["slug"], ic("chev-d", "chev"), DIR, c["slug"], esc(chap_label(c)), ic("arrow-r"), lst))
         parts.append('<section class="toc-part"><h2><small>%s</small>%s</h2>%s</section>' % (esc(p["so"]), esc(sentence(p["ten"])), "".join(chs)))
     return "".join(parts)
 
@@ -703,6 +718,197 @@ def stats():
     n_fut = len([a for a in ARTS if a.fut])
     return n_am, n_rep, n_fut
 
+
+
+# =============================================================================
+# Liên quan, trang chương, công cụ, đã lưu, giới thiệu (cùng bộ tính năng với mục Bộ luật Hình sự)
+# =============================================================================
+INREFS = {}
+
+
+def collect_refs():
+    """Dựng trước toàn văn từng điều để thu dẫn chiếu "Điều N" (đi và đến)."""
+    for a in ARTS:
+        if a.node is not None:
+            art_law_html(a)
+        if a.whole or a.new:
+            whole_html(a.whole or a.new)
+    for a, outs in list(REFS.items()):
+        for x in outs:
+            INREFS.setdefault(x, [])
+            if a not in INREFS[x]:
+                INREFS[x].append(a)
+    for k in INREFS:
+        INREFS[k].sort(key=akey)
+
+
+def excerpt(a, n=170):
+    ps = law_paras(a)
+    return clip(" ".join(ps), n) if ps else ""
+
+
+def art_card(a):
+    return ('<a class="pa" href="%sdieu-%s" data-pv="%s"><span class="pn">Điều %s</span><h3>%s</h3><span class="pm"><span class="tag tag--soft">%s</span>%s</span></a>'
+            % (DIR, a.id, a.id, esc(a.id), esc(a.t), esc(chap_label(a.ch)), art_tags(a, True)))
+
+
+def rel_html(a):
+    def sec(title, ids):
+        ids = [i for i in ids if i in BY and i != a.id]
+        if not ids:
+            return "", 0
+        return ('<section class="rel-sec"><h3>%s</h3><div class="rel-grid">%s</div></section>' % (title, "".join(art_card(BY[i]) for i in ids)), len(ids))
+    near = [ARTS[a.i + j].id for j in (-2, -1, 1, 2) if 0 <= a.i + j < len(ARTS) and ARTS[a.i + j].ch is a.ch]
+    out, n = "", 0
+    for title, ids in (("Điều luật được dẫn chiếu trong văn bản", REFS.get(a.id) or []), ("Được viện dẫn tại các điều", INREFS.get(a.id) or []),
+                       ("Các điều lân cận trong " + chap_label(a.ch), near)):
+        h, k = sec(title, ids)
+        out += h
+        if title.startswith(("Điều luật được", "Được viện")):
+            n += k
+    return out, n
+
+
+def page_chapter(c):
+    i = CHAPS.index(c)
+    prev, nxt = (CHAPS[i - 1] if i else None), (CHAPS[i + 1] if i + 1 < len(CHAPS) else None)
+    lst, last_m = "", None
+    for a in c["arts"]:
+        if a.muc and a.muc != last_m:
+            last_m = a.muc
+            lst += '<h2 class="muc-h">%s</h2>' % esc(sentence(a.muc))
+        lst += ('<a class="ca" href="%sdieu-%s" data-pv="%s"><span class="cn"><small>Điều</small><b>%s</b></span><h3>%s</h3><p>%s</p><span class="cm">%s</span></a>'
+                % (DIR, a.id, a.id, esc(a.id), esc(a.t), esc(excerpt(a)), art_tags(a, True)))
+    crumbs = [("Trang chủ", "./"), ("Tố tụng hình sự", DIR), (chap_label(c), None)]
+    n_am = len([a for a in c["arts"] if a.eff and not a.rep])
+    meta = ('<div class="ph-meta"><span>%s%d điều (Điều %s – %s)</span>%s</div>'
+            % (ic("book"), len(c["arts"]), c["arts"][0].id, c["arts"][-1].id, "<span>%s%d điều có sửa đổi, bổ sung</span>" % (ic("note"), n_am) if n_am else ""))
+    acts = ('<div class="ph-acts"><a class="btn btn--g" href="%sdieu-%s">%sĐọc từ Điều %s</a>%s%s</div>'
+            % (DIR, c["arts"][0].id, ic("book"), c["arts"][0].id,
+               '<a class="btn" href="%schuong-%s">%s%s</a>' % (DIR, prev["slug"], ic("chev-l"), esc(chap_label(prev))) if prev else "",
+               '<a class="btn" href="%schuong-%s">%s%s</a>' % (DIR, nxt["slug"], esc(chap_label(nxt)), ic("chev-r")) if nxt else ""))
+    title = (chap_label(c) + ". " if c["num"] else "") + sentence(c["ten"])
+    note = ""
+    if c["rep"] and not c["rep"]["law"]["future"]:
+        it = c["rep"]
+        note = ('<div class="callout callout--warn" style="margin-bottom:18px">%s<div><b>Lưu ý hiệu lực:</b> chương này đã bị bãi bỏ kể từ ngày %s theo %s %s (%s). '
+                "Nội dung được giữ lại để tham khảo, nghiên cứu.</div></div>" % (ic("alert"), vnd(it["law"]["hl"]), esc(lc(it["cite"])), esc(law_label(it["law"])), esc(it["law"]["ten"])))
+    main = (ph(crumbs, title, None, c["part"]["so"] + " · " + sentence(c["part"]["ten"]), meta + acts) +
+            '<div class="wrap page">' + note + '<div class="chap-list">' + lst + "</div></div>")
+    desc = clip("%s Bộ luật Tố tụng hình sự 2015 gồm %d điều (Điều %s – %s): %s" % (title, len(c["arts"]), c["arts"][0].id, c["arts"][-1].id,
+                                                                                      "; ".join(a.t for a in c["arts"][:6])), 175)
+    return {"path": DIR + "chuong-" + c["slug"], "title": title + SUFFIX, "desc": desc, "main": main, "crumbs": crumbs, "nav": "muc-luc", "body": "is-reading"}
+
+
+TOOLS_T = [
+    ("thoi-han", "clock", "Thời hạn tố tụng", "Bảng thời hạn giữ người, tạm giữ, điều tra, tạm giam, truy tố, xét xử, kháng cáo, kháng nghị – trích nguyên văn điều luật."),
+    ("so-sanh", "columns", "So sánh điều luật", "Đặt hai điều cạnh nhau để phân biệt thủ tục, thẩm quyền, thời hạn – kèm nội dung sửa đổi, bổ sung."),
+    ("tim-kiem", "search", "Tìm kiếm toàn văn", "Tìm trong tên điều, văn bản điều luật và nội dung sửa đổi; gõ không dấu, cụm từ chính xác."),
+    ("sua-doi", "history", "Dòng thời gian sửa đổi", "9 văn bản sửa đổi, bổ sung, bãi bỏ theo thứ tự hiệu lực; bấm số điều để xem nguyên văn."),
+]
+
+
+def tool_cards():
+    return '<div class="tools-grid">' + "".join(
+        '<a class="tl" href="%s%s"><span class="ti">%s</span><h3>%s</h3><p>%s</p><span class="lk">Mở công cụ %s</span></a>'
+        % (DIR, k, ic(i), t, d, ic("arrow-r")) for k, i, t, d in TOOLS_T) + "</div>"
+
+
+def page_tools():
+    crumbs = [("Trang chủ", "./"), ("Tố tụng hình sự", DIR), ("Công cụ", None)]
+    main = (ph(crumbs, "Công cụ nghiên cứu tố tụng hình sự", "Tra nhanh thời hạn tố tụng, so sánh điều luật, tìm kiếm toàn văn và theo dõi các lần sửa đổi.",
+               "Công cụ") + '<div class="wrap page">' + tool_cards() + "</div>")
+    return {"path": DIR + "cong-cu", "title": "Công cụ nghiên cứu" + SUFFIX, "desc": "Công cụ nghiên cứu Bộ luật Tố tụng hình sự 2015: bảng thời hạn tố tụng, so sánh điều luật, tìm kiếm toàn văn.",
+            "main": main, "crumbs": crumbs, "nav": "cong-cu"}
+
+
+def page_deadlines():
+    import tths_thoi_han as TH
+    crumbs = [("Trang chủ", "./"), ("Tố tụng hình sự", DIR), ("Công cụ", DIR + "cong-cu"), ("Thời hạn tố tụng", None)]
+    rows, last = "", None
+    for st, viec, th, dieu, kh, quote in TH.ROWS:
+        a = BY[dieu]
+        txt = " ".join(law_paras(a))
+        if quote not in re.sub(r"\s+", " ", txt):
+            raise SystemExit("Bảng thời hạn: câu trích không có trong Điều %s – %s" % (dieu, quote))
+        am = [it for it in a.eff if it["kind"] != "repeal-chapter"]
+        fut = a.fut
+        href = DIR + "dieu-" + dieu + ("#k" + kh if kh else "")
+        rows += ('<tr><td><b>%s</b><small>%s</small></td><td class="n">%s</td><td><a href="%s" data-pv="%s">%s Điều %s</a>%s</td>'
+                 '<td class="q">“%s”</td></tr>'
+                 % (esc(viec), esc(st), esc(th), href, dieu, "Khoản " + kh if kh else "", dieu,
+                    ('<br><a class="tag tag--am" href="%sdieu-%s#p-sua-doi">Điều có sửa đổi</a>' % (DIR, dieu) if am else "") +
+                    ('<br><span class="tag tag--fut">Sắp sửa đổi</span>' if fut else ""), esc(quote)))
+    main = (ph(crumbs, "Bảng thời hạn tố tụng hình sự", "Các thời hạn chính theo Bộ luật Tố tụng hình sự 2015. Mỗi dòng trích nguyên văn điều luật; "
+               "bấm vào điều để xem đầy đủ các trường hợp gia hạn, ngoại lệ và nội dung sửa đổi.", "Công cụ") +
+            '<div class="wrap page"><div class="callout callout--info" style="margin-bottom:16px">%s<div>Bảng chỉ tóm tắt <b>thời hạn chung</b>. Thời hạn gia hạn, '
+            'thẩm quyền gia hạn, cách tính thời hạn (Điều 9 BLTTHS) và trường hợp đặc biệt phải đọc tại điều luật tương ứng. Câu trích được '
+            'tự động đối chiếu với văn bản điều luật khi dựng trang.</div></div>'
+            '<div class="tbl-wrap"><table class="tbl tbl--cards tbl--th"><thead><tr><th>Việc</th><th>Thời hạn</th><th>Căn cứ</th><th>Trích nguyên văn</th></tr></thead>'
+            '<tbody>%s</tbody></table></div></div>' % (ic("info"), rows))
+    return {"path": DIR + "thoi-han", "title": "Bảng thời hạn tố tụng" + SUFFIX,
+            "desc": "Bảng thời hạn tố tụng hình sự: giữ người khẩn cấp, tạm giữ, giải quyết tố giác, điều tra, tạm giam, truy tố, chuẩn bị xét xử, kháng cáo, kháng nghị – trích nguyên văn BLTTHS 2015.",
+            "main": main, "crumbs": crumbs, "nav": "cong-cu"}
+
+
+PRESETS_T = [("117", "119", "Tạm giữ ↔ Tạm giam"), ("110", "111", "Giữ người khẩn cấp ↔ Bắt quả tang"), ("121", "122", "Bảo lĩnh ↔ Đặt tiền"),
+             ("123", "124", "Cấm đi khỏi nơi cư trú ↔ Tạm hoãn xuất cảnh"), ("331", "336", "Kháng cáo ↔ Kháng nghị"),
+             ("370", "397", "Giám đốc thẩm ↔ Tái thẩm"), ("229", "230", "Tạm đình chỉ ↔ Đình chỉ điều tra"),
+             ("247", "248", "Tạm đình chỉ ↔ Đình chỉ vụ án"), ("172", "173", "Thời hạn điều tra ↔ Thời hạn tạm giam"),
+             ("157", "155", "Không khởi tố ↔ Khởi tố theo yêu cầu bị hại")]
+
+
+def page_compare():
+    crumbs = [("Trang chủ", "./"), ("Tố tụng hình sự", DIR), ("Công cụ", DIR + "cong-cu"), ("So sánh", None)]
+    main = (ph(crumbs, "So sánh điều luật", "Đặt hai điều của Bộ luật Tố tụng hình sự cạnh nhau để phân biệt thủ tục, thẩm quyền, thời hạn – kèm nội dung sửa đổi, bổ sung.",
+               "So sánh") +
+            '<div class="wrap page"><div class="card" style="padding:18px"><div class="cmp" style="margin-top:0">'
+            '<label class="field"><span>Điều luật thứ nhất</span><input class="inp" id="cmpA" inputmode="text" placeholder="Số điều, vd: 117" list="cmpList"></label>'
+            '<label class="field"><span>Điều luật thứ hai</span><input class="inp" id="cmpB" inputmode="text" placeholder="Số điều, vd: 119" list="cmpList"></label></div>'
+            '<datalist id="cmpList">%s</datalist>'
+            '<div class="field" style="margin-top:16px"><span>Cặp thường được so sánh</span><div class="presets">%s</div></div></div><div id="cmpOut"></div></div>'
+            % ("".join('<option value="%s">Điều %s. %s</option>' % (a.id, a.id, esc(a.t)) for a in ARTS),
+               "".join('<button type="button" class="chip" data-ps="%s,%s">%s</button>' % (x, y, esc(t)) for x, y, t in PRESETS_T)))
+    return {"path": DIR + "so-sanh", "title": "So sánh điều luật" + SUFFIX, "desc": "So sánh hai điều của Bộ luật Tố tụng hình sự 2015: tạm giữ – tạm giam, kháng cáo – kháng nghị, giám đốc thẩm – tái thẩm…",
+            "main": main, "crumbs": crumbs, "nav": "cong-cu"}
+
+
+def page_saved():
+    crumbs = [("Trang chủ", "./"), ("Tố tụng hình sự", DIR), ("Đã lưu", None)]
+    main = (ph(crumbs, "Đã lưu, ghi chú & lịch sử", "Dữ liệu chỉ lưu trên trình duyệt của thiết bị này, không gửi đi đâu.") +
+            '<div class="wrap page" id="savedOut"><noscript>Cần bật JavaScript để xem các điều đã lưu.</noscript></div>')
+    return {"path": DIR + "da-luu", "title": "Đã lưu" + SUFFIX, "desc": "Các điều Bộ luật Tố tụng hình sự đã lưu, ghi chú và lịch sử đọc trên thiết bị này.",
+            "main": main, "crumbs": crumbs, "nav": "da-luu", "noindex": True}
+
+
+def page_about():
+    crumbs = [("Trang chủ", "./"), ("Tố tụng hình sự", DIR), ("Giới thiệu", None)]
+    srcs = "".join('<li><b>%s</b> – %s%s</li>' % (esc(law_label(L)), esc(L["ten"]), ' (<a href="%s" target="_blank" rel="noopener nofollow">nguồn</a>)' % esc(L["nguon"]) if L.get("nguon") else "") for L in ORDER)
+    main = (ph(crumbs, "Giới thiệu & nguồn dữ liệu", "Mục Bộ luật Tố tụng hình sự của trang Tra cứu Luật Hình sự do Công ty Luật TNHH Luật Sư Nam xây dựng, phục vụ nghiên cứu, học tập và thực hành.") +
+            '<div class="wrap page"><div class="lawdoc">'
+            '<h2 class="muc-h">Văn bản gốc</h2><p>Bộ luật Tố tụng hình sự số 101/2015/QH13 được Quốc hội thông qua ngày 27/11/2015, có hiệu lực từ 01/01/2018 '
+            '(theo Nghị quyết số 144/2016/QH13). Toàn văn %d điều được trích từ kho dữ liệu tracuuphapluat (nguồn luatvietnam.vn) và giữ nguyên văn.</p>'
+            '<h2 class="muc-h">Các văn bản sửa đổi, bổ sung, bãi bỏ</h2><ul class="src-list">%s</ul>'
+            '<h2 class="muc-h">Cách trình bày</h2><ul class="src-list"><li>Văn bản điều luật là nguyên văn năm 2015; điều khoản sửa đổi được trích nguyên văn ngay dưới điều, theo thứ tự ngày có hiệu lực.</li>'
+            '<li>Điều bị thay thế toàn bộ hiển thị nội dung mới; văn bản gốc thu gọn bên dưới.</li>'
+            '<li>Văn bản chưa đến ngày có hiệu lực được ghi rõ “chưa có hiệu lực”.</li>'
+            '<li>Các thay đổi chỉ thay một cụm từ không được tự hợp nhất vào văn bản, để tránh sai lệch.</li></ul>'
+            '<div class="callout callout--warn" style="margin-top:18px">%s<div>Nội dung nhằm mục đích tham khảo, nghiên cứu; không thay thế ý kiến tư vấn pháp lý cho từng vụ việc. '
+            'Khi sử dụng trong hồ sơ tố tụng, vui lòng đối chiếu văn bản đăng trên Công báo hoặc văn bản hợp nhất của Văn phòng Quốc hội.</div></div></div></div>'
+            % (len(ARTS) - 1, srcs, ic("alert")))
+    return {"path": DIR + "gioi-thieu", "title": "Giới thiệu & nguồn dữ liệu" + SUFFIX, "desc": "Nguồn dữ liệu, cách trình bày văn bản Bộ luật Tố tụng hình sự 2015 và các văn bản sửa đổi trên trang Tra cứu Luật Hình sự.",
+            "main": main, "crumbs": crumbs}
+
+
+def preview_data(a):
+    """Dữ liệu một điều cho xem nhanh và công cụ so sánh: to-tung-hinh-su/a/<số>.json."""
+    return {"id": a.id, "t": a.t, "ch": chap_label(a.ch) + (". " + sentence(a.ch["ten"]) if a.ch["num"] else ""), "ex": excerpt(a, 220),
+            "fl": flags(a), "law": [[para_cls(p), p] for p in law_paras(a)],
+            "am": [[it["cite"] + " " + law_label(it["law"]), vnd(it["law"]["hl"]), 1 if it["law"]["future"] else 0,
+                    [p for _, p in node_paras(it["node"], [], prefix=False)]] for it in a.items if it["kind"] != "repeal-chapter" and it is not a.new]}
+
+
+POPULAR_T = ["119", "173", "147", "110", "117", "72", "331", "336", "245", "143", "370", "471"]
 
 def page_index():
     n_am, n_rep, n_fut = stats()
@@ -735,6 +941,8 @@ def page_index():
               'Khi dùng trong hồ sơ tố tụng, đối chiếu văn bản đăng Công báo hoặc văn bản hợp nhất của Văn phòng Quốc hội.</div></div>' % ic("book"))
     main = (ph(crumbs, "Bộ luật Tố tụng hình sự 2015", sub, "Bộ luật số 101/2015/QH13 · sửa đổi 2021, 2024, 2025, 2026", extra) +
             '<div class="wrap page"><div class="tths-notes">%s</div>' % notes +
+            '<section class="sec-s"><h2 class="muc-h">Thường được tra cứu</h2><div class="pop-grid">%s</div></section>' % "".join(art_card(BY[i]) for i in POPULAR_T if i in BY) +
+            '<section class="sec-s"><h2 class="muc-h">Công cụ hỗ trợ nghiên cứu</h2>%s</section>' % tool_cards() +
             '<section class="sec-s"><h2 class="muc-h">Các văn bản sửa đổi, bổ sung, bãi bỏ</h2>%s</section>' % law_rows() +
             '<section class="sec-s" id="muc-luc"><h2 class="muc-h">Mục lục Bộ luật</h2>'
             '<div class="toc-bar js-only"><div class="sb"><div class="sb-box">%s<input class="sb-in" id="tocQ" type="search" '
@@ -757,7 +965,7 @@ def side_html(a):
         h += '<div class="sp">%s</div>' % esc(p["so"])
         for c in p["chaps"]:
             cur = c is a.ch
-            h += ('<div class="sc%s"><a href="%s#chuong-%s">%s<span class="r">%s</span><span>%s</span></a>'
+            h += ('<div class="sc%s"><a href="%schuong-%s">%s<span class="r">%s</span><span>%s</span></a>'
                   % (" open" if cur else "", DIR, c["slug"], ic("chev-r"), esc(c["num"] or "TH"), esc(sentence(c["ten"]))))
             if cur:
                 h += '<div class="sc-l">' + "".join(
@@ -767,7 +975,7 @@ def side_html(a):
             h += "</div>"
     return ('<aside class="side" aria-label="Mục lục điều luật"><div class="side-h js-only"><input class="inp" id="sideQ" type="search" '
             'placeholder="Lọc nhanh điều luật…" aria-label="Lọc mục lục"><a class="side-all" href="%s#muc-luc" title="Mục lục đầy đủ" '
-            'aria-label="Mục lục đầy đủ">%s</a></div><div class="side-b">' % (DIR, ic("olist")) + h + "</div></aside>")
+            'aria-label="Mục lục đầy đủ" data-act="jump">%s</a></div><div class="side-b">' % (DIR, ic("olist")) + h + "</div></aside>")
 
 
 def plain_art(a):
@@ -780,19 +988,21 @@ def page_article(a):
     c = a.ch
     prev = ARTS[a.i - 1] if a.i else None
     nxt = ARTS[a.i + 1] if a.i + 1 < len(ARTS) else None
-    crumbs = [("Trang chủ", "./"), ("Tố tụng hình sự", DIR), (chap_label(c), DIR + "#chuong-" + c["slug"]), ("Điều " + a.id, None)]
-    tags = ('<div class="art-tags"><span class="tag tag--soft">%s</span><a class="tag tag--soft" href="%s#chuong-%s">%s</a>%s</div>'
+    crumbs = [("Trang chủ", "./"), ("Tố tụng hình sự", DIR), (chap_label(c), DIR + "chuong-" + c["slug"]), ("Điều " + a.id, None)]
+    tags = ('<div class="art-tags"><span class="tag tag--soft">%s</span><a class="tag tag--soft" href="%schuong-%s">%s</a>%s</div>'
             % (esc(c["part"]["so"]), DIR, c["slug"], esc(chap_label(c)), art_tags(a)))
     n_chars = len(plain_art(a)) + sum(len(tree_text(it["node"])) for it in a.items if it["kind"] != "repeal-chapter")
     sm = ('<div class="art-sum"><span>%s%s</span>%s<span class="rt">%s~%d phút đọc</span></div>'
           % (ic("book"), esc(sentence(c["ten"])), "<span>%s%s</span>" % (ic("list"), esc(sentence(a.muc))) if a.muc else "",
              ic("clock"), max(1, int(n_chars / 900 + 0.5))))
     head = ('<header class="art-h">' + crumb(crumbs) + tags + '<h1><span class="dn">Điều %s.</span> %s</h1>' % (esc(a.id), esc(a.t)) + sm +
-            '<div class="tools no-print js-only"><button type="button" class="btn btn--p" data-act="copy-art">%s<span>Sao chép</span></button>'
-            '<button type="button" class="btn" data-act="share">%s<span>Chia sẻ</span></button>'
+            '<div class="tools no-print js-only"><button type="button" class="btn btn--p" data-act="save" aria-pressed="false">%s<span>Lưu điều này</span></button>'
+            '<button type="button" class="btn" data-act="copy-art" title="Sao chép toàn văn điều luật">%s<span>Sao chép</span></button>'
+            '<button type="button" class="btn" data-act="share" title="Chia sẻ">%s<span>Chia sẻ</span></button>'
+            '<a class="btn" href="%sso-sanh?a=%s" title="So sánh với điều khác">%s<span>So sánh</span></a>'
             '<button type="button" class="btn btn--ic" data-act="print" title="In điều luật" aria-label="In điều luật">%s</button>'
-            '<button type="button" class="btn btn--ic" data-act="settings" title="Công cụ đọc: cỡ chữ, sáng/tối" aria-label="Công cụ đọc" '
-            'aria-haspopup="dialog">%s</button></div></header>' % (ic("copy"), ic("share"), ic("print"), ic("text")))
+            '<button type="button" class="btn btn--ic" data-act="settings" title="Công cụ đọc: cỡ chữ, kiểu chữ, sáng/tối" aria-label="Công cụ đọc" '
+            'aria-haspopup="dialog">%s</button></div></header>' % (ic("bookmark"), ic("copy"), ic("share"), DIR, a.id, ic("columns"), ic("print"), ic("text")))
     callouts = ""
     if a.rep:
         it = a.rep
@@ -834,7 +1044,7 @@ def page_article(a):
                  % (esc(a.id), ic("info"), "".join('<div id="sd-%d">%s</div>' % (j + 1, item_html(it, cur=a.id)) for j, it in enumerate(others))))
     pager = ('<nav class="pager no-print" aria-label="Điều trước, điều sau">%s%s%s</nav>'
              % ('<a href="%sdieu-%s" rel="prev"><small>%sĐiều trước</small><span>Điều %s. %s</span></a>' % (DIR, prev.id, ic("chev-l"), esc(prev.id), esc(prev.t)) if prev else "<span></span>",
-                '<a class="pg-all" href="%s#chuong-%s">%s<span>Mục lục</span></a>' % (DIR, c["slug"], ic("olist")),
+                '<a class="pg-all" href="%s#muc-luc" data-act="jump" aria-haspopup="dialog">%s<span>Mục lục</span></a>' % (DIR, ic("olist")),
                 '<a class="nx" href="%sdieu-%s" rel="next"><small>Điều sau%s</small><span>Điều %s. %s</span></a>' % (DIR, nxt.id, ic("chev-r"), esc(nxt.id), esc(nxt.t)) if nxt else ""))
     rail = ""
     if a.node is not None and not a.whole:
@@ -851,14 +1061,23 @@ def page_article(a):
                                            % (DIR, a.id, j + 1, esc(it["law"]["so"]), esc(it["cite"]),
                                               ("từ " if it["law"]["future"] else "hiệu lực ") + vnd(it["law"]["hl"]))
                                            for j, it in enumerate(others))))
+    refs = [x for x in (REFS.get(a.id) or []) + INREFS.get(a.id, []) if x in BY and x != a.id]
+    refs = list(dict.fromkeys(refs))[:8]
+    if refs:
+        rail += ('<div class="rc"><h3>%sĐiều luật liên quan</h3><div class="rl">%s</div></div>'
+                 % (ic("link"), "".join('<a href="%sdieu-%s" data-pv="%s"><b>Điều %s</b><span>%s</span></a>' % (DIR, x, x, esc(x), esc(BY[x].t)) for x in refs)))
+    rail += '<div class="rc rc-note js-only"><h3>%sGhi chú của tôi</h3><textarea class="inp" id="noteBox" rows="4" placeholder="Ghi chú riêng cho Điều %s – chỉ lưu trên thiết bị này" aria-label="Ghi chú cho Điều %s"></textarea><small class="muted" id="noteSt"></small></div>' % (ic("note"), esc(a.id), esc(a.id))
     rail += ('<div class="rc"><h3>%sTrích dẫn</h3><p class="cite-t" id="citeT">Điều %s Bộ luật Tố tụng hình sự số 101/2015/QH13%s</p></div>'
              % (ic("copy"), esc(a.id), " (sửa đổi, bổ sung năm %s)" % ", ".join(sorted({it["law"]["hl"][:4] for it in a.eff if it["kind"] != "repeal-chapter"}))
                 if [1 for it in a.eff if it["kind"] != "repeal-chapter"] else ""))
+    rel, rel_n = rel_html(a)
     tabs = ('<nav class="tabs" aria-label="Nội dung điều luật"><a href="#p-noi-dung" aria-current="true"><span class="tl-l">Nội dung điều luật</span>'
             '<span class="tl-s">Điều luật</span></a>' +
-            ('<a href="#p-sua-doi">Sửa đổi, bổ sung<span class="cnt">%d</span></a>' % len(others) if others else "") + "</nav>")
+            ('<a href="#p-sua-doi">Sửa đổi, bổ sung<span class="cnt">%d</span></a>' % len(others) if others else "") +
+            ('<a href="#p-lien-quan">Liên quan<span class="cnt">%d</span></a>' % rel_n if rel_n else "") + "</nav>")
     body = (tabs + '<div class="panel" id="p-noi-dung">' + callouts + law_head + '<div class="law-paper"><div class="law" id="lawBody">' + body_law +
-            "</div></div>" + orig + "</div>" + amend)
+            "</div></div>" + orig + "</div>" + amend +
+            ('<section class="panel" id="p-lien-quan" aria-labelledby="h-lq"><h2 class="muc-h" id="h-lq">Điều luật liên quan</h2>%s</section>' % rel if rel else ""))
     main = ('<div class="wrap"><div class="reader">' + side_html(a) + '<article class="art" id="art" data-id="%s">' % esc(a.id) + head + body + pager +
             '</article><aside class="rail" aria-label="Thông tin bổ trợ">' + rail + "</aside></div></div>")
     txt = plain_art(a) if not (a.whole or a.new) else re.sub(r"<[^>]+>", " ", body_law)
@@ -1053,12 +1272,14 @@ def search_index(ver):
 
 # =============================================================================
 def main():
-    ver = TODAY.replace("-", "") + "h"  # tăng chữ cuối khi sửa tths.css, tths.js
+    ver = TODAY.replace("-", "") + "i"  # tăng chữ cuối khi sửa tths.css, tths.js
     tpl = make_template().replace("__V__", ver)
     for m in ("<!--seo:head-->", "<!--seo:main-->", '<base href="../">', DIR + "tths.js"):
         assert m in tpl, "Khuôn trang thiếu " + m
     os.makedirs(OUT, exist_ok=True)
-    pages = [page_index(), page_amend(), page_search(), page_hist_list()] + [page_law(L) for L in ORDER] + \
+    collect_refs()
+    pages = [page_index(), page_amend(), page_search(), page_hist_list(), page_tools(), page_deadlines(), page_compare(), page_saved(), page_about()] + \
+        [page_chapter(c) for c in CHAPS] + [page_law(L) for L in ORDER] + \
             [page_hist(H) for H in HIST] + [page_article(a) for a in ARTS]
     keep = {os.path.basename(p["path"]) + ".html" for p in pages}
     for f in glob.glob(os.path.join(OUT, "*.html")):
@@ -1075,6 +1296,18 @@ def main():
             written += 1
     with open(os.path.join(OUT, "tim-kiem.json"), "w", encoding="utf-8", newline="\n") as f:
         json.dump(search_index(ver), f, ensure_ascii=False, separators=(",", ":"))
+    adir = os.path.join(OUT, "a")
+    os.makedirs(adir, exist_ok=True)
+    keep_a = {a.id + ".json" for a in ARTS}
+    for f in os.listdir(adir):
+        if f not in keep_a:
+            os.remove(os.path.join(adir, f))
+    for a in ARTS:
+        body = json.dumps(preview_data(a), ensure_ascii=False, separators=(",", ":"))
+        dest = os.path.join(adir, a.id + ".json")
+        if not os.path.exists(dest) or open(dest, encoding="utf-8").read() != body:
+            with open(dest, "w", encoding="utf-8", newline="\n") as f:
+                f.write(body)
     with open(os.path.join(OUT, "muc-luc.json"), "w", encoding="utf-8", newline="\n") as f:
         json.dump(toc_index(ver), f, ensure_ascii=False, separators=(",", ":"))
     urls = ["  <url><loc>%s</loc></url>" % esc(SITE + (p["path"][:-5] if p["path"].endswith("index") else p["path"]))

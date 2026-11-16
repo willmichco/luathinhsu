@@ -77,8 +77,10 @@ ol.tl::before{content:"";position:absolute;left:96px;top:6px;bottom:6px;width:2p
   .tbl--cards,.tbl--cards tbody,.tbl--cards tr,.tbl--cards td{display:block;width:100%}
   .tbl--cards tr{padding:10px 14px;border-bottom:1px solid var(--line-2)}
   .tbl--cards td{border:0;padding:2px 0}
-  .tbl--cards td:nth-child(3)::before{content:"Ban hành: ";color:var(--muted)}
-  .tbl--cards td:nth-child(5)::before{content:"Số điều bị tác động: ";color:var(--muted)}
+  .tbl--cards:not(.tbl--th) td:nth-child(3)::before{content:"Ban hành: ";color:var(--muted)}
+  .tbl--cards:not(.tbl--th) td:nth-child(5)::before{content:"Số điều bị tác động: ";color:var(--muted)}
+  .tbl--th td:nth-child(2)::before{content:"Thời hạn: ";color:var(--muted);font-weight:400}
+  .tbl--th td:nth-child(3)::before{content:"Căn cứ: ";color:var(--muted)}
 }
 .tths .tbl-wrap{max-height:none}
 
@@ -96,3 +98,13 @@ ol.tl::before{content:"";position:absolute;left:96px;top:6px;bottom:6px;width:2p
 /* Nhãn khoản/điểm trong văn bản sửa đổi có thể kèm dấu mở ngoặc kép (“a), “3.) → ô nhãn co giãn */
 .am-body .lk>.kn:first-child,.am-body .lp>.pl:first-child,.law .lk>b.kn:first-child{width:auto;min-width:var(--g)}
 .am-body .kh{margin:0;padding:0}
+
+/* Bảng thời hạn tố tụng */
+.tbl--th td small{display:block;color:var(--muted);font-size:.78rem;margin-top:2px}
+.tbl--th td.n{white-space:normal;min-width:150px}
+.tbl--th td.q{font-size:.86rem;color:var(--ink-2);font-style:italic;line-height:1.55;min-width:260px}
+.tbl--th .tag{margin-top:6px}
+/* Ghi chú của tôi, giới thiệu */
+.rc-note textarea{width:100%;min-height:96px;resize:vertical;font-size:.9rem}
+.rc-note small{display:block;margin-top:6px;font-size:.78rem}
+.src-list{padding-left:20px;display:grid;gap:6px;line-height:1.6}

@@ -76,7 +76,9 @@
   function settings() {
     var a = $('#art');
     sheet('<h2 id="sheetTitle">Công cụ đọc</h2><p class="set-sub">' + (a ? 'Điều ' + esc(a.dataset.id) + ' · ' : '') +
-      'Thay đổi áp dụng ngay và được ghi nhớ trên thiết bị này</p>' + disp());
+      'Thay đổi áp dụng ngay và được ghi nhớ trên thiết bị này</p>' + disp() +
+      '<div class="set-row"><div><b>Đọc khi không có mạng</b><small>Tải sẵn toàn bộ 511 điều Bộ luật Tố tụng hình sự (~25 MB)</small></div>' +
+      '<button type="button" class="btn btn--sm" data-act="offline"><svg aria-hidden="true"><use href="#i-offline"/></svg>Tải về</button></div>');
   }
 
   document.addEventListener('click', function (e) {
@@ -352,7 +354,7 @@
     if (!art || !h1) return;
     var t = h1.textContent.replace(/^\s*Điều\s+\S+\.\s*/, '').trim();
     var l = Store.get('hist', []).filter(function (x) { return x.id !== art.dataset.id; });
-    l.unshift({ id: art.dataset.id, t: t }); Store.set('hist', l.slice(0, 30));
+    l.unshift({ id: art.dataset.id, t: t, at: Date.now() }); Store.set('hist', l.slice(0, 30));
   })();
 
   // Mở điều luật từ kết quả tìm kiếm (?q=…): tô sáng từ khóa trong văn bản điều luật và nội dung sửa đổi, cuộn tới chỗ đầu tiên
@@ -640,5 +642,371 @@
     window.addEventListener('popstate', show);
     show();
     if (!state().q) { var si = $('#srQ'); if (si) si.focus(); }
+  }
+
+  /* ======================================================================
+     Các tính năng như mục Bộ luật Hình sự: lưu điều, ghi chú, lịch sử, xem nhanh điều dẫn chiếu, sao chép trích dẫn khoản,
+     bảng tra nhanh mục lục (Ctrl/⌘+K), thu thanh khi cuộn (điện thoại), vạch tiến độ đọc, đánh dấu khoản đang đọc,
+     so sánh điều luật, trang Đã lưu, tải về đọc offline
+     ====================================================================== */
+  var CITE = 'Bộ luật Tố tụng hình sự số 101/2015/QH13';
+  var isTouch = window.matchMedia('(hover: none)').matches;
+  var SHEETQ = window.matchMedia('(max-width: 1023px)');
+  var ART = $('#art'), AID = ART && ART.dataset.id;
+  var Saved = {
+    list: function () { return Store.get('saved', []); },
+    has: function (id) { return Saved.list().some(function (x) { return x.id === id; }); },
+    toggle: function (id, t) {
+      var l = Saved.list(), on = !l.some(function (x) { return x.id === id; });
+      l = l.filter(function (x) { return x.id !== id; });
+      if (on) l.unshift({ id: id, t: t, at: Date.now() });
+      Store.set('saved', l); return on;
+    }
+  };
+  var Notes = {
+    all: function () { return Store.get('notes', {}); },
+    get: function (id) { return (Notes.all()[id] || {}).x || ''; },
+    set: function (id, x, t) { var n = Notes.all(); if (x && x.trim()) n[id] = { x: x, t: Date.now(), tt: t }; else delete n[id]; Store.set('notes', n); }
+  };
+  var artTitle = function () { var h = $('#art h1'); return h ? h.textContent.replace(/^\s*Điều\s+\S+\.\s*/, '').trim() : ''; };
+
+  // Lưu điều này
+  var saveBtn = $('[data-act="save"]');
+  var drawSave = function () {
+    if (!saveBtn) return;
+    var on = Saved.has(AID);
+    saveBtn.setAttribute('aria-pressed', String(on));
+    saveBtn.innerHTML = ic(on ? 'bookmark-fill' : 'bookmark') + '<span>' + (on ? 'Đã lưu' : 'Lưu điều này') + '</span>';
+  };
+  drawSave();
+  // Ghi chú của tôi (cột phải)
+  var nb = $('#noteBox');
+  if (nb && AID) {
+    nb.value = Notes.get(AID);
+    var nst = $('#noteSt'), nt;
+    if (nb.value) nst.textContent = 'Đã lưu trên thiết bị';
+    nb.addEventListener('input', function () {
+      clearTimeout(nt); nst.textContent = 'Đang lưu…';
+      nt = setTimeout(function () { Notes.set(AID, nb.value, artTitle()); nst.textContent = nb.value.trim() ? 'Đã lưu trên thiết bị' : ''; }, 400);
+    });
+  }
+
+  // Nút trên trang điều luật: lưu, trích dẫn khoản, liên kết khoản
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+    if (t.closest('[data-act="save"]') && AID) {
+      var on = Saved.toggle(AID, artTitle()); drawSave();
+      toast(on ? 'Đã lưu Điều ' + AID : 'Đã bỏ lưu Điều ' + AID); return;
+    }
+    var c = t.closest('[data-cite]');
+    if (c && AID) {
+      var kn = c.dataset.cite, box = $('#k' + kn);
+      var body = $$('p', box).map(function (p) { return p.textContent.replace(/\s+/g, ' ').trim(); }).filter(Boolean).join('\n');
+      copy(body + '\n(Khoản ' + kn + ' Điều ' + AID + ' ' + CITE + ')', 'Đã sao chép trích dẫn khoản ' + kn); return;
+    }
+    var kl = t.closest('[data-klink]');
+    if (kl && AID) { copy(location.href.split('#')[0].split('?')[0] + '#k' + kl.dataset.klink, 'Đã sao chép liên kết khoản ' + kl.dataset.klink); return; }
+  });
+
+  /* ---------- Xem nhanh điều được dẫn chiếu (rê chuột trên máy tính, chạm trên điện thoại) ---------- */
+  var pvCache = {};
+  function pvData(id) { return pvCache[id] || (pvCache[id] = fetch(abs(DIR + 'a/' + id + '.json?v=' + VER)).then(function (r) { if (!r.ok) throw 0; return r.json(); }).catch(function (e) { delete pvCache[id]; throw e; })); }
+  function pvTags(fl) {
+    fl = fl || '';
+    return (fl.indexOf('r') > -1 ? '<span class="tag tag--rep">Đã bãi bỏ</span>' : '') + (fl.indexOf('n') > -1 ? '<span class="tag tag--am">Bổ sung 2025</span>' : '') +
+      (fl.indexOf('a') > -1 && fl.indexOf('r') < 0 ? '<span class="tag tag--am">Sửa đổi</span>' : '') + (fl.indexOf('f') > -1 ? '<span class="tag tag--fut">Sắp sửa đổi</span>' : '');
+  }
+  function pvHtml(d) {
+    return '<div class="pv-n">Điều ' + esc(d.id) + ' · ' + esc(d.ch.split('.')[0]) + '</div><div class="pv-t" id="sheetTitle">' + esc(d.t) + '</div>' +
+      '<div class="pv-x">' + esc(d.ex) + '</div><div class="pv-m">' + pvTags(d.fl) + '</div>' +
+      '<div class="pv-a"><a class="btn btn--p btn--sm" href="' + abs(DIR + 'dieu-' + d.id) + '">Mở Điều ' + esc(d.id) + ic('arrow-r') + '</a>' +
+      (isTouch ? '<button type="button" class="btn btn--sm" data-act="sheet-close">Đóng</button>' : '') + '</div>';
+  }
+  var pop = $('#pop'), pvT = null, pvA = null;
+  function popAt(a, html) {
+    pop.innerHTML = html; pop.hidden = false;
+    var r = a.getBoundingClientRect(), pw = pop.offsetWidth, ph = pop.offsetHeight;
+    var x = Math.min(Math.max(12, r.left + r.width / 2 - pw / 2), window.innerWidth - pw - 12), y = r.bottom + 10;
+    if (y + ph > window.innerHeight - 12) y = Math.max(12, r.top - ph - 10);
+    pop.style.left = x + 'px'; pop.style.top = y + 'px';
+  }
+  function closePop() { if (pop) pop.hidden = true; pvA = null; }
+  if (pop) {
+    document.addEventListener('mouseover', function (e) {
+      if (isTouch) return;
+      var a = e.target.closest('[data-pv]');
+      if (!a) { if (!e.target.closest('#pop')) { clearTimeout(pvT); pvT = setTimeout(closePop, 220); } return; }
+      if (a === pvA) { clearTimeout(pvT); return; }
+      clearTimeout(pvT);
+      pvT = setTimeout(function () { pvA = a; pvData(a.dataset.pv).then(function (d) { if (pvA === a) popAt(a, pvHtml(d)); }, function () { }); }, 280);
+    });
+    document.addEventListener('click', function (e) {
+      var a = e.target.closest('[data-pv]');
+      // Chạm vào điều được dẫn chiếu trong văn bản luật: xem nhanh trước, bấm "Mở" để chuyển trang
+      if (a && isTouch && a.closest('.law, .rl') && !e.metaKey) {
+        e.preventDefault();
+        pvData(a.dataset.pv).then(function (d) { sheet(pvHtml(d)); }, function () { location.href = a.href; });
+        return;
+      }
+      if (!e.target.closest('#pop')) closePop();
+    });
+  }
+
+  /* ---------- Bảng tra nhanh mục lục (giống bảng "Mục lục điều luật" của BLHS) ---------- */
+  var Jump = {
+    el: null, rows: [], secs: [], act: -1,
+    build: function () {
+      var nav = '', list = '';
+      var parts = {};
+      DB.chaps.forEach(function (c, ci) {
+        var first = c.arts[0].id, last = c.arts[c.arts.length - 1].id;
+        nav += '<button type="button" data-jc="' + ci + '" title="' + esc(c.label + '. ' + c.name) + '"><b>' + esc(c.num || 'TH') + '</b><span>' + esc(c.name) + '</span><small>' + c.arts.length + '</small></button>';
+        list += '<section class="jp-sec" data-c="' + ci + '"><h3 class="jp-ch"><small>' + esc(c.num ? c.label + ' · ' : '') + 'Điều ' + first + (first !== last ? ' – ' + last : '') + ' · ' + c.arts.length + ' điều</small>' + esc(c.name) + '</h3>' +
+          c.arts.map(function (a) {
+            return '<a class="jp-a' + ((a.fl || '').indexOf('r') > -1 ? ' is-rep' : '') + '" href="' + abs(DIR + 'dieu-' + a.id) + '" data-id="' + esc(a.id) + '"><b>Điều ' + esc(a.id) + '</b><span class="t">' + esc(a.t) + '</span><span class="tg">' + pvTags(a.fl) + '</span></a>';
+          }).join('') + '</section>';
+      });
+      void parts;
+      var mod = /Mac|iP(hone|ad|od)/.test(navigator.platform || '') ? '⌘' : 'Ctrl';
+      var el = document.createElement('div');
+      el.className = 'jp'; el.id = 'jump'; el.hidden = true;
+      el.innerHTML = '<div class="jp-bg" data-act="jump-close"></div><div class="jp-panel" role="dialog" aria-modal="true" aria-labelledby="jpTitle" tabindex="-1">' +
+        '<div class="jp-grip" aria-hidden="true"></div><div class="jp-hd"><div><h2 id="jpTitle">' + ic('olist') + 'Mục lục điều luật</h2><p class="jp-sub" id="jpSub" aria-live="polite"></p></div>' +
+        '<button type="button" class="jp-x" data-act="jump-close" aria-label="Đóng mục lục">' + ic('x') + '</button></div>' +
+        '<div class="jp-tool"><div class="sb"><div class="sb-box">' + ic('filter') +
+        '<input class="sb-in" id="jpQ" type="search" autocomplete="off" spellcheck="false" enterkeyhint="go" placeholder="Gõ số điều hoặc tên điều… (vd: 119, tam giam)" aria-label="Lọc danh sách điều luật" aria-controls="jpList">' +
+        '<button type="button" class="sb-clear" id="jpClr" aria-label="Xóa từ lọc" hidden>' + ic('x') + '</button></div></div><div class="jp-recent" id="jpRecent" hidden></div></div>' +
+        '<div class="jp-body"><nav class="jp-nav" id="jpNav" aria-label="Đi tới chương">' + nav + '</nav><div class="jp-list" id="jpList">' + list + '<div class="jp-empty" id="jpEmpty" hidden></div></div></div>' +
+        '<div class="jp-ft"><span class="k"><kbd>↑</kbd><kbd>↓</kbd> chọn điều</span><span class="k"><kbd>Enter</kbd> mở</span><span class="k"><kbd>Esc</kbd> đóng</span>' +
+        '<span class="k"><kbd>' + mod + '</kbd>+<kbd>K</kbd> mở mục lục ở mọi trang</span><a href="' + abs(DIR + '#muc-luc') + '">Trang Mục lục đầy đủ ' + ic('arrow-r') + '</a></div></div>';
+      document.body.appendChild(el);
+      Jump.el = el; Jump.q = $('#jpQ', el); Jump.list = $('#jpList', el); Jump.nav = $('#jpNav', el); Jump.sub = $('#jpSub', el); Jump.clr = $('#jpClr', el);
+      Jump.rows = $$('.jp-a', el).map(function (r, i) { var a = DB.byId[r.dataset.id]; return { el: r, a: a, i: i, lo: ('điều ' + a.id + ' ' + a.t).toLowerCase(), fo: fold('dieu ' + a.id + ' ' + a.t).toLowerCase() }; });
+      Jump.secs = $$('.jp-sec', el).map(function (s) { return { el: s, btn: $('[data-jc="' + s.dataset.c + '"]', Jump.nav) }; });
+      Jump.q.addEventListener('input', Jump.filter);
+      Jump.q.addEventListener('keydown', Jump.key);
+      Jump.clr.addEventListener('click', function () { Jump.q.value = ''; Jump.filter(); Jump.q.focus(); });
+      Jump.nav.addEventListener('click', function (e) { var b = e.target.closest('[data-jc]'); if (!b) return; var s = Jump.secs[+b.dataset.jc]; if (s && !s.el.hidden) Jump.list.scrollTo({ top: s.el.offsetTop, behavior: 'smooth' }); });
+      el.addEventListener('click', function (e) { if (e.target.closest('[data-act="jump-close"]')) Jump.hide(); });
+    },
+    show: function () {
+      if (!DB) { loadDB().then(Jump.show, function () { go(DIR + '#muc-luc'); }); return; }
+      if (!Jump.el) Jump.build();
+      closePop(); drawer(false);
+      $$('.jp-a.on', Jump.el).forEach(function (x) { x.classList.remove('on'); x.removeAttribute('aria-current'); });
+      var cur = AID && Jump.rows.filter(function (r) { return r.a.id === AID; })[0];
+      if (cur) { cur.el.classList.add('on'); cur.el.setAttribute('aria-current', 'page'); }
+      var rec = Store.get('hist', []).map(function (h) { return h.id; }).filter(function (id) { return DB.byId[id] && id !== AID; }).slice(0, 6), R = $('#jpRecent', Jump.el);
+      R.hidden = !rec.length;
+      R.innerHTML = '<span>' + ic('history') + 'Vừa xem</span>' + rec.map(function (id) { return '<a class="chip" href="' + abs(DIR + 'dieu-' + id) + '" title="' + esc(DB.byId[id].t) + '">Điều ' + esc(id) + '</a>'; }).join('');
+      Jump.q.value = ''; Jump.filter();
+      Jump.el.hidden = false; document.body.style.overflow = 'hidden';
+      void Jump.el.offsetWidth; Jump.el.classList.add('is-open');
+      if (cur) Jump.list.scrollTop = cur.el.offsetTop - Jump.list.clientHeight / 3;
+      if (isTouch) $('.jp-panel', Jump.el).focus({ preventScroll: true }); else Jump.q.focus({ preventScroll: true });
+    },
+    hide: function () {
+      if (!Jump.el || Jump.el.hidden) return;
+      Jump.el.classList.remove('is-open'); document.body.style.overflow = '';
+      setTimeout(function () { if (!Jump.el.classList.contains('is-open')) Jump.el.hidden = true; }, SHEETQ.matches ? 280 : 0);
+    },
+    filter: function () {
+      var v = Jump.q.value.trim(), r = v ? parseRef(v) : null, cq = null, only = null, chap = null, num = null;
+      Jump.clr.hidden = !v;
+      if (r && r.chap) chap = r.chap; else if (r && r.art) { if (r.k) only = r.art; else num = r.art; }
+      else if (v) { cq = LX.compile(LX.parseQuery(v), { prefix: true }); if (cq.empty) cq = null; }
+      Jump.ref = r && (r.a || r.chap) ? r : null;
+      var on = !!(chap || only || num || cq), n = 0, per = {};
+      Jump.rows.forEach(function (x) {
+        var a = x.a, ok = !on || (chap ? a.ch === chap : only ? a.id === only : num ? a.id.indexOf(num) === 0 : (cq.exact(x.lo, x.fo) || cq.loose(x.lo, x.fo)));
+        x.el.hidden = !ok;
+        if (ok) { n++; per[DB.chaps.indexOf(a.ch)] = (per[DB.chaps.indexOf(a.ch)] || 0) + 1; }
+      });
+      Jump.secs.forEach(function (s, i) { var k = per[i] || 0; s.el.hidden = on && !k; s.btn.hidden = on && !k; $('small', s.btn).textContent = on ? k : DB.chaps[i].arts.length; });
+      var E = $('#jpEmpty', Jump.el); E.hidden = !on || n > 0;
+      if (on && !n) E.innerHTML = ic('search') + '<p>Không có điều nào khớp “' + esc(v) + '”.</p><a class="btn btn--sm" href="' + abs(DIR + 'tim-kiem?q=' + encodeURIComponent(v)) + '">' + ic('search') + 'Tìm trong toàn văn</a>';
+      Jump.sub.textContent = on ? (n ? 'Tìm thấy ' + n + ' điều' : 'Không có điều nào phù hợp') : DB.arts.length + ' điều · ' + DB.chaps.filter(function (c) { return c.num; }).length + ' chương · chọn một điều để chuyển tới ngay';
+      Jump.el.classList.toggle('is-filter', on);
+      Jump.setAct(on ? Jump.first() : -1);
+      if (on) Jump.list.scrollTop = 0;
+    },
+    first: function () { for (var i = 0; i < Jump.rows.length; i++) if (!Jump.rows[i].el.hidden) return i; return -1; },
+    setAct: function (i) {
+      var o = Jump.rows[Jump.act]; if (o) o.el.classList.remove('act');
+      Jump.act = i; var x = Jump.rows[i];
+      if (x) { x.el.classList.add('act'); var L = Jump.list, y = x.el.offsetTop; if (y < L.scrollTop + 40 || y > L.scrollTop + L.clientHeight - 40) L.scrollTop = y - L.clientHeight / 2; }
+    },
+    key: function (e) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        var d = e.key === 'ArrowDown' ? 1 : -1, i = Jump.act;
+        do { i += d; } while (Jump.rows[i] && Jump.rows[i].el.hidden);
+        if (Jump.rows[i]) Jump.setAct(i);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        var x = Jump.rows[Jump.act] && !Jump.rows[Jump.act].el.hidden ? Jump.rows[Jump.act] : Jump.rows[Jump.first()];
+        if (Jump.ref && (Jump.ref.chap || (x && Jump.ref.a === x.a))) { go(refHref(Jump.ref)); return; }
+        if (x) location.href = x.el.href;
+      } else if (e.key === 'Escape') {
+        e.preventDefault(); e.stopPropagation();
+        if (Jump.q.value) { Jump.q.value = ''; Jump.filter(); } else Jump.hide();
+      }
+    }
+  };
+  // Nút "Mục lục" (đầu trang, thanh dưới, cột trái, giữa Điều trước/sau): đang đọc điều/chương → mở bảng tra nhanh;
+  // ở trang chủ phân mục → cuộn tới mục lục; trang khác → mở trang mục lục
+  var reading = document.body.classList.contains('is-reading');
+  document.addEventListener('click', function (e) {
+    var j = e.target.closest('[data-act="jump"]');
+    if (!j || e.metaKey || e.ctrlKey || e.shiftKey) return;
+    var toc = $('#muc-luc');
+    if (toc) { e.preventDefault(); toc.scrollIntoView({ behavior: 'smooth' }); var q = $('#tocQ'); if (q) setTimeout(function () { q.focus({ preventScroll: true }); }, 400); return; }
+    if (reading || document.body.dataset.page === 'muc-luc') { e.preventDefault(); Jump.show(); }
+  });
+  document.addEventListener('keydown', function (e) {
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+      e.preventDefault();
+      if (Jump.el && !Jump.el.hidden) Jump.hide(); else { var q = $('#tocQ'); if (q) { q.focus(); q.scrollIntoView({ block: 'center' }); } else Jump.show(); }
+    }
+    if (e.key === 'Escape' && Jump.el && !Jump.el.hidden) Jump.hide();
+  });
+  if (reading) { var warm = function () { loadDB().catch(function () { }); }; if (window.requestIdleCallback) requestIdleCallback(warm, { timeout: 4000 }); else setTimeout(warm, 1500); }
+
+  /* ---------- Điện thoại: thu header/thanh dưới khi cuộn xuống đọc; vạch tiến độ đọc; đánh dấu khoản đang đọc ---------- */
+  (function () {
+    var hidden = false, lastY = window.scrollY, acc = 0, ticking = false, prog = $('#progress');
+    var set = function (h) { if (h !== hidden) { hidden = h; document.body.classList.toggle('ui-hide', h); } };
+    var check = function () {
+      ticking = false;
+      var y = window.scrollY, dy = y - lastY, max = document.documentElement.scrollHeight - window.innerHeight;
+      lastY = y;
+      if (prog && ART) prog.style.width = (max > 0 ? Math.min(100, y / max * 100) : 0) + '%';
+      if (!SHEETQ.matches) { set(false); return; }
+      if (y < 140 || y > max - 80) { acc = 0; set(false); return; }
+      if (!dy) return;
+      if ((dy > 0) !== (acc > 0)) acc = 0;
+      acc += dy;
+      if (acc > 28) set(true); else if (acc < -18) set(false);
+    };
+    window.addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(check); } }, { passive: true });
+    document.addEventListener('focusin', function (e) { if (e.target.closest && e.target.closest('.hd,.tabbar')) set(false); });
+    var links = {}, cur = null;
+    $$('.rail .kl a').forEach(function (l) { var m = l.getAttribute('href').match(/#k(\w+)$/); if (m) links[m[1]] = l; });
+    if (Object.keys(links).length && window.IntersectionObserver && window.matchMedia('(min-width: 1281px)').matches) {
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (en) {
+          if (!en.isIntersecting) return;
+          var l = links[en.target.dataset.k]; if (!l || l === cur) return;
+          if (cur) cur.classList.remove('on'); cur = l; l.classList.add('on');
+        });
+      }, { rootMargin: '-25% 0px -65% 0px' });
+      $$('#lawBody .kh[data-k]').forEach(function (k) { io.observe(k); });
+    }
+  })();
+
+  /* ---------- Trang Đã lưu ---------- */
+  var savedOut = $('#savedOut');
+  if (savedOut) {
+    var drawSaved = function () {
+      var tab = new URLSearchParams(location.search).get('tab') || 'luu';
+      var saved = Saved.list(), notes = Notes.all(), nk = Object.keys(notes), hist = Store.get('hist', []);
+      var when = function (t) { if (!t) return ''; var d = new Date(t); return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear() + ' ' + d.toTimeString().slice(0, 5); };
+      var row = function (id, t, tm, extra, kind) {
+        return '<div class="sv"><a class="t" href="' + abs(DIR + 'dieu-' + id) + '"><b>Điều ' + esc(id) + '</b><span>' + esc(t || '') + '</span>' + (extra || '') + '</a>' +
+          '<time>' + when(tm) + '</time><button type="button" class="hd-ic sv-rm" data-rm="' + kind + ':' + esc(id) + '" aria-label="Xóa">' + ic('trash') + '</button></div>';
+      };
+      var empty = function (i, t, s) { return '<div class="empty">' + ic(i) + '<h3>' + t + '</h3><p>' + s + '</p></div>'; };
+      var body;
+      if (tab === 'ghi-chu') body = nk.length ? nk.sort(function (x, y) { return notes[y].t - notes[x].t; }).map(function (id) { return row(id, notes[id].tt, notes[id].t, '<div class="note">' + esc(notes[id].x) + '</div>', 'note'); }).join('') :
+        empty('note', 'Chưa có ghi chú', 'Mở một điều luật và ghi chú ở khung “Ghi chú của tôi”.');
+      else if (tab === 'lich-su') body = hist.length ? hist.map(function (x) { return row(x.id, x.t, x.at, '', 'hist'); }).join('') : empty('history', 'Chưa có lịch sử', 'Các điều bạn đã xem sẽ xuất hiện ở đây.');
+      else body = saved.length ? saved.map(function (x) { return row(x.id, x.t, x.at, '', 'saved'); }).join('') : empty('bookmark', 'Chưa lưu điều luật nào', 'Nhấn “Lưu điều này” trên trang điều luật để đánh dấu và đọc lại nhanh.');
+      savedOut.innerHTML = '<div class="filters">' + [['luu', 'Đã lưu', saved.length], ['ghi-chu', 'Ghi chú', nk.length], ['lich-su', 'Lịch sử', hist.length]].map(function (x) {
+        return '<a class="chip' + (tab === x[0] ? ' on' : '') + '" href="' + abs(DIR + 'da-luu' + (x[0] === 'luu' ? '' : '?tab=' + x[0])) + '">' + x[1] + ' <span class="n">' + x[2] + '</span></a>';
+      }).join('') +
+        (tab === 'ghi-chu' && nk.length ? '<button type="button" class="btn btn--sm" data-act="export-notes" style="margin-left:auto">' + ic('download') + 'Xuất ghi chú (.txt)</button>' : '') +
+        (tab === 'lich-su' && hist.length ? '<button type="button" class="btn btn--sm" data-act="clear-hist" style="margin-left:auto">' + ic('trash') + 'Xóa lịch sử</button>' : '') +
+        '</div><div class="saved-list">' + body + '</div>';
+    };
+    savedOut.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-rm]');
+      if (b) {
+        var p = b.dataset.rm.split(':');
+        if (p[0] === 'saved') Saved.toggle(p[1]);
+        if (p[0] === 'note') Notes.set(p[1], '');
+        if (p[0] === 'hist') Store.set('hist', Store.get('hist', []).filter(function (x) { return x.id !== p[1]; }));
+        drawSaved(); return;
+      }
+      if (e.target.closest('[data-act="clear-hist"]')) { Store.set('hist', []); drawSaved(); }
+      if (e.target.closest('[data-act="export-notes"]')) {
+        var n = Notes.all();
+        var txt = 'GHI CHÚ – BỘ LUẬT TỐ TỤNG HÌNH SỰ\n\n' + Object.keys(n).map(function (id) { return 'Điều ' + id + '. ' + (n[id].tt || '') + '\n' + n[id].x + '\n'; }).join('\n');
+        var blob = new Blob([txt], { type: 'text/plain;charset=utf-8' }), u = URL.createObjectURL(blob), l = document.createElement('a');
+        l.href = u; l.download = 'ghi-chu-bltths.txt'; document.body.appendChild(l); l.click(); l.remove(); setTimeout(function () { URL.revokeObjectURL(u); }, 1000);
+      }
+    });
+    drawSaved();
+  }
+
+  /* ---------- So sánh điều luật ---------- */
+  var cmpOut = $('#cmpOut');
+  if (cmpOut) {
+    var ia = $('#cmpA'), ib = $('#cmpB');
+    var clean = function (v) { var m = fold(v || '').toLowerCase().match(/(\d{1,3}[a-z]?)/); return m ? m[1] : ''; };
+    var lawCol = function (d) {
+      return '<div class="cmp-col"><h3><a href="' + abs(DIR + 'dieu-' + d.id) + '"><b>Điều ' + esc(d.id) + '.</b> ' + esc(d.t) + '</a></h3><div class="law-paper"><div class="law">' +
+        d.law.map(function (p) {
+          var h = esc(p[1]);
+          if (p[0] === 'lk') h = h.replace(/^(\d+[a-z]?\.)\s*/, '<b class="kn">$1 </b>');
+          if (p[0] === 'lp') h = h.replace(/^([a-zđ]\))\s*/, '<b class="pl">$1 </b>');
+          return '<p class="' + p[0] + '">' + h + '</p>';
+        }).join('') + '</div></div>' +
+        (d.am.length ? '<details class="orig"><summary>' + ic('history') + 'Nội dung sửa đổi, bổ sung (' + d.am.length + ')</summary><div class="law-paper"><div class="law">' +
+          d.am.map(function (x) { return '<p class="lh">' + esc(x[0]) + ' – ' + (x[2] ? 'chưa có hiệu lực, từ ' : 'hiệu lực từ ') + esc(x[1]) + '</p>' + x[3].map(function (t) { return '<p class="lx">' + esc(t) + '</p>'; }).join(''); }).join('') +
+          '</div></div></details>' : '') + '</div>';
+    };
+    var draw = function () {
+      var a = clean(ia.value), b = clean(ib.value);
+      var u = new URL(location.href); u.search = (a ? '?a=' + a : '') + (b ? (a ? '&' : '?') + 'b=' + b : ''); history.replaceState(null, '', u);
+      if (!a || !b) { cmpOut.innerHTML = '<div class="empty">' + ic('columns') + '<h3>Chọn hai điều luật để so sánh</h3><p>Gõ số điều hoặc chọn nhanh một cặp gợi ý ở trên.</p></div>'; return; }
+      cmpOut.innerHTML = '<div style="margin-top:20px"><div class="skel"></div><div class="skel" style="width:70%"></div></div>';
+      Promise.all([pvData(a), pvData(b)]).then(function (r) {
+        var A = r[0], B = r[1];
+        var row = function (l, x, y) { return '<tr><th scope="row">' + l + '</th><td>' + x + '</td><td>' + y + '</td></tr>'; };
+        var st = function (d) { return pvTags(d.fl) || '<span class="muted">Chưa sửa đổi</span>'; };
+        cmpOut.innerHTML = '<section class="sec" style="margin-top:24px"><div class="sec-h"><div><h2>Đối chiếu nhanh</h2></div></div><div style="overflow:auto"><table class="cmp-tbl cmp-tbl--2up"><thead><tr><th></th><th>Điều ' + esc(A.id) + '</th><th>Điều ' + esc(B.id) + '</th></tr></thead><tbody>' +
+          row('Tên điều', esc(A.t), esc(B.t)) + row('Vị trí', esc(A.ch), esc(B.ch)) + row('Số khoản', A.law.filter(function (p) { return p[0] === 'lk'; }).length || '—', B.law.filter(function (p) { return p[0] === 'lk'; }).length || '—') +
+          row('Tình trạng', st(A), st(B)) + row('Lần sửa đổi, bổ sung', A.am.length || '—', B.am.length || '—') + '</tbody></table></div></section>' +
+          '<section class="sec" style="margin-top:28px"><div class="sec-h"><div><h2>Toàn văn hai điều luật</h2><p>Nội dung sửa đổi, bổ sung của từng điều nằm ở mục thu gọn bên dưới mỗi cột.</p></div></div><div class="cmp">' + lawCol(A) + lawCol(B) + '</div></section>';
+      }).catch(function () { cmpOut.innerHTML = '<div class="callout callout--warn" style="margin-top:20px">' + ic('alert') + '<div>Không tìm thấy điều luật. Bộ luật Tố tụng hình sự có Điều 1 – Điều 510 (và Điều 506a).</div></div>'; });
+    };
+    var qp = new URLSearchParams(location.search);
+    ia.value = qp.get('a') || ''; ib.value = qp.get('b') || '';
+    [ia, ib].forEach(function (x) { x.addEventListener('change', draw); x.addEventListener('keydown', function (e) { if (e.key === 'Enter') draw(); }); });
+    document.addEventListener('click', function (e) { var p = e.target.closest('[data-ps]'); if (!p) return; var v = p.dataset.ps.split(','); ia.value = v[0]; ib.value = v[1]; draw(); });
+    draw();
+  }
+
+  /* ---------- Đọc offline: tải sẵn toàn bộ trang điều luật vào bộ nhớ đệm của service worker ---------- */
+  function offline(btn) {
+    if (!('caches' in window)) { toast('Trình duyệt không hỗ trợ lưu ngoại tuyến'); return; }
+    loadDB().then(function () {
+      var urls = DB.arts.map(function (a) { return abs(DIR + 'dieu-' + a.id); }).concat([abs(DIR), abs(DIR + 'tim-kiem'), abs(DIR + 'tim-kiem.json?v=' + VER), abs(DIR + 'muc-luc.json?v=' + VER)]);
+      var done = 0, label = btn.innerHTML, i = 0;
+      btn.disabled = true;
+      return caches.open('tths-offline').then(function (c) {
+        var next = function () {
+          if (i >= urls.length) return Promise.resolve();
+          var batch = urls.slice(i, i + 8); i += 8;
+          return Promise.all(batch.map(function (u) { return fetch(u).then(function (r) { if (r.ok) return c.put(u, r); }).then(function () { done++; btn.innerHTML = '<span class="spinner"></span> ' + done + '/' + urls.length; }); })).then(next);
+        };
+        return next();
+      }).then(function () { btn.innerHTML = ic('check') + 'Đã sẵn sàng offline'; toast('Đã tải toàn bộ Bộ luật Tố tụng hình sự để đọc offline'); },
+        function () { btn.disabled = false; btn.innerHTML = label; toast('Tải chưa xong, vui lòng thử lại khi có mạng'); });
+    });
+  }
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-act="offline"]'); if (b) offline(b); });
+  if ('serviceWorker' in navigator && window.isSecureContext) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register(abs('sw.js')).catch(function () { }); });
   }
 })();

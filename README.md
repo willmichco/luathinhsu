@@ -36,6 +36,8 @@ Luật Tư pháp người chưa thành niên số 59/2024/QH15; Điều 292 đã
 | Sửa đổi, bổ sung, bãi bỏ | 9 văn bản, 104 điều khoản, gắn vào từng điều theo thứ tự hiệu lực: Luật 02/2021/QH15 (01/12/2021), 34/2024/QH15 (01/01/2025), 99/2025/QH15 (01/07/2025), 59/2024/QH15 (01/01/2026 – bãi bỏ Chương XXVIII, Điều 413–430), 105/2025/QH15 (01/05/2026), 103/2025/QH15, 106/2025/QH15, 128/2025/QH15 (01/07/2026), 11/2026/QH16 (01/03/2027 – chưa có hiệu lực) |
 | Cách trình bày | Văn bản điều luật là nguyên văn năm 2015; điều khoản sửa đổi trích nguyên văn ngay dưới điều. Điều bị thay thế toàn bộ (Điều 7, 20, 141, 233, 243, 268, 382, 476, 477) hiển thị nội dung mới, văn bản gốc thu gọn |
 | Trang khác | `sua-doi` (bảng + dòng thời gian), `luat-<số hiệu>` (từng văn bản sửa đổi), `lich-su`, `van-ban-<số hiệu>` (Bộ luật 2003, 1988 và luật sửa đổi 1990, 1992, 2000), `tim-kiem` (tìm toàn văn, không dấu) |
+| Tính năng như mục BLHS | Tìm kiếm có gợi ý khi gõ, bảng tra nhanh mục lục (Ctrl/⌘+K, nút Mục lục khi đang đọc), lưu điều, ghi chú, lịch sử (`da-luu`), xem nhanh điều được dẫn chiếu, sao chép trích dẫn/liên kết từng khoản, tab Liên quan (dẫn chiếu đi/đến), trang chương (`chuong-<số>`), công cụ (`cong-cu`, `thoi-han`, `so-sanh`), giới thiệu (`gioi-thieu`), đọc offline, thu thanh khi cuộn trên điện thoại, vạch tiến độ đọc |
+| Bảng thời hạn | `tools/tths_thoi_han.py`: mỗi dòng có câu trích nguyên văn; `build_tths.py` đối chiếu với văn bản điều luật, không khớp thì dừng |
 
 Cập nhật dữ liệu: `python3 tools/tths_nguon.py /duong-dan/tracuuphapluat` (trích hồ sơ từ `bot/du-lieu/ho-so/*.jsonl.gz`,
 nhánh `claude/compassionate-ritchie-wwgrw7`, theo `id`) → `python3 tools/build_tths.py` → `python3 tools/build_seo.py`
