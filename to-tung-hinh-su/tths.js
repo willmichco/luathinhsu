@@ -514,7 +514,7 @@
       var qf = fold(q).toLowerCase().replace(/["“”]/g, '').replace(/\s+/g, ' ').trim();
       T.forEach(function (t) {
         var eq = t.tf === qf ? 2 : t.tf.indexOf(qf) === 0 ? 1 : 0;
-        if (eq) rec(exact, t.id, t.o).eq = eq;
+        if (eq && qf.length >= 2) rec(exact, t.id, t.o).eq = eq;
         if (cq.exact(t.lo, t.fo)) rec(exact, t.id, t.o).th = 2;
         else if (cq.hasLoose && cq.loose(t.lo, t.fo)) rec(loose, t.id, t.o).th = 1;
       });

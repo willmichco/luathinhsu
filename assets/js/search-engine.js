@@ -28,7 +28,7 @@
     var order = {}, self = this, LX = g.LX;
     this.T = titles.map(function (x, o) {
       order[x[0]] = o;
-      return { id: x[0], o: o, t: x[1], lo: x[1].toLowerCase(), fo: LX.fold(x[1]) };
+      return { id: x[0], o: o, t: x[1], lo: x[1].toLowerCase(), fo: LX.fold(x[1]), tf: LX.fold(x[1].replace(/^Điều\s+\S+\.\s*/, '')).toLowerCase() };
     });
     lists.forEach(function (arr) {
       arr.forEach(function (a) {
@@ -82,13 +82,17 @@
       for (var j = 0; j < r.sn.length; j++) if (r.sn[j][0] === p.k) same++;
       if (same < 2) r.sn.push(snippet(p, cq));
     }
+    // Tên điều trùng đúng từ khóa (vd. "trộm cắp tài sản" → Điều 173. Tội trộm cắp tài sản) hoặc bắt đầu bằng từ khóa: đưa lên trước
+    var qf = LX.fold(q).toLowerCase().replace(/["“”]/g, '').replace(/\s+/g, ' ').trim();
     for (var k = 0; k < this.T.length; k++) {
       var t = this.T[k];
+      var eq = (t.tf === qf || t.tf === 'toi ' + qf) ? 2 : (t.tf.indexOf(qf) === 0 || t.tf.indexOf('toi ' + qf) === 0) ? 1 : 0;
+      if (eq && qf.length >= 2) rec(exact, t.id, t.o).eq = eq;
       if (cq.exact(t.lo, t.fo)) rec(exact, t.id, t.o).th = 2;
       else if (cq.hasLoose && cq.loose(t.lo, t.fo)) rec(loose, t.id, t.o).th = 1;
     }
     function score(r, bonus) {
-      return bonus + r.th * 45 + Math.min(r.lh, 8) * 7 + Math.min(r.cm, 25) * 1.4;
+      return bonus + (r.eq || 0) * 40 + r.th * 45 + Math.min(r.lh, 8) * 7 + Math.min(r.cm, 25) * 1.4;
     }
     var ex = Array.from(exact.values()), lo = [];
     ex.forEach(function (r) { r.sc = score(r, 30); });
