@@ -1,0 +1,315 @@
+{
+"id": "lvn-360843",
+"slug": "34-2024-qh15",
+"ten": "Luật Tổ chức Tòa án nhân dân 2024, số 34/2024/QH15",
+"soHieu": "34/2024/QH15",
+"loai": "Luật",
+"coQuan": "Quốc hội",
+"nguoiKy": "Trần Thanh Mẫn",
+"ngayBanHanh": "2024-06-24",
+"trichYeu": "Tổ chức Tòa án nhân dân",
+"nguon": {
+"ten": "luatvietnam",
+"url": "https://luatvietnam.vn/tu-phap/luat-to-chuc-toa-an-nhan-dan-2024-360843-d1.html",
+"idNguon": "360843",
+"layLuc": "2026-11-04",
+"doiChieu": [
+{
+"ten": "Cơ sở dữ liệu quốc gia về văn bản pháp luật (vbpl.vn)",
+"ketQua": "chua"
+}
+]
+},
+"noiDung": {
+"trangThai": "co",
+"duLieu": {
+"cay": [
+{
+"id": "dieu-17",
+"cap": "dieu",
+"so": "17",
+"tieuDe": "Bảo đảm hiệu lực của bản án, quyết định của Tòa án",
+"con": [
+{
+"id": "m2663141",
+"cap": "khoan",
+"so": "1",
+"text": "Bản án, quyết định của Tòa án có hiệu lực pháp luật phải được cơ quan, tổ chức, cá nhân tôn trọng; cơ quan, tổ chức, cá nhân hữu quan phải nghiêm chỉnh chấp hành."
+},
+{
+"id": "m2663142",
+"cap": "khoan",
+"so": "2",
+"text": "Bản án, quyết định của Tòa án có hiệu lực pháp luật được bảo đảm thi hành theo quy định của pháp luật."
+},
+{
+"id": "m2663143",
+"cap": "khoan",
+"so": "3",
+"text": "Bản án, quyết định của Tòa án có hiệu lực pháp luật nếu có sai lầm trong việc áp dụng pháp luật, vi phạm nghiêm trọng thủ tục tố tụng, kết luận không phù hợp với tình tiết khách quan của vụ án, vụ việc phải do Tòa án có thẩm quyền xem xét, quyết định và khắc phục theo trình tự, thủ tục theo quy định của luật."
+},
+{
+"id": "m2663144",
+"cap": "khoan",
+"so": "4",
+"text": "Cơ quan, tổ chức, cá nhân hữu quan không thi hành bản án, quyết định của Tòa án theo quy định của pháp luật thì tùy theo tính chất, mức độ vi phạm mà bị xử lý kỷ luật, xử phạt vi phạm hành chính hoặc truy cứu trách nhiệm hình sự theo quy định của pháp luật."
+}
+]
+},
+{
+"id": "dieu-18",
+"cap": "dieu",
+"so": "18",
+"tieuDe": "Bảo đảm hiệu lực, hiệu quả hoạt động của Tòa án",
+"con": [
+{
+"id": "m2663146",
+"cap": "khoan",
+"so": "1",
+"text": "Cơ quan, tổ chức, cá nhân phải tôn trọng Tòa án, Thẩm phán, Hội thẩm, người có chức danh tư pháp khác của Tòa án và nghiêm chỉnh chấp hành quyết định, yêu cầu của Tòa án."
+},
+{
+"id": "m2663147",
+"cap": "khoan",
+"so": "2",
+"text": "Nghiêm cấm cơ quan, tổ chức, cá nhân cản trở, can thiệp, tác động trái pháp luật vào hoạt động xét xử, thực hiện quyền tư pháp. Trường hợp cơ quan, tổ chức, cá nhân trong hoặc ngoài Tòa án có hành vi quy định tại khoản này thì Thẩm phán, Hội thẩm, người có chức danh tư pháp khác của Tòa án phải báo cáo ngay với cơ quan, tổ chức, cá nhân có thẩm quyền để kịp thời giải quyết, xử lý."
+},
+{
+"id": "m2663148",
+"cap": "khoan",
+"so": "3",
+"text": "Nghiêm cấm mọi hành vi xúc phạm, xâm hại đến sự tôn nghiêm, uy tín của Tòa án; đe dọa, xúc phạm danh dự, nhân phẩm, uy tín, xâm hại đến tính mạng, sức khỏe của Thẩm phán, Hội thẩm, người có chức danh tư pháp khác của Tòa án hoặc những người thực hiện nhiệm vụ theo yêu cầu của Tòa án; lợi dụng quyền khiếu nại, tố cáo để vu khống Thẩm phán, Hội thẩm, người có chức danh tư pháp khác, công chức khác, viên chức và người lao động của Tòa án."
+},
+{
+"id": "m2663149",
+"cap": "khoan",
+"so": "4",
+"text": "Người có hành vi vi phạm quy định tại các khoản 1, 2 và 3 Điều này thì tùy theo tính chất, mức độ vi phạm mà bị xử lý kỷ luật, xử phạt vi phạm hành chính hoặc truy cứu trách nhiệm hình sự theo quy định của pháp luật."
+}
+]
+},
+{
+"id": "dieu-25",
+"cap": "dieu",
+"so": "25",
+"tieuDe": "Nhiệm vụ, quyền hạn của Toà án xét lại bản án, quyết định đã có hiệu lực pháp luật theo thủ tục giám đốc thẩm, tái thẩm",
+"con": [
+{
+"id": "m2663191",
+"cap": "khoan",
+"so": "1",
+"text": "Giám đốc thẩm có nhiệm vụ xét lại bản án, quyết định của Tòa án đã có hiệu lực pháp luật theo quy định của luật; kiểm tra tính đúng đắn của bản án, quyết định; bảo vệ bản án, quyết định đã xét xử, giải quyết đúng pháp luật; khắc phục những sai sót trong bản án, quyết định; bảo đảm áp dụng thống nhất pháp luật trong xét xử.\nTái thẩm có nhiệm vụ xét lại bản án, quyết định của Tòa án đã có hiệu lực pháp luật bị kháng nghị do có tình tiết mới theo quy định của luật."
+},
+{
+"id": "m2663192",
+"cap": "khoan",
+"so": "2",
+"text": "Tòa án xét lại bản án, quyết định đã có hiệu lực pháp luật có nhiệm vụ, quyền hạn sau đây:",
+"con": [
+{
+"id": "m2663193",
+"cap": "diem",
+"so": "a",
+"text": "Nhận, thụ lý, giải quyết đơn đề nghị, kiến nghị, kháng nghị, thông báo đối với bản án, quyết định của Tòa án đã có hiệu lực pháp luật;"
+},
+{
+"id": "m2663194",
+"cap": "diem",
+"so": "b",
+"text": "Nghiên cứu, thẩm tra hồ sơ vụ án, vụ việc;"
+},
+{
+"id": "m2663195",
+"cap": "diem",
+"so": "c",
+"text": "Quyết định kháng nghị giám đốc thẩm, tái thẩm hoặc thông báo trả lời đơn;"
+},
+{
+"id": "m2663196",
+"cap": "diem",
+"so": "d",
+"text": "Hoãn, yêu cầu hoãn, tạm đình chỉ thi hành bản án, quyết định đã có hiệu lực pháp luật theo quy định của luật;"
+},
+{
+"id": "m2663197",
+"cap": "diem",
+"so": "đ",
+"text": "Thụ lý vụ án, vụ việc để xét xử giám đốc thẩm, tái thẩm;"
+},
+{
+"id": "m2663198",
+"cap": "diem",
+"so": "e",
+"text": "Thay đổi, bổ sung, rút kháng nghị giám đốc thẩm, tái thẩm;"
+},
+{
+"id": "m2663199",
+"cap": "diem",
+"so": "g",
+"text": "Tổ chức phiên tòa xét xử giám đốc thẩm, tái thẩm;"
+},
+{
+"id": "m2663200",
+"cap": "diem",
+"so": "h",
+"text": "Ban hành quyết định giám đốc thẩm, tái thẩm;"
+},
+{
+"id": "m2663201",
+"cap": "diem",
+"so": "i",
+"text": "Thực hiện nhiệm vụ, quyền hạn quy định tại điểm k và điểm l khoản 2 Điều 23 của Luật này ;",
+"chuThich": [
+{
+"loai": "dan-chieu",
+"noiDung": "Nội dung tham chiếu"
+}
+]
+},
+{
+"id": "m2663202",
+"cap": "diem",
+"so": "k",
+"text": "Thực hiện nhiệm vụ, quyền hạn khác theo quy định của pháp luật."
+}
+]
+}
+]
+},
+{
+"id": "dieu-150",
+"cap": "dieu",
+"so": "150",
+"tieuDe": "Sửa đổi, bổ sung, bãi bỏ một số điều của luật có liên quan",
+"con": [
+{
+"id": "m2663960",
+"cap": "khoan",
+"so": "1",
+"text": "Sửa đổi, bổ sung một số điều của Bộ luật Tố tụng hình sự số 101/2015/QH13 đã được sửa đổi, bổ sung một số điều theo Luật số 02/2021/QH15 như sau:",
+"con": [
+{
+"id": "m2663961",
+"cap": "diem",
+"so": "a",
+"text": "Sửa đổi khoản 4 Điều 153 như sau:\n“4. Hội đồng xét xử yêu cầu Viện kiểm sát khởi tố vụ án hình sự nếu qua việc xét xử tại phiên tòa mà phát hiện có việc bỏ lọt tội phạm.”;"
+},
+{
+"id": "m2663962",
+"cap": "diem",
+"so": "b",
+"text": "Sửa đổi, bổ sung khoản 2 Điều 154 như sau:\n“2. Trong thời hạn 24 giờ kể từ khi ra quyết định khởi tố vụ án hình sự, Viện kiểm sát phải gửi quyết định đó đến Cơ quan điều tra có thẩm quyền để tiến hành điều tra.\nTrong thời hạn 24 giờ kể từ khi ra quyết định khởi tố vụ án hình sự, Cơ quan điều tra, cơ quan được giao nhiệm vụ tiến hành một số hoạt động điều tra phải gửi quyết định đó kèm theo tài liệu liên quan đến Viện kiểm sát có thẩm quyền để kiểm sát việc khởi tố.”;"
+},
+{
+"id": "m2663963",
+"cap": "diem",
+"so": "c",
+"text": "Bãi bỏ điểm c khoản 1 Điều 161 ;"
+},
+{
+"id": "m2663964",
+"cap": "diem",
+"so": "d",
+"text": "Bãi bỏ khoản 7 Điều 326 ;"
+},
+{
+"id": "m2663965",
+"cap": "diem",
+"so": "đ",
+"text": "Sửa đổi, bổ sung khoản 3 Điều 467 như sau:\n“3. Trường hợp hành vi của người vi phạm nội quy phiên tòa có dấu hiệu tội phạm thì Tòa án yêu cầu, kiến nghị khởi tố theo quy định của Bộ luật này.”."
+}
+]
+},
+{
+"id": "m2663966",
+"cap": "khoan",
+"so": "2",
+"text": "Sửa đổi, bổ sung một số điều của Bộ luật Tố tụng dân sự số 92/2015/QH13 đã được sửa đổi, bổ sung một số điều theo Luật số 45/2019/QH14 , Luật số 59/2020/QH14 , Luật số 13/2022/QH15 và Luật số 19/2023/QH15 như sau:",
+"con": [
+{
+"id": "m2663967",
+"cap": "diem",
+"so": "a",
+"text": "Bãi bỏ khoản 4 Điều 234 ;"
+},
+{
+"id": "m2663968",
+"cap": "diem",
+"so": "b",
+"text": "Sửa đổi, bổ sung khoản 3 Điều 491 như sau:\n“3. Trường hợp người vi phạm nội quy phiên tòa có dấu hiệu tội phạm thì Tòa án yêu cầu, kiến nghị khởi tố theo quy định của Bộ luật Tố tụng hình sự.”;"
+},
+{
+"id": "m2663969",
+"cap": "diem",
+"so": "c",
+"text": "Bãi bỏ Điều 497 ."
+}
+]
+},
+{
+"id": "m2663970",
+"cap": "khoan",
+"so": "3",
+"text": "Sửa đổi, bổ sung một số điều của Luật Tố tụng hành chính số 93/2015/QH13 đã được sửa đổi, bổ sung một số điều theo Luật số 55/2019/QH14 như sau:",
+"con": [
+{
+"id": "m2663971",
+"cap": "diem",
+"so": "a",
+"text": "Bãi bỏ khoản 4 Điều 153;"
+},
+{
+"id": "m2663972",
+"cap": "diem",
+"so": "b",
+"text": "Sửa đổi, bổ sung khoản 3 Điều 316 như sau:\n“3. Trường hợp người vi phạm nội quy phiên tòa có dấu hiệu tội phạm thì Tòa án yêu cầu, kiến nghị khởi tố theo quy định của Bộ luật Tố tụng hình sự.”;"
+},
+{
+"id": "m2663973",
+"cap": "diem",
+"so": "c",
+"text": "Bãi bỏ Điều 321 ."
+}
+]
+},
+{
+"id": "m2663974",
+"cap": "khoan",
+"so": "4",
+"text": "Sửa đổi, bổ sung điểm a khoản 2 Điều 19 của Luật Tổ chức chính quyền địa phương số 77/2015/QH13 đã được sửa đổi, bổ sung một số điều theo Luật số 21/2017/QH14 , Luật số 47/2019/QH14 , Nghị quyết số 96/2023/QH15 và Luật số 31/2024/QH15 như sau:\n“a) Bầu, miễn nhiệm, bãi nhiệm Chủ tịch Hội đồng nhân dân, Phó Chủ tịch Hội đồng nhân dân, Trưởng ban, Phó Trưởng ban của Hội đồng nhân dân tỉnh; bầu, miễn nhiệm, bãi nhiệm Chủ tịch Ủy ban nhân dân, Phó Chủ tịch Ủy ban nhân dân và các Ủy viên Ủy ban nhân dân tỉnh; bầu, miễn nhiệm, bãi nhiệm Hội thẩm tại Tòa án nhân dân tỉnh, Tòa án nhân dân sơ thẩm chuyên biệt;”."
+}
+]
+},
+{
+"id": "dieu-151",
+"cap": "dieu",
+"so": "151",
+"tieuDe": "Hiệu lực thi hành",
+"con": [
+{
+"id": "m2663976",
+"cap": "khoan",
+"so": "1",
+"text": "Luật này có hiệu lực thi hành từ ngày 01 tháng 01 năm 2025."
+},
+{
+"id": "m2663977",
+"cap": "khoan",
+"so": "2",
+"text": "Luật Tổ chức Tòa án nhân dân số 62/2014/QH13 hết hiệu lực từ ngày Luật này có hiệu lực thi hành, trừ trường hợp quy định tại khoản 1 và khoản 2 Điều 152 của Luật này .",
+"chuThich": [
+{
+"loai": "dan-chieu",
+"noiDung": "Nội dung tham chiếu"
+}
+]
+}
+]
+}
+],
+"chiGiu": [
+"150"
+]
+}
+}
+}

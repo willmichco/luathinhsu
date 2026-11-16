@@ -1,0 +1,112 @@
+{
+"id": "lvn-422292",
+"slug": "128-2025-qh15",
+"ten": "Luật Thi hành tạm giữ, tạm giam và cấm đi khỏi nơi cư trú 2025, số 128/2025/QH15",
+"soHieu": "128/2025/QH15",
+"loai": "Luật",
+"coQuan": "Quốc hội",
+"nguoiKy": "Trần Thanh Mẫn",
+"ngayBanHanh": "2025-12-10",
+"trichYeu": "Thi hành tạm giữ, tạm giam và cấm đi khỏi nơi cư trú",
+"nguon": {
+"ten": "luatvietnam",
+"url": "https://luatvietnam.vn/hinh-su/luat-thi-hanh-tam-giu-tam-giam-va-cam-di-khoi-noi-cu-tru-2025-so-128-2025-qh15-422292-d1.html",
+"idNguon": "422292",
+"layLuc": "2026-11-04",
+"doiChieu": [
+{
+"ten": "Cơ sở dữ liệu quốc gia về văn bản pháp luật (vbpl.vn)",
+"ketQua": "chua"
+}
+]
+},
+"noiDung": {
+"trangThai": "co",
+"duLieu": {
+"cay": [
+{
+"id": "dieu-73",
+"cap": "dieu",
+"so": "73",
+"tieuDe": "Sửa đổi, bổ sung một số khoản của Điều 123 của Bộ luật Tố tụng hình sự số 101/2015/QH13 đã được sửa đổi, bổ sung một số điều theo Luật số 02/2021/QH15 , Luật số 34/2024/QH15 , Luật số 59/2024/QH15 và Luật số 99/2025/QH15 như sau:",
+"chuThich": [
+{
+"loai": "dan-chieu",
+"noiDung": "Nội dung tham chiếu"
+}
+],
+"con": [
+{
+"id": "m3401038",
+"cap": "khoan",
+"so": "1",
+"text": "Sửa đổi, bổ sung khoản 2 như sau:\n“2. Bị can, bị cáo bị cấm đi khỏi nơi cư trú phải làm giấy cam đoan thực hiện các nghĩa vụ:",
+"con": [
+{
+"id": "m3401039",
+"cap": "diem",
+"so": "a",
+"text": "Không đi khỏi nơi cư trú nếu không được người đã ra lệnh cấm đi khỏi nơi cư trú cho phép, trừ trường hợp vì lý do bất khả kháng hoặc do trở ngại khách quan;"
+},
+{
+"id": "m3401040",
+"cap": "diem",
+"so": "b",
+"text": "Có mặt theo giấy triệu tập, trừ trường hợp vì lý do bất khả kháng hoặc do trở ngại khách quan;"
+},
+{
+"id": "m3401041",
+"cap": "diem",
+"so": "c",
+"text": "Không bỏ trốn, không tiếp tục phạm tội;"
+},
+{
+"id": "m3401042",
+"cap": "diem",
+"so": "d",
+"text": "Không mua chuộc, cưỡng ép, xúi giục người khác khai báo gian dối, cung cấp tài liệu sai sự thật; không tiêu hủy, giả mạo chứng cứ, tài liệu, đồ vật của vụ án, tẩu tán tài sản liên quan đến vụ án; không đe dọa, khống chế, trả thù người làm chứng, bị hại, người tố giác tội phạm và người thân thích của những người này.\nTrường hợp bị can, bị cáo vi phạm nghĩa vụ cam đoan quy định tại khoản này hoặc vi phạm các nghĩa vụ theo quy định của Luật Thi hành tạm giữ, tạm giam và cấm đi khỏi nơi cư trú thuộc trường hợp bị đề nghị thay đổi biện pháp ngăn chặn thì bị tạm giam.”."
+}
+]
+},
+{
+"id": "m3401043",
+"cap": "khoan",
+"so": "2",
+"text": "Sửa đổi, bổ sung khoản 5 như sau:\n“5. Người ra lệnh cấm đi khỏi nơi cư trú phải gửi lệnh cấm đi khỏi nơi cư trú cho Trưởng Công an cấp xã nơi bị can, bị cáo cư trú, đơn vị quân đội được giao quản lý, theo dõi bị can, bị cáo, cơ quan khác có liên quan để quản lý, theo dõi họ.”."
+}
+]
+},
+{
+"id": "dieu-74",
+"cap": "dieu",
+"so": "74",
+"tieuDe": "Hiệu lực thi hành",
+"con": [
+{
+"id": "m3401045",
+"cap": "khoan",
+"so": "1",
+"text": "Luật này có hiệu lực thi hành từ ngày 01 tháng 7 năm 2026."
+},
+{
+"id": "m3401046",
+"cap": "khoan",
+"so": "2",
+"text": "Luật Thi hành tạm giữ, tạm giam số 94/2015/QH13 hết hiệu lực kể từ ngày Luật này có hiệu lực thi hành.\nLuật này được Quốc hội nước Cộng hòa xã hội chủ nghĩa Việt Nam khóa XV, Kỳ họp thứ 10 thông qua ngày 10 tháng 12 năm 2025",
+"con": [
+{
+"id": "m3401047",
+"cap": "ket",
+"text": "CHỦ TỊCH QUỐC HỘI Trần Thanh Mẫn"
+}
+]
+}
+]
+}
+],
+"chiGiu": [
+"73"
+]
+}
+}
+}
