@@ -30,8 +30,11 @@ details.orig[open]>summary{border-bottom:1px solid var(--line-2)}
 details.orig>.law-paper{border:0;border-radius:0;margin:0}
 
 /* Một điều khoản sửa đổi */
-.am{border:1px solid var(--line-2);border-left:3px solid var(--new);border-radius:var(--r-l);background:var(--surface);padding:14px 16px;margin:0 0 14px;scroll-margin-top:calc(var(--hd-h) + 20px)}
-.am--fut{border-left-color:var(--warn);background:color-mix(in srgb,var(--warn-bg) 45%,var(--surface))}
+.am{position:relative;border:1px solid var(--line-2);border-radius:var(--r-l);background:var(--surface);padding:14px 16px;margin:0 0 14px;scroll-margin-top:calc(var(--hd-h) + 20px)}
+.am--fut{background:color-mix(in srgb,var(--warn-bg) 45%,var(--surface))}
+/* Vạch nhấn bên trái giống khung văn bản điều luật (.law-paper): vàng đồng → đỏ son */
+.am::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:0 3px 3px 0;background:linear-gradient(var(--gold-400),var(--red-600))}
+.am--fut::before{background:var(--gold-400)}
 .am-h{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
 .am-law{display:flex;flex-direction:column;gap:2px;color:var(--ink);min-width:0}
 .am-law b{font-family:var(--f-ui);color:var(--primary-ink);font-size:.95rem}
@@ -52,8 +55,8 @@ details.orig>.law-paper{border:0;border-radius:0;margin:0}
 ol.tl{list-style:none;margin:8px 0 24px;padding:0;position:relative}
 ol.tl::before{content:"";position:absolute;left:96px;top:6px;bottom:6px;width:2px;background:var(--line)}
 .tl-i{display:grid;grid-template-columns:84px 1fr;gap:24px;padding:10px 0;position:relative}
-.tl-i::before{content:"";position:absolute;left:91px;top:18px;width:12px;height:12px;border-radius:50%;background:var(--new);box-shadow:0 0 0 3px var(--bg)}
-.tl-i.is-fut::before{background:var(--warn)}
+.tl-i::before{content:"";position:absolute;left:91px;top:18px;width:12px;height:12px;border-radius:50%;background:var(--primary);box-shadow:0 0 0 3px var(--bg)}
+.tl-i.is-fut::before{background:var(--gold-400)}
 .tl-d{font-family:var(--f-ui);font-weight:700;font-size:.86rem;color:var(--primary-ink);padding-top:12px;text-align:right}
 .tl-b{background:var(--surface);border:1px solid var(--line-2);border-radius:var(--r-l);padding:12px 16px}
 .tl-b>a{color:var(--ink);font-weight:500}
@@ -87,7 +90,7 @@ ol.tl::before{content:"";position:absolute;left:96px;top:6px;bottom:6px;width:2p
 /* Tìm kiếm */
 .sr-stat{color:var(--muted);font-size:.9rem;margin:0 0 12px}
 .sr mark{border-radius:3px;padding:0 1px}
-.sr .ty--am{background:var(--new-bg);color:var(--new)}
+.sr .ty--am{background:var(--gold-50);color:var(--gold-800)}
 
 @media print{.tths .side,.tths .rail,.tths .pager,.tths details.orig:not([open]){display:none!important}}
 /* Nhãn khoản/điểm trong văn bản sửa đổi có thể kèm dấu mở ngoặc kép (“a), “3.) → ô nhãn co giãn */

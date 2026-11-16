@@ -537,7 +537,7 @@ def page_home():
                    ' <span class="tag tag--rep26">%s</span>' % CH_NOTE[c["id"]]["short"] if c["id"] in CH_NOTE else "",
                    c["first"].id, "–" + c["last"].id if c["first"] is not c["last"] else "") for c in p1) +
         "</div></section>"
-        '<section class="wrap sec"><div class="callout callout--new">' + ic("book") + '<div><b>Mới: Bộ luật Tố tụng hình sự 2015</b> – '
+        '<section class="wrap sec"><div class="callout callout--info">' + ic("book") + '<div><b>Mới: Bộ luật Tố tụng hình sự 2015</b> – '
         'toàn văn 510 điều (và Điều 506a), kèm nguyên văn sửa đổi, bổ sung theo Luật 02/2021/QH15, 34/2024/QH15, 59/2024/QH15, 99/2025/QH15 '
         'và các luật năm 2025, 2026. <a href="to-tung-hinh-su/">Mở tra cứu Bộ luật Tố tụng hình sự ›</a></div></div></section>'
         '<section class="wrap sec"><div class="sec-h"><div><h2>Công cụ hỗ trợ nghiên cứu</h2><p>Tính toán tự động từ chính văn bản điều luật</p></div>'

@@ -650,7 +650,7 @@ def art_tags(a, short=False):
     if a.rep:
         out.append('<span class="tag tag--rep">Bãi bỏ từ %s</span>' % vnd(a.rep["law"]["hl"]))
     elif a.new:
-        out.append('<span class="tag tag--new">Bổ sung %s</span>' % a.new["law"]["hl"][:4])
+        out.append('<span class="tag tag--am">Bổ sung %s</span>' % a.new["law"]["hl"][:4])
     elif a.eff:
         ys = sorted({it["law"]["hl"][:4] for it in a.eff})
         out.append('<span class="tag tag--am">Sửa đổi %s</span>' % ", ".join(ys))
@@ -806,7 +806,7 @@ def page_article(a):
                      % (j + 1, esc(it["cite"]), esc(law_label(it["law"])),
                         "chưa có hiệu lực, từ %s" % vnd(it["law"]["hl"]) if it["law"]["future"] else "hiệu lực từ %s" % vnd(it["law"]["hl"]))
                      for j, it in enumerate(others))
-        callouts += ('<div class="callout callout--new">%s<div><b>Điều này đã được sửa đổi, bổ sung</b> (%d lần, xem nguyên văn ở mục '
+        callouts += ('<div class="callout callout--info">%s<div><b>Điều này đã được sửa đổi, bổ sung</b> (%d lần, xem nguyên văn ở mục '
                      '<a href="#p-sua-doi">Sửa đổi, bổ sung</a>):<ul class="sd-list">%s</ul></div></div>' % (ic("spark"), len(others), li))
     if a.new:
         it = a.new
@@ -1027,7 +1027,7 @@ def search_index():
 
 # =============================================================================
 def main():
-    ver = TODAY.replace("-", "") + "a"
+    ver = TODAY.replace("-", "") + "b"  # tăng chữ cuối khi sửa tths.css, tths.js
     tpl = make_template().replace("__V__", ver)
     for m in ("<!--seo:head-->", "<!--seo:main-->", '<base href="../">', DIR + "tths.js"):
         assert m in tpl, "Khuôn trang thiếu " + m
