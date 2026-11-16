@@ -1,7 +1,7 @@
 {
-  "name": "Tra cứu Bộ luật Hình sự – Luật Sư Nam",
-  "short_name": "BLHS Luật Sư Nam",
-  "description": "Tra cứu toàn văn Bộ luật Hình sự 2015 (sửa đổi 2017, 2025), bình luận khoa học, khung hình phạt và công cụ nghiên cứu.",
+  "name": "Tra cứu Luật Hình sự – Luật Sư Nam",
+  "short_name": "Luật Hình sự",
+  "description": "Tra cứu Luật Hình sự: toàn văn Bộ luật Hình sự 2015 và Bộ luật Tố tụng hình sự 2015 (kèm các văn bản sửa đổi), bình luận khoa học, khung hình phạt và công cụ nghiên cứu.",
   "lang": "vi",
   "start_url": "./",
   "scope": "./",

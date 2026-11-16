@@ -1,4 +1,7 @@
-# Tra cứu Bộ luật Hình sự – Luật Sư Nam
+# Tra cứu Luật Hình sự – Luật Sư Nam
+
+Một trang, hai mục riêng: **Bộ luật Hình sự** (gốc trang) và **Bộ luật Tố tụng hình sự** (`to-tung-hinh-su/`).
+Thanh chọn mục (`.secbar`, ngay dưới đầu trang) có trên mọi trang; thương hiệu, đầu trang, chân trang, menu dùng chung.
 
 Website tra cứu, nghiên cứu **Bộ luật Hình sự số 100/2015/QH13** (sửa đổi, bổ sung bởi Luật số 12/2017/QH14,
 Luật số 59/2024/QH15 và Luật số 86/2025/QH15) dành cho luật sư, sinh viên luật và người dân.

@@ -1,5 +1,5 @@
 /*
- * Tra cứu Bộ luật Hình sự – ứng dụng một trang.
+ * Tra cứu Luật Hình sự – mục Bộ luật Hình sự (ứng dụng một trang).
  * Định tuyến bằng History API với đường dẫn sạch nằm cùng thư mục gốc: dieu-173, chuong-14, muc-luc,
  * cong-cu-thoi-hieu… Mỗi đường dẫn có sẵn một trang HTML dựng tĩnh (tools/build_seo.py) để công cụ tìm kiếm
  * đọc được; khi JavaScript chạy, ứng dụng thay nội dung tĩnh bằng giao diện tương tác.
@@ -20,7 +20,7 @@
   var cap = function (s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; };
   var debounce = function (fn, ms) { var t; return function () { var a = arguments, c = this; clearTimeout(t); t = setTimeout(function () { fn.apply(c, a); }, ms); }; };
   var isTouch = window.matchMedia('(hover: none)').matches;
-  var VER = '20261116a';
+  var VER = '20261116c';
   // Thư mục gốc của trang web (…/luathinhsu/), suy ra từ vị trí tệp assets/js/app.js
   var ROOT = document.currentScript ? new URL('../../', document.currentScript.src).href : new URL('./', location.href).href;
   var ROOT_PATH = new URL(ROOT).pathname;
@@ -411,14 +411,18 @@
         return '<a href="' + href + '"' + (k === cur ? ' class="on" aria-current="page"' : k === sec ? ' class="on"' : '') + '>' + ic(icon) + t + '</a>';
       };
       $('#drawerNav').innerHTML =
+        '<div class="dn-h">Bộ luật Hình sự</div>' +
         L('./', 'home', 'Trang chủ') + L('muc-luc', 'list', 'Mục lục Bộ luật') +
         L('tim-kiem', 'search', 'Tìm kiếm toàn văn') +
         L('da-luu', 'bookmark', 'Đã lưu & ghi chú') +
-        L('to-tung-hinh-su/', 'book', 'Bộ luật Tố tụng hình sự') +
         '<div class="dn-h">Công cụ nghiên cứu</div>' +
         L('cong-cu-thoi-hieu', 'clock', 'Phân loại tội & thời hiệu') + L('cong-cu-tuoi', 'user', 'Tuổi chịu trách nhiệm hình sự') +
         L('cong-cu-thi-hanh-an', 'calendar', 'Thời hiệu thi hành bản án') + L('cong-cu-so-sanh', 'columns', 'So sánh điều luật') +
         L('cong-cu-khung-hinh-phat', 'table', 'Bảng khung hình phạt') +
+        '<div class="dn-h">Bộ luật Tố tụng hình sự</div>' +
+        L('to-tung-hinh-su/', 'gavel', 'Mục lục Bộ luật Tố tụng hình sự') +
+        L('to-tung-hinh-su/tim-kiem', 'search', 'Tìm kiếm Tố tụng hình sự') +
+        L('to-tung-hinh-su/sua-doi', 'history', 'Các văn bản sửa đổi, bổ sung') +
         '<hr>' +
         L('gioi-thieu', 'info', 'Giới thiệu & nguồn dữ liệu') +
         '<div class="dn-h">Liên hệ luật sư</div>' +
@@ -1076,7 +1080,7 @@
     document.body.classList.toggle('is-home', name === 'home');
   }
   // Phải khớp với tiêu đề trong trang dựng tĩnh (tools/build_seo.py) vì công cụ tìm kiếm đọc tiêu đề sau khi chạy JavaScript
-  function setTitle(t) { document.title = t ? t + ' – Bộ luật Hình sự 2015 (sửa đổi 2025)' : 'Tra cứu Bộ luật Hình sự 2015 (sửa đổi 2017, 2025) – Luật Sư Nam'; }
+  function setTitle(t) { document.title = t ? t + ' – Bộ luật Hình sự 2015 (sửa đổi 2025)' : 'Tra cứu Luật Hình sự: Bộ luật Hình sự, Bộ luật Tố tụng hình sự – Luật Sư Nam'; }
 
   var VIEWS = {};
   // Mã các công cụ (tools.js) chỉ tải khi mở trang công cụ; trang dựng tĩnh của công cụ đã nhúng sẵn tệp này
@@ -1185,8 +1189,8 @@
       var nCm = DB.arts.filter(function (a) { return a.M.ln && a.M.ln[1] > 0; }).length;
       main.innerHTML =
         '<section class="hero">' + drum() + '<div class="wrap hero-grid">' +
-        '<div><span class="eyebrow">Bộ luật số 100/2015/QH13 · cập nhật 2025</span>' +
-        '<h1>Tra cứu <em>Bộ luật Hình sự</em> <br>nhanh, chính xác, dễ&nbsp;hiểu</h1>' +
+        '<div><span class="eyebrow">Tra cứu Luật Hình sự · Mục Bộ luật Hình sự số 100/2015/QH13</span>' +
+        '<h1>Tra cứu <em>Luật Hình sự</em> <br>nhanh, chính xác, dễ&nbsp;hiểu</h1>' +
         '<p class="hero-sub">Toàn văn ' + st.arts + ' điều luật kèm bình luận khoa học, khung hình phạt từng khoản, phân loại tội phạm và thời hiệu — tìm được cả khi gõ không dấu.</p>' +
         '<div id="heroSearch"></div>' +
         '<div class="hero-try"><span>Thử tìm:</span>' +
@@ -1226,6 +1230,14 @@
           return '<a href="chuong-' + c.slug + '"><span class="gr">' + esc(c.num || '—') + '</span><span class="gt">' + esc(c.name) + (CH_NOTE[c.id] ? ' <span class="tag tag--rep26">' + CH_NOTE[c.id].short + '</span>' : '') + '</span><span class="gc">Đ.' + c.first.id + (c.first !== c.last ? '–' + c.last.id : '') + '</span></a>';
         }).join('') + '</div></section>' +
 
+        // Hai mục của trang: phải khớp page_home() trong tools/build_seo.py
+        '<section class="wrap sec"><div class="sec-h"><div><span class="eyebrow">Tra cứu Luật Hình sự</span><h2>Hai mục tra cứu</h2>' +
+        '<p>Luật nội dung và luật hình thức trong cùng một trang</p></div></div><div class="law-2">' +
+        '<a class="law-2c on" href="./">' + ic('scale') + '<span><small>Mục 1 · Bạn đang xem</small><b>Bộ luật Hình sự</b>' +
+        '<em>Số 100/2015/QH13 – 428 điều, bình luận khoa học, khung hình phạt, công cụ thời hiệu</em></span></a>' +
+        '<a class="law-2c" href="to-tung-hinh-su/">' + ic('gavel') + '<span><small>Mục 2</small><b>Bộ luật Tố tụng hình sự</b>' +
+        '<em>Số 101/2015/QH13 – 510 điều và Điều 506a, nguyên văn sửa đổi theo 9 văn bản đến năm 2026</em></span>' +
+        ic('chev-r', 'go') + '</a></div></section>' +
         '<section class="wrap sec"><div class="sec-h"><div><h2>Công cụ hỗ trợ nghiên cứu</h2><p>Tính toán tự động từ chính văn bản điều luật</p></div><a class="more" href="cong-cu">Tất cả công cụ ' + ic('chev-r') + '</a></div>' +
         toolCards() + '</section>' +
 
