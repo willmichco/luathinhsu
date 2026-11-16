@@ -61,16 +61,21 @@
     $('#sheetBody').innerHTML = html; s.hidden = false; document.body.style.overflow = 'hidden';
     var f = $('#sheetBody button'); if (f) f.focus();
   }
-  function settings() {
+  // Các dòng chỉnh hiển thị – cùng markup với UI.disp() của mục Bộ luật Hình sự (assets/js/app.js)
+  function disp(compact) {
     var p = Prefs.get(), th = p.theme || 'light', fs = p.fs || 0;
-    sheet('<h2 id="sheetTitle">Công cụ đọc</h2><p class="set-sub">Thay đổi áp dụng ngay và được ghi nhớ trên thiết bị này</p>' +
-      '<div class="set-row"><div><b>Giao diện</b><small>Sáng, tối hoặc theo thiết bị</small></div><div class="seg" data-set="theme">' +
+    return '<div class="set-row"><div><b>Giao diện</b><small>Sáng, tối hoặc theo thiết bị</small></div><div class="seg" data-set="theme">' +
       [['light', 'Sáng'], ['dark', 'Tối'], ['auto', 'Theo máy']].map(function (o) { return '<button type="button" data-v="' + o[0] + '" aria-pressed="' + (th === o[0]) + '">' + o[1] + '</button>'; }).join('') +
-      '</div></div><div class="set-row"><div><b>Cỡ chữ văn bản</b><small>Điều luật và văn bản sửa đổi</small></div><div class="fs-ctl">' +
+      '</div></div><div class="set-row"><div><b>' + (compact ? 'Cỡ chữ' : 'Cỡ chữ văn bản') + '</b><small>Điều luật và văn bản sửa đổi</small></div><div class="fs-ctl">' +
       '<button type="button" data-fs="-1" aria-label="Giảm cỡ chữ">A−</button><output class="fs-out" aria-live="polite">' + (100 + fs * 6) + '%</output>' +
       '<button type="button" data-fs="1" aria-label="Tăng cỡ chữ">A+</button></div></div>' +
-      '<div class="set-row"><div><b>Kiểu chữ điều luật</b><small>Mặc định không chân</small></div><div class="seg" data-set="serif">' +
-      '<button type="button" data-v="0" aria-pressed="' + (p.serif !== true) + '">Không chân</button><button type="button" data-v="1" aria-pressed="' + (p.serif === true) + '">Có chân</button></div></div>');
+      '<div class="set-row"><div><b>' + (compact ? 'Kiểu chữ' : 'Kiểu chữ điều luật') + '</b><small>Mặc định không chân</small></div><div class="seg" data-set="serif">' +
+      '<button type="button" data-v="0" aria-pressed="' + (p.serif !== true) + '">Không chân</button><button type="button" data-v="1" aria-pressed="' + (p.serif === true) + '">Có chân</button></div></div>';
+  }
+  function settings() {
+    var a = $('#art');
+    sheet('<h2 id="sheetTitle">Công cụ đọc</h2><p class="set-sub">' + (a ? 'Điều ' + esc(a.dataset.id) + ' · ' : '') +
+      'Thay đổi áp dụng ngay và được ghi nhớ trên thiết bị này</p>' + disp());
   }
 
   document.addEventListener('click', function (e) {
@@ -127,6 +132,19 @@
       if (u) { e.preventDefault(); location.href = document.baseURI.replace(/[^/]*$/, '') + u; }
     });
   });
+
+  /* ---------- Trang điều luật: khối Hiển thị ở cột phải, thanh tab (giống mục Bộ luật Hình sự) ---------- */
+  var rail = $('.rail');
+  if (rail && $('#art')) rail.insertAdjacentHTML('afterbegin', '<div class="rc rc-disp"><h3><svg aria-hidden="true"><use href="#i-text"/></svg>Hiển thị</h3>' + disp(true) + '</div>');
+  var tabs = $$('.tabs a');
+  if (tabs.length) {
+    var mark = function (id) { tabs.forEach(function (t) { if (t.getAttribute('href') === '#' + id) t.setAttribute('aria-current', 'true'); else t.removeAttribute('aria-current'); }); };
+    tabs.forEach(function (t) { t.addEventListener('click', function () { mark(t.getAttribute('href').slice(1)); }); });
+    if (window.IntersectionObserver && tabs.length > 1) {
+      var io = new IntersectionObserver(function (es) { es.forEach(function (en) { if (en.isIntersecting) mark(en.target.id); }); }, { rootMargin: '-30% 0px -60% 0px' });
+      tabs.forEach(function (t) { var el = document.getElementById(t.getAttribute('href').slice(1)); if (el) io.observe(el); });
+    }
+  }
 
   /* ---------- Lên đầu trang, đánh dấu khoản ---------- */
   var tt = $('#toTop');

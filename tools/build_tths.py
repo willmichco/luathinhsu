@@ -189,7 +189,7 @@ def build_code():
     for top in CODE["noiDung"]["duLieu"]["cay"]:
         if top.get("cap") != "phan":
             continue
-        cur_p = {"id": top["id"], "so": clean(top.get("so")).title().replace("Thứ", "thứ"),
+        cur_p = {"id": top["id"], "so": clean(top.get("so")).capitalize(),
                  "ten": clean(top.get("tieuDe")), "chaps": []}
         PARTS.append(cur_p)
         direct = [x for x in top.get("con", []) if x.get("cap") == "dieu"]
@@ -524,8 +524,9 @@ def make_template():
     t = TPL
     t = t.replace('<meta charset="utf-8">', '<meta charset="utf-8">\n<base href="../">', 1)
     t = re.sub(r'<link rel="preload" href="data/(toc|meta)\.json"[^>]*>\n', "", t)
-    t = t.replace('<link rel="manifest" href="manifest.webmanifest">', '<link rel="manifest" href="manifest.webmanifest">\n'
-                  '<link rel="stylesheet" href="%stths.css?v=__V__">' % DIR)
+    # tths.css nạp SAU app.css (giao diện gốc) để chỉ bổ sung, không bị app.css ghi đè
+    t, n = re.subn(r'(<link rel="stylesheet" href="assets/css/app\.css\?v=[^"]+">)', r'\1\n<link rel="stylesheet" href="%stths.css?v=__V__">' % DIR, t, count=1)
+    assert n == 1
     # Thương hiệu, ô tìm kiếm, điều hướng: trỏ vào phân mục Tố tụng hình sự
     # Thanh chọn mục: đánh dấu mục Bộ luật Tố tụng hình sự
     t = t.replace('data-sec="blhs" class="on" aria-current="true"', 'data-sec="blhs"', 1)
@@ -779,11 +780,13 @@ def page_article(a):
     c = a.ch
     prev = ARTS[a.i - 1] if a.i else None
     nxt = ARTS[a.i + 1] if a.i + 1 < len(ARTS) else None
-    crumbs = [("BLTTHS 2015", DIR), (chap_label(c), DIR + "#chuong-" + c["slug"]), ("Điều " + a.id, None)]
+    crumbs = [("Trang chủ", "./"), ("Tố tụng hình sự", DIR), (chap_label(c), DIR + "#chuong-" + c["slug"]), ("Điều " + a.id, None)]
     tags = ('<div class="art-tags"><span class="tag tag--soft">%s</span><a class="tag tag--soft" href="%s#chuong-%s">%s</a>%s</div>'
             % (esc(c["part"]["so"]), DIR, c["slug"], esc(chap_label(c)), art_tags(a)))
-    sm = ('<div class="art-sum"><span>%s%s</span>%s</div>'
-          % (ic("book"), esc(sentence(c["ten"])), "<span>%s%s</span>" % (ic("list"), esc(sentence(a.muc))) if a.muc else ""))
+    n_chars = len(plain_art(a)) + sum(len(tree_text(it["node"])) for it in a.items if it["kind"] != "repeal-chapter")
+    sm = ('<div class="art-sum"><span>%s%s</span>%s<span class="rt">%s~%d phút đọc</span></div>'
+          % (ic("book"), esc(sentence(c["ten"])), "<span>%s%s</span>" % (ic("list"), esc(sentence(a.muc))) if a.muc else "",
+             ic("clock"), max(1, int(n_chars / 900 + 0.5))))
     head = ('<header class="art-h">' + crumb(crumbs) + tags + '<h1><span class="dn">Điều %s.</span> %s</h1>' % (esc(a.id), esc(a.t)) + sm +
             '<div class="tools no-print js-only"><button type="button" class="btn btn--p" data-act="copy-art">%s<span>Sao chép</span></button>'
             '<button type="button" class="btn" data-act="share">%s<span>Chia sẻ</span></button>'
@@ -820,8 +823,8 @@ def page_article(a):
     else:
         body_law = art_law_html(a)
         law_head = ('<h2 class="law-cap">%s</h2>' % ("Văn bản trước khi bãi bỏ <small>Bộ luật số 101/2015/QH13</small>" if a.rep else
-                                                    "Văn bản gốc <small>Bộ luật số 101/2015/QH13</small>" if others else
-                                                    "Nội dung điều luật <small>chưa được sửa đổi, bổ sung</small>"))
+                                                    "Văn bản gốc <small>Bộ luật số 101/2015/QH13</small>") if (a.rep or others) else
+                    '<h2 class="vh">Nội dung Điều %s</h2>' % esc(a.id))
         orig = ""
     amend = ""
     if others:
@@ -851,7 +854,10 @@ def page_article(a):
     rail += ('<div class="rc"><h3>%sTrích dẫn</h3><p class="cite-t" id="citeT">Điều %s Bộ luật Tố tụng hình sự số 101/2015/QH13%s</p></div>'
              % (ic("copy"), esc(a.id), " (sửa đổi, bổ sung năm %s)" % ", ".join(sorted({it["law"]["hl"][:4] for it in a.eff if it["kind"] != "repeal-chapter"}))
                 if [1 for it in a.eff if it["kind"] != "repeal-chapter"] else ""))
-    body = ('<div class="panel" id="p-noi-dung">' + callouts + law_head + '<div class="law-paper"><div class="law" id="lawBody">' + body_law +
+    tabs = ('<nav class="tabs" aria-label="Nội dung điều luật"><a href="#p-noi-dung" aria-current="true"><span class="tl-l">Nội dung điều luật</span>'
+            '<span class="tl-s">Điều luật</span></a>' +
+            ('<a href="#p-sua-doi">Sửa đổi, bổ sung<span class="cnt">%d</span></a>' % len(others) if others else "") + "</nav>")
+    body = (tabs + '<div class="panel" id="p-noi-dung">' + callouts + law_head + '<div class="law-paper"><div class="law" id="lawBody">' + body_law +
             "</div></div>" + orig + "</div>" + amend)
     main = ('<div class="wrap"><div class="reader">' + side_html(a) + '<article class="art" id="art" data-id="%s">' % esc(a.id) + head + body + pager +
             '</article><aside class="rail" aria-label="Thông tin bổ trợ">' + rail + "</aside></div></div>")
@@ -863,14 +869,14 @@ def page_article(a):
          "alternateName": "Điều %s Bộ luật Tố tụng hình sự 2015" % a.id, "url": url, "inLanguage": "vi", "description": desc,
          "legislationJurisdiction": "VN", "legislationLegalForce": "https://schema.org/NotInForce" if a.rep else "https://schema.org/InForce",
          "isPartOf": CODE_LD},
-        breadcrumb_ld([("BLTTHS 2015", DIR), (chap_label(c), DIR), ("Điều " + a.id, DIR + "dieu-" + a.id)])]}
+        breadcrumb_ld([("Trang chủ", "./"), ("Tố tụng hình sự", DIR), (chap_label(c), DIR), ("Điều " + a.id, DIR + "dieu-" + a.id)])]}
     return {"path": DIR + "dieu-" + a.id, "title": "Điều %s. %s" % (a.id, a.t) + SUFFIX, "desc": desc, "main": main, "ld": ld,
             "og_type": "article", "body": "is-reading is-article", "nav": "muc-luc"}
 
 
 def page_law(L):
     d = L["doc"]
-    crumbs = [("BLTTHS 2015", DIR), ("Sửa đổi, bổ sung", DIR + "sua-doi"), (L["so"], None)]
+    crumbs = [("Trang chủ", "./"), ("Tố tụng hình sự", DIR), ("Sửa đổi, bổ sung", DIR + "sua-doi"), (L["so"], None)]
     n_art = sorted({t for it in L["items"] for t in it["targets"] if t in BY}, key=akey)
     meta = ('<div class="ph-meta"><span>%sBan hành %s</span><span>%s%s</span><span>%s%d điều khoản tác động tới %d điều của Bộ luật</span></div>'
             % (ic("calendar"), vnd(L["ngay"]), ic("clock"),
@@ -906,7 +912,7 @@ def page_law(L):
 
 
 def page_amend():
-    crumbs = [("BLTTHS 2015", DIR), ("Sửa đổi, bổ sung", None)]
+    crumbs = [("Trang chủ", "./"), ("Tố tụng hình sự", DIR), ("Sửa đổi, bổ sung", None)]
     tl = []
     for L in ORDER:
         arts = sorted({t for it in L["items"] for t in it["targets"] if t in BY}, key=akey)
@@ -958,7 +964,7 @@ def hist_doc_html(d):
 
 def page_hist(H):
     d = load(H["id"])
-    crumbs = [("BLTTHS 2015", DIR), ("Văn bản trước 2015", DIR + "lich-su"), (H["so"], None)]
+    crumbs = [("Trang chủ", "./"), ("Tố tụng hình sự", DIR), ("Văn bản trước 2015", DIR + "lich-su"), (H["so"], None)]
     ps, toc = hist_doc_html(d)
     meta = '<div class="ph-meta"><span>%sBan hành %s</span><span>%s%s</span></div>' % (ic("calendar"), vnd(d.get("ngayBanHanh")), ic("alert"), esc(H["het"]))
     if not ps:
@@ -982,7 +988,7 @@ def page_hist(H):
 
 
 def page_hist_list():
-    crumbs = [("BLTTHS 2015", DIR), ("Văn bản trước 2015", None)]
+    crumbs = [("Trang chủ", "./"), ("Tố tụng hình sự", DIR), ("Văn bản trước 2015", None)]
     cards = "".join('<a class="ca" href="%svan-ban-%s"><span class="cn"><small>Số</small><b>%s</b></span><h3>%s</h3><p>%s</p></a>'
                     % (DIR, H["slug"], esc(H["so"]), esc(H["ten"]), esc(H["het"])) for H in HIST)
     main = (ph(crumbs, "Bộ luật Tố tụng hình sự qua các thời kỳ", "Bộ luật năm 1988 (sửa đổi 1990, 1992, 2000) và Bộ luật năm 2003 – "
@@ -993,7 +999,7 @@ def page_hist_list():
 
 
 def page_search():
-    crumbs = [("BLTTHS 2015", DIR), ("Tìm kiếm", None)]
+    crumbs = [("Trang chủ", "./"), ("Tố tụng hình sự", DIR), ("Tìm kiếm", None)]
     main = (ph(crumbs, "Tìm kiếm trong Bộ luật Tố tụng hình sự", "Gõ có dấu hoặc không dấu; số điều (143), “khoản 2 điều 173”; cụm từ "
                "chính xác đặt trong ngoặc kép. Tìm cả trong nội dung sửa đổi, bổ sung.", "Tìm kiếm toàn văn",
                '<form class="sb sb--lg" role="search" action="%stim-kiem" method="get" style="margin-top:18px"><div class="sb-box">%s'
@@ -1023,7 +1029,7 @@ def search_index():
 
 # =============================================================================
 def main():
-    ver = TODAY.replace("-", "") + "d"  # tăng chữ cuối khi sửa tths.css, tths.js
+    ver = TODAY.replace("-", "") + "e"  # tăng chữ cuối khi sửa tths.css, tths.js
     tpl = make_template().replace("__V__", ver)
     for m in ("<!--seo:head-->", "<!--seo:main-->", '<base href="../">', DIR + "tths.js"):
         assert m in tpl, "Khuôn trang thiếu " + m
