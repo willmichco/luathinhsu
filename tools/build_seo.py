@@ -537,6 +537,9 @@ def page_home():
                    ' <span class="tag tag--rep26">%s</span>' % CH_NOTE[c["id"]]["short"] if c["id"] in CH_NOTE else "",
                    c["first"].id, "–" + c["last"].id if c["first"] is not c["last"] else "") for c in p1) +
         "</div></section>"
+        '<section class="wrap sec"><div class="callout callout--new">' + ic("book") + '<div><b>Mới: Bộ luật Tố tụng hình sự 2015</b> – '
+        'toàn văn 510 điều (và Điều 506a), kèm nguyên văn sửa đổi, bổ sung theo Luật 02/2021/QH15, 34/2024/QH15, 59/2024/QH15, 99/2025/QH15 '
+        'và các luật năm 2025, 2026. <a href="to-tung-hinh-su/">Mở tra cứu Bộ luật Tố tụng hình sự ›</a></div></div></section>'
         '<section class="wrap sec"><div class="sec-h"><div><h2>Công cụ hỗ trợ nghiên cứu</h2><p>Tính toán tự động từ chính văn bản điều luật</p></div>'
         '<a class="more" href="cong-cu">Tất cả công cụ ' + ic("chev-r") + "</a></div>" + tool_cards() + "</section>"
         '<section class="wrap sec"><div class="law-info">'
@@ -1132,6 +1135,11 @@ def main():
 
     day = lastmod_date()
     urls = ["  <url><loc>%s</loc><lastmod>%s</lastmod></url>" % (esc(SITE + p["path"]), day) for p in pages if not p.get("noindex")]
+    # Phân mục Bộ luật Tố tụng hình sự (tools/build_tths.py) ghi danh sách địa chỉ riêng → gộp vào sitemap chung
+    tths = os.path.join(ROOT, "sitemap-tths.xml")
+    if os.path.exists(tths):
+        for loc in re.findall(r"<loc>(.*?)</loc>", open(tths, encoding="utf-8").read()):
+            urls.append("  <url><loc>%s</loc><lastmod>%s</lastmod></url>" % (loc, day))
     with open(os.path.join(ROOT, "sitemap.xml"), "w", encoding="utf-8", newline="\n") as f:
         f.write('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
                 "\n".join(urls) + "\n</urlset>\n")

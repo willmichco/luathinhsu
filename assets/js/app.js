@@ -20,7 +20,7 @@
   var cap = function (s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; };
   var debounce = function (fn, ms) { var t; return function () { var a = arguments, c = this; clearTimeout(t); t = setTimeout(function () { fn.apply(c, a); }, ms); }; };
   var isTouch = window.matchMedia('(hover: none)').matches;
-  var VER = '20261021b';
+  var VER = '20261116a';
   // Thư mục gốc của trang web (…/luathinhsu/), suy ra từ vị trí tệp assets/js/app.js
   var ROOT = document.currentScript ? new URL('../../', document.currentScript.src).href : new URL('./', location.href).href;
   var ROOT_PATH = new URL(ROOT).pathname;
@@ -414,6 +414,7 @@
         L('./', 'home', 'Trang chủ') + L('muc-luc', 'list', 'Mục lục Bộ luật') +
         L('tim-kiem', 'search', 'Tìm kiếm toàn văn') +
         L('da-luu', 'bookmark', 'Đã lưu & ghi chú') +
+        L('to-tung-hinh-su/', 'book', 'Bộ luật Tố tụng hình sự') +
         '<div class="dn-h">Công cụ nghiên cứu</div>' +
         L('cong-cu-thoi-hieu', 'clock', 'Phân loại tội & thời hiệu') + L('cong-cu-tuoi', 'user', 'Tuổi chịu trách nhiệm hình sự') +
         L('cong-cu-thi-hanh-an', 'calendar', 'Thời hiệu thi hành bản án') + L('cong-cu-so-sanh', 'columns', 'So sánh điều luật') +

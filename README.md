@@ -23,6 +23,22 @@ Luật số 59/2024/QH15 và Luật số 86/2025/QH15) dành cho luật sư, sin
 Lưu ý hiệu lực đã được gắn trên trang: Chương XII (Điều 90 – 107) bị bãi bỏ từ 01/01/2026 theo Điều 177
 Luật Tư pháp người chưa thành niên số 59/2024/QH15; Điều 292 đã bị bãi bỏ; 39 điều sửa đổi theo Luật số 86/2025/QH15.
 
+## Phân mục Bộ luật Tố tụng hình sự (`to-tung-hinh-su/`)
+
+**Xem trực tiếp:** https://willmichco.github.io/luathinhsu/to-tung-hinh-su/
+
+| Nội dung | Chi tiết |
+|---|---|
+| Bộ luật | Bộ luật Tố tụng hình sự số 101/2015/QH13: 9 phần, 36 chương, 510 điều + Điều 506a (bổ sung 2025) – mỗi điều một trang `to-tung-hinh-su/dieu-<số>` |
+| Sửa đổi, bổ sung, bãi bỏ | 9 văn bản, 104 điều khoản, gắn vào từng điều theo thứ tự hiệu lực: Luật 02/2021/QH15 (01/12/2021), 34/2024/QH15 (01/01/2025), 99/2025/QH15 (01/07/2025), 59/2024/QH15 (01/01/2026 – bãi bỏ Chương XXVIII, Điều 413–430), 105/2025/QH15 (01/05/2026), 103/2025/QH15, 106/2025/QH15, 128/2025/QH15 (01/07/2026), 11/2026/QH16 (01/03/2027 – chưa có hiệu lực) |
+| Cách trình bày | Văn bản điều luật là nguyên văn năm 2015; điều khoản sửa đổi trích nguyên văn ngay dưới điều. Điều bị thay thế toàn bộ (Điều 7, 20, 141, 233, 243, 268, 382, 476, 477) hiển thị nội dung mới, văn bản gốc thu gọn |
+| Trang khác | `sua-doi` (bảng + dòng thời gian), `luat-<số hiệu>` (từng văn bản sửa đổi), `lich-su`, `van-ban-<số hiệu>` (Bộ luật 2003, 1988 và luật sửa đổi 1990, 1992, 2000), `tim-kiem` (tìm toàn văn, không dấu) |
+
+Cập nhật dữ liệu: `python3 tools/tths_nguon.py /duong-dan/tracuuphapluat` (trích hồ sơ từ `bot/du-lieu/ho-so/*.jsonl.gz`,
+nhánh `claude/compassionate-ritchie-wwgrw7`, theo `id`) → `python3 tools/build_tths.py` → `python3 tools/build_seo.py`
+(gộp `sitemap-tths.xml` vào `sitemap.xml`). Văn bản sửa đổi mới: thêm vào `LAWS` trong `tools/build_tths.py` và `WANT` trong
+`tools/tths_nguon.py`. Trạng thái "chưa có hiệu lực" tính theo ngày chạy (`TTHS_TODAY=YYYY-MM-DD` để cố định).
+
 ## Cấu trúc
 
 ```
